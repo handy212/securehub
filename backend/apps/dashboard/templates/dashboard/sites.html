@@ -1,0 +1,277 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Sites | SecureHub{% endblock %}
+{% block header_title %}Site Directory{% endblock %}
+
+{% block content %}
+<div class="space-y-4" x-data="{ provisionModal: false, search: '{{ current_query|escapejs }}', filter: 'all' }">
+
+    <!-- ── DIRECTORY HEADER & BREADCRUMBS ──────────────── -->
+    <div class="mb-4">
+        <nav class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+            <a href="{% url 'dashboard:home' %}" class="hover:text-brand transition-colors">Dashboard</a>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+            <span class="text-slate-900">Manage Sites</span>
+        </nav>
+
+        <div class="flex flex-col gap-3 border-b border-slate-200 pb-3 lg:flex-row lg:items-center lg:justify-between">
+            <div class="flex items-center gap-3">
+                <h1 class="text-lg font-black text-slate-900 tracking-tight leading-none">Site Directory</h1>
+                <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-400 text-[9px] font-black uppercase tracking-wider">{{ total_sites_count }} Sites</span>
+            </div>
+            <button @click="provisionModal = true" class="inline-flex items-center justify-center gap-1.5 self-start rounded bg-slate-900 px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white transition-all hover:bg-brand lg:self-auto">
+                <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+                New Site
+            </button>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="grid gap-2 grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm flex items-center justify-between gap-3">
+            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Total Sites</p>
+            <p class="text-lg font-black text-slate-900">{{ total_sites_count }}</p>
+        </div>
+        <div class="rounded-xl border border-emerald-100 bg-white px-3 py-2.5 shadow-sm flex items-center justify-between gap-3">
+            <p class="text-[9px] font-black uppercase tracking-widest text-emerald-600">Online Now</p>
+            <p class="text-lg font-black text-slate-900">{{ count_online }}</p>
+        </div>
+        <div class="rounded-xl border border-brand/20 bg-brand/5 px-3 py-2.5 shadow-sm flex items-center justify-between gap-3">
+            <p class="text-[9px] font-black uppercase tracking-widest text-brand">Active Plan</p>
+            <p class="text-lg font-black text-slate-900">{{ count_with_plan }}</p>
+        </div>
+        <div class="rounded-xl border border-amber-100 bg-white px-3 py-2.5 shadow-sm flex items-center justify-between gap-3">
+            <p class="text-[9px] font-black uppercase tracking-widest text-amber-600">No Plan</p>
+            <p class="text-lg font-black text-slate-900">{{ count_no_plan }}</p>
+        </div>
+    </div>
+
+    <!-- ── SITE DIRECTORY TABLE ────────────────────────── -->
+    <div class="bg-white rounded border border-slate-200 shadow-sm overflow-hidden">
+
+        <!-- Search + Filter Bar -->
+        <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/50 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-2 flex-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-slate-400 flex-shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" x-model="search" placeholder="Filter by name or Hik ID&hellip;"
+                       class="flex-1 bg-transparent text-[11px] font-bold text-slate-700 placeholder:text-slate-300 outline-none border-none shadow-none ring-0 h-auto py-0">
+                <button x-show="search" @click="search = ''" class="text-slate-300 hover:text-slate-500 transition-colors text-sm leading-none flex-shrink-0">&times;</button>
+            </div>
+            <div class="flex items-center gap-1 rounded bg-slate-100 p-1 self-start sm:self-auto">
+                <button @click="filter = 'all'" :class="filter === 'all' ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-400 hover:text-slate-600'" class="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded transition-all">All</button>
+                <button @click="filter = 'plan'" :class="filter === 'plan' ? 'bg-white text-brand shadow-sm' : 'text-slate-400 hover:text-brand'" class="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded transition-all">Has Plan</button>
+                <button @click="filter = 'noplan'" :class="filter === 'noplan' ? 'bg-white text-amber-600 shadow-sm' : 'text-slate-400 hover:text-amber-500'" class="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded transition-all">No Plan</button>
+            </div>
+        </div>
+
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-slate-50 border-b border-slate-200">
+                        <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Site</th>
+                        <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Infrastructure</th>
+                        <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Health</th>
+                        <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Billing</th>
+                        <th class="px-4 py-2 text-right text-[9px] font-black uppercase tracking-[0.15em] text-slate-400"></th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100">
+                    {% for site in sites %}
+                    <tr class="hover:bg-slate-50/40 transition-colors"
+                        x-show="
+                            (filter === 'all' ||
+                             (filter === 'plan' && {{ site.subscription|yesno:'true,false' }}) ||
+                             (filter === 'noplan' && {{ site.subscription|yesno:'false,true' }})) &&
+                            (!search || '{{ site.name|lower|escapejs }} {{ site.hik_site_id|lower|escapejs }}'.includes(search.toLowerCase()))
+                        ">
+                        <td class="px-4 py-2.5">
+                            <a href="{% url 'dashboard:site-console' site.pk %}" class="text-[11px] font-black text-slate-800 hover:text-brand transition-colors uppercase tracking-tight leading-none block">{{ site.name }}</a>
+                            <p class="text-[9px] font-bold text-slate-400 uppercase tracking-tighter mt-0.5 leading-none">{{ site.hik_site_id|default:"INTERNAL" }}{% if site.city %} &middot; {{ site.city }}{% if site.country %}, {{ site.country }}{% endif %}{% endif %}</p>
+                        </td>
+                        <td class="px-4 py-2.5 whitespace-nowrap">
+                            {% with device_count=site.devices.count user_count=site.access_list.count %}
+                            <p class="text-[10px] font-black text-slate-700 leading-none">{{ device_count }} panel{{ device_count|pluralize }}</p>
+                            <p class="text-[9px] font-bold uppercase tracking-widest mt-0.5 leading-none {% if user_count %}text-slate-400{% else %}text-amber-500{% endif %}">{% if user_count %}{{ user_count }} user{{ user_count|pluralize }}{% else %}No users{% endif %}</p>
+                            {% endwith %}
+                        </td>
+                        <td class="px-4 py-2.5">
+                            {% with first_panel=site.devices.first %}
+                            <div class="flex items-center gap-1.5">
+                                <span class="w-1.5 h-1.5 rounded-full flex-shrink-0 {% if first_panel and first_panel.is_online %}bg-emerald-500{% else %}bg-slate-200{% endif %}"></span>
+                                <span class="text-[10px] font-black uppercase tracking-tight leading-none {% if first_panel and first_panel.is_online %}text-emerald-700{% else %}text-slate-400{% endif %}">{% if first_panel %}{{ first_panel.is_online|yesno:"Online,Offline" }}{% else %}No panel{% endif %}</span>
+                            </div>
+                            <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 leading-none">{{ first_panel.last_seen_at|date:"d M, H:i"|default:"Never" }}</p>
+                            {% endwith %}
+                        </td>
+                        <td class="px-4 py-2.5">
+                            {% if site.subscription %}
+                            <div class="flex items-center gap-1.5 flex-wrap">
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase border leading-none
+                                    {% if site.subscription.status == 'active' %}bg-emerald-50 border-emerald-100 text-emerald-600
+                                    {% elif site.subscription.status == 'overdue' %}bg-amber-50 border-amber-100 text-amber-600
+                                    {% elif site.subscription.status == 'suspended' %}bg-red-50 border-red-100 text-red-600
+                                    {% else %}bg-slate-50 border-slate-200 text-slate-500{% endif %}">
+                                    {% if site.subscription.status == 'overdue' %}<span class="w-1 h-1 rounded-full bg-amber-500 animate-pulse"></span>{% endif %}
+                                    {{ site.subscription.status }}
+                                </span>
+                                <span class="text-[10px] font-black text-slate-700 leading-none">GH&#8373;{{ site.subscription.monthly_rate }}</span>
+                            </div>
+                            {% else %}
+                            <span class="inline-flex items-center px-1.5 py-0.5 rounded bg-amber-50 border border-amber-100 text-[8px] font-black uppercase tracking-widest text-amber-500 leading-none">No Plan</span>
+                            {% endif %}
+                        </td>
+                        <td class="px-4 py-2.5 text-right">
+                            <div class="flex items-center justify-end gap-1" x-data="{ open: false, pos: '' }">
+                                <a href="{% url 'dashboard:site-console' site.pk %}" title="Open Console"
+                                   class="p-1.5 text-slate-400 rounded hover:bg-brand/10 hover:text-brand transition-all border border-transparent hover:border-brand/20">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
+                                </a>
+                                <div class="relative">
+                                    <button @click="const r = $el.getBoundingClientRect(); pos = 'top:' + (r.bottom + 4) + 'px;right:' + (document.documentElement.clientWidth - r.right) + 'px'; open = !open"
+                                            @click.away="open = false"
+                                            class="p-1.5 text-slate-400 rounded hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-700 dark:hover:text-slate-300 transition-all border border-transparent hover:border-slate-200 dark:hover:border-slate-700">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="1"/><circle cx="12" cy="5" r="1"/><circle cx="12" cy="19" r="1"/></svg>
+                                    </button>
+                                    <div x-show="open" x-cloak :style="pos"
+                                         class="fixed w-44 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg shadow-xl z-[200] overflow-hidden divide-y divide-slate-100 dark:divide-slate-800">
+                                        <a href="{% url 'dashboard:update-site' site.pk %}" class="block px-3 py-2.5 text-[10px] font-black text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 uppercase tracking-widest">Edit Details</a>
+                                        <a href="{% url 'dashboard:onboard-client' site.pk %}" class="block px-3 py-2.5 text-[10px] font-black text-slate-600 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 uppercase tracking-widest">Onboard Client</a>
+                                        <form action="{% url 'dashboard:site-action' site.pk 'sync-devices' %}" method="POST">
+                                            {% csrf_token %}
+                                            <button type="submit" class="w-full text-left px-3 py-2.5 text-[10px] font-black text-red-500 hover:bg-red-50 dark:hover:bg-red-950/40 uppercase tracking-widest">Force Sync</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="py-12 text-center text-slate-400 uppercase tracking-widest text-[10px] font-black">Directory is Empty</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- ── PROVISION MODAL ─────────────────────────────── -->
+    <template x-if="provisionModal">
+        <div class="fixed inset-0 z-[100] flex items-center justify-center p-6 bg-slate-900/40 backdrop-blur-md"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             @click.self="provisionModal = false">
+            <div class="w-full max-w-4xl overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-2xl"
+                 x-transition:enter="transition ease-out duration-300"
+                 x-transition:enter-start="opacity-0 scale-95 translate-y-10"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0">
+                <div class="flex items-center justify-between border-b border-slate-100 bg-slate-50/70 px-6 py-4">
+                    <div class="flex items-center gap-3">
+                        <div class="flex h-10 w-10 items-center justify-center rounded-2xl border border-slate-200 bg-white text-slate-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                        </div>
+                        <div>
+                            <h2 class="text-sm font-black tracking-tight text-slate-900">Add New Site</h2>
+                            <p class="text-[10px] font-medium text-slate-500">Fill in the site details below to provision or link a Hik record.</p>
+                        </div>
+                    </div>
+                    <button @click="provisionModal = false" class="rounded-full bg-white p-1.5 text-slate-400 shadow-sm transition-all hover:text-slate-900">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none"
+                             stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                </div>
+                <div class="px-6 py-6">
+                    <form action="{% url 'dashboard:provision-site' %}" method="POST" class="form-perfex space-y-6" x-data="{ loading: false }" @submit="loading = true">
+                        {% csrf_token %}
+                        <section class="space-y-4">
+                            <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Identity</h3>
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="form-group md:col-span-2">
+                                    <label>Location Name</label>
+                                    <input type="text" name="name" required placeholder="e.g. Accra Data Center" class="w-full">
+                                </div>
+                                <div class="form-group">
+                                    <label>Primary Scene</label>
+                                    <select name="primary_industry" class="w-full">
+                                        <option value="">Select Scene...</option>
+                                        {% for scene in scene_options %}
+                                        <option value="{{ scene }}">{{ scene }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label>Sector (Secondary)</label>
+                                    <input type="text" name="secondary_industry" placeholder="e.g. Technology" class="w-full">
+                                </div>
+                                <div class="form-group md:col-span-2">
+                                    <label>HPP Site ID</label>
+                                    <input type="text" name="hik_site_id" placeholder="Leave blank to let Hik create one" class="w-full font-mono">
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="space-y-4 border-t border-slate-100 pt-5">
+                            <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Address</h3>
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="form-group md:col-span-2">
+                                    <label>Street Address</label>
+                                    <input type="text" name="address" placeholder="e.g. 123 Security Way" class="w-full">
+                                </div>
+                                <div class="form-group">
+                                    <label>City</label>
+                                    <input type="text" name="city" placeholder="Accra" class="w-full">
+                                </div>
+                                <div class="form-group">
+                                    <label>State / Province</label>
+                                    <input type="text" name="state" placeholder="Accra State" class="w-full">
+                                </div>
+                                <div class="form-group">
+                                    <label>Country</label>
+                                    <input type="text" name="country" placeholder="Ghana" class="w-full">
+                                </div>
+                                <div class="form-group">
+                                    <label>Timezone</label>
+                                    <select name="timezone" class="w-full">
+                                        <option value="UTC">UTC (Default)</option>
+                                        <option value="Africa/Accra">Africa/Accra</option>
+                                        <option value="Europe/London">Europe/London</option>
+                                        <option value="America/New_York">America/New_York</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </section>
+
+                        <section class="space-y-4 border-t border-slate-100 pt-5">
+                            <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Map Placement</h3>
+                            <div class="grid gap-4 md:grid-cols-2">
+                                <div class="form-group">
+                                    <label>Latitude</label>
+                                    <input type="text" name="latitude" placeholder="5.6429" class="w-full font-mono">
+                                </div>
+                                <div class="form-group">
+                                    <label>Longitude</label>
+                                    <input type="text" name="longitude" placeholder="-0.2451" class="w-full font-mono">
+                                </div>
+                            </div>
+                        </section>
+
+                        <div class="flex flex-col gap-3 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
+                            <button type="button" @click="provisionModal = false" class="text-[10px] font-black uppercase tracking-widest text-slate-400 transition-colors hover:text-slate-700">Cancel</button>
+                            <button type="submit" :disabled="loading" class="rounded-xl bg-slate-900 px-5 py-3 text-[10px] font-black uppercase tracking-[0.18em] text-white shadow-lg shadow-slate-200 transition-all hover:bg-brand disabled:opacity-50">
+                                <span x-show="!loading">Create Site</span>
+                                <span x-show="loading" class="flex items-center justify-center gap-2">
+                                    <svg class="h-3.5 w-3.5 animate-spin text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                    Synchronizing...
+                                </span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </template>
+
+</div>
+{% endblock %}

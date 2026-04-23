@@ -1,0 +1,1622 @@
+openapi: 3.0.3
+info:
+  title: Alarm Hub API
+  version: 1.0.0
+  description: REST API for SecureHub alarm management.
+paths:
+  /:
+    get:
+      operationId: root_retrieve
+      responses:
+        '200':
+          description: No response body
+  /api/v1/alarm-devices/:
+    get:
+      operationId: alarm_devices_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - alarm-devices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlarmPanelDeviceList'
+          description: ''
+  /api/v1/alarm-devices/{id}/:
+    get:
+      operationId: alarm_devices_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - alarm-devices
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AlarmPanelDevice'
+          description: ''
+  /api/v1/alarms/events/:
+    get:
+      operationId: alarms_events_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - alarms
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlarmEventList'
+          description: ''
+  /api/v1/alarms/sites/{site_id}/events/{event_id}/picture/:
+    post:
+      operationId: alarms_sites_events_picture_create
+      description: |-
+        Retrieve download URL(s) for alarm image attachments. Per API guide §3.36.
+
+        Handles two event types:
+        - Linkage (PIR cameras with built-in cam): images are in alarmData.pictureList[].url
+          - https:// URLs → returned directly (no Hik API call needed)
+          - ISAPI_FILES/... URLs → resolved via /v1/alarm/pictureurl (valid 2 hours)
+        - Other events: accepts explicit filePath in request body.
+
+        POST body (optional): {"filePath": "ISAPI_FILES/..."}
+        Returns: {"pictures": [{url, encrypt, id}]} or error if no pictures found.
+      parameters:
+      - in: path
+        name: event_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - alarms
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/alarms/webhook/:
+    get:
+      operationId: alarms_webhook_retrieve
+      description: |-
+        Webhook validation handshake — per API guide §2.10.
+        The platform sends a GET request with X-Hook-Timestamp and X-Hook-Batch-Id.
+        We must respond with the same timestamp and batch_id signed with our secret
+        in the X-Hook-Signature header.
+      tags:
+      - alarms
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: alarms_webhook_create
+      description: |-
+        Endpoint to receive push notifications from Hik-Partner Pro.
+        Signature algorithm per API guide §2.10:
+          sha256=HMAC-SHA256(signSecret, "{X-Hook-Timestamp}.{batchId}")
+      tags:
+      - alarms
+      security:
+      - jwtAuth: []
+      - {}
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/google/:
+    post:
+      operationId: auth_google_create
+      description: |-
+        POST /api/v1/auth/google/
+        Expects {"id_token": "..."}.
+        Validates the token with Google, finds/creates the user, and returns JWT.
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/auth/login/:
+    post:
+      operationId: auth_login_create
+      description: |-
+        Takes a set of user credentials and returns an access and refresh JSON web
+        token pair to prove the authentication of those credentials.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenObtainPairRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenObtainPair'
+          description: ''
+  /api/v1/auth/refresh/:
+    post:
+      operationId: auth_refresh_create
+      description: |-
+        Takes a refresh type JSON web token and returns an access type JSON web
+        token if the refresh token is valid.
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/TokenRefreshRequest'
+        required: true
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenRefresh'
+          description: ''
+  /api/v1/communication/broadcast/:
+    get:
+      operationId: communication_broadcast_list
+      description: 'Admin-only: create and manage broadcast messages.'
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - communication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBroadcastMessageList'
+          description: ''
+    post:
+      operationId: communication_broadcast_create
+      description: 'Admin-only: create and manage broadcast messages.'
+      tags:
+      - communication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastMessageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BroadcastMessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BroadcastMessageRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastMessage'
+          description: ''
+  /api/v1/communication/broadcast/{id}/:
+    get:
+      operationId: communication_broadcast_retrieve
+      description: 'Admin-only: create and manage broadcast messages.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this broadcast message.
+        required: true
+      tags:
+      - communication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastMessage'
+          description: ''
+    put:
+      operationId: communication_broadcast_update
+      description: 'Admin-only: create and manage broadcast messages.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this broadcast message.
+        required: true
+      tags:
+      - communication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/BroadcastMessageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/BroadcastMessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/BroadcastMessageRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastMessage'
+          description: ''
+    patch:
+      operationId: communication_broadcast_partial_update
+      description: 'Admin-only: create and manage broadcast messages.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this broadcast message.
+        required: true
+      tags:
+      - communication
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedBroadcastMessageRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/PatchedBroadcastMessageRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/PatchedBroadcastMessageRequest'
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/BroadcastMessage'
+          description: ''
+    delete:
+      operationId: communication_broadcast_destroy
+      description: 'Admin-only: create and manage broadcast messages.'
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        description: A UUID string identifying this broadcast message.
+        required: true
+      tags:
+      - communication
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/communication/messages/:
+    get:
+      operationId: communication_messages_list
+      description: |-
+        Mobile-facing inbox: returns sent messages addressed to the current user
+        (recipient=null means broadcast to all; recipient=self means individual).
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - communication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedBroadcastMessageList'
+          description: ''
+  /api/v1/hik/arc/{action}/:
+    post:
+      operationId: hik_arc_create
+      description: |-
+        Enable or disable ARC service for a device (§3.38–3.39).
+        Restricted to admins.
+
+        POST /api/v1/hik/arc/enable/  — body: {"deviceSerial": "...", "arcId": "..."}
+        POST /api/v1/hik/arc/disable/ — body: {"deviceSerial": "..."}
+      parameters:
+      - in: path
+        name: action
+        schema:
+          type: string
+        required: true
+      tags:
+      - hik
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/hik/arc/devices/:
+    get:
+      operationId: hik_arc_devices_retrieve
+      description: |-
+        List devices with ARC (Alarm Receiving Centre) service enabled (§3.37).
+        Restricted to admins.
+
+        GET /api/v1/hik/arc/devices/?site_id=...&page=1
+      tags:
+      - hik
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/hik/devices/{hik_device_id}/delete/:
+    post:
+      operationId: hik_devices_delete_create
+      description: |-
+        Remove a device from the Hik-Partner Pro platform and from local records (§3.19).
+        Restricted to admins.
+
+        POST /api/v1/hik/devices/{hik_device_id}/delete/
+        No request body needed — the Hik device ID is taken from the URL.
+      parameters:
+      - in: path
+        name: hik_device_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - hik
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/hik/installers/:
+    get:
+      operationId: hik_installers_retrieve
+      description: |-
+        Search for employees/installers on the Hik-Partner Pro platform (§3.2).
+        Restricted to admins — used to look up installer IDs for site assignment.
+
+        GET /api/v1/hik/installers/?q=name&page=1&page_size=20
+      tags:
+      - hik
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/hik/sites/{site_id}/devices/add/:
+    post:
+      operationId: hik_sites_devices_add_create
+      description: |-
+        Add one or more devices to a site on the Hik-Partner Pro platform (§3.18).
+        Restricted to admins — requires the device serial number and the validation
+        code printed on the device label.
+
+        POST /api/v1/hik/sites/{site_id}/devices/add/
+        Body: {"deviceList": [{"deviceSerial": "...", "validateCode": "...", "extendInfo": ""}]}
+
+        After a successful add, local device records are synced automatically.
+        The response includes addSuccessList and addFailedList from the Hik platform.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - hik
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/hik/webhook-config/:
+    get:
+      operationId: hik_webhook_config_retrieve
+      description: |-
+        Manage the Hik-Partner Pro webhook push configuration (§3.67–§3.69).
+        Restricted to superadmins — credentials and callback URLs are server-side only.
+
+        GET    → query current config
+        POST   → save/update config (callbackUrl required; must be HTTPS)
+        DELETE → remove config
+      tags:
+      - hik
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    post:
+      operationId: hik_webhook_config_create
+      description: |-
+        Manage the Hik-Partner Pro webhook push configuration (§3.67–§3.69).
+        Restricted to superadmins — credentials and callback URLs are server-side only.
+
+        GET    → query current config
+        POST   → save/update config (callbackUrl required; must be HTTPS)
+        DELETE → remove config
+      tags:
+      - hik
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: hik_webhook_config_destroy
+      description: |-
+        Manage the Hik-Partner Pro webhook push configuration (§3.67–§3.69).
+        Restricted to superadmins — credentials and callback URLs are server-side only.
+
+        GET    → query current config
+        POST   → save/update config (callbackUrl required; must be HTTPS)
+        DELETE → remove config
+      tags:
+      - hik
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/notifications/register-device/:
+    post:
+      operationId: notifications_register_device_create
+      description: |-
+        POST  /api/v1/notifications/register-device/
+            Register or refresh an FCM token for the authenticated user.
+            If the token already exists (any user), it is re-assigned to the
+            current user and marked active — handles device token reuse after
+            app reinstall.
+
+        DELETE /api/v1/notifications/register-device/
+            Deactivate the token on logout. Token is soft-deleted (is_active=False)
+            rather than removed so historical delivery records stay intact.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+    delete:
+      operationId: notifications_register_device_destroy
+      description: |-
+        POST  /api/v1/notifications/register-device/
+            Register or refresh an FCM token for the authenticated user.
+            If the token already exists (any user), it is re-assigned to the
+            current user and marked active — handles device token reuse after
+            app reinstall.
+
+        DELETE /api/v1/notifications/register-device/
+            Deactivate the token on logout. Token is soft-deleted (is_active=False)
+            rather than removed so historical delivery records stay intact.
+      tags:
+      - notifications
+      security:
+      - jwtAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/v1/profile/:
+    get:
+      operationId: profile_retrieve
+      tags:
+      - profile
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/sites/:
+    get:
+      operationId: sites_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - sites
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSiteList'
+          description: ''
+  /api/v1/sites/{id}/:
+    get:
+      operationId: sites_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - sites
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+          description: ''
+  /api/v1/sites/{id}/sync/:
+    post:
+      operationId: sites_sync_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - sites
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiteRequest'
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: '#/components/schemas/SiteRequest'
+          multipart/form-data:
+            schema:
+              $ref: '#/components/schemas/SiteRequest'
+        required: true
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Site'
+          description: ''
+  /api/v1/sites/{site_id}/commands/:
+    get:
+      operationId: sites_commands_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - sites
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedArmDisarmCommandList'
+          description: ''
+  /api/v1/sites/{site_id}/events/:
+    get:
+      operationId: sites_events_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - sites
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedAlarmEventList'
+          description: ''
+  /api/v1/sites/{site_id}/poll/:
+    get:
+      operationId: sites_poll_retrieve
+      description: |-
+        Lightweight site status endpoint for frontend polling.
+        Unlike SiteStatusView, this DOES NOT perform a network call to Hikvision.
+        It reads exclusively from the local database to ensure sub-millisecond responses.
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - sites
+      security:
+      - jwtAuth: []
+      - cookieAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/sites/{site_id}/status/:
+    get:
+      operationId: sites_status_retrieve
+      parameters:
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - sites
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiteStatus'
+          description: ''
+  /api/v1/sites/{site_id}/subsystems/{subsystem_id}/{action}/:
+    post:
+      operationId: sites_subsystems_create
+      parameters:
+      - in: path
+        name: action
+        schema:
+          type: string
+        required: true
+      - in: path
+        name: site_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      - in: path
+        name: subsystem_id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - sites
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/v1/subsystems/:
+    get:
+      operationId: subsystems_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - subsystems
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedSubsystemList'
+          description: ''
+  /api/v1/subsystems/{id}/:
+    get:
+      operationId: subsystems_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - subsystems
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Subsystem'
+          description: ''
+  /api/v1/zones/:
+    get:
+      operationId: zones_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      tags:
+      - zones
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedZoneList'
+          description: ''
+  /api/v1/zones/{id}/:
+    get:
+      operationId: zones_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - zones
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Zone'
+          description: ''
+  /healthz/:
+    get:
+      operationId: healthz_retrieve
+      tags:
+      - healthz
+      responses:
+        '200':
+          description: No response body
+components:
+  schemas:
+    ActionEnum:
+      enum:
+      - arm
+      - disarm
+      - stay-arm
+      - clear-alarm
+      type: string
+      description: |-
+        * `arm` - Arm
+        * `disarm` - Disarm
+        * `stay-arm` - Stay Arm
+        * `clear-alarm` - Clear Alarm
+    AlarmEvent:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        site_name:
+          type: string
+          readOnly: true
+        event_type:
+          type: string
+          maxLength: 64
+        event_category:
+          $ref: '#/components/schemas/EventCategoryEnum'
+        severity:
+          $ref: '#/components/schemas/SeverityEnum'
+        payload: {}
+        occurred_at:
+          type: string
+          format: date-time
+        subsystem:
+          type: string
+          format: uuid
+          nullable: true
+        subsystem_name:
+          type: string
+          nullable: true
+          readOnly: true
+        zone:
+          type: string
+          format: uuid
+          nullable: true
+        zone_name:
+          type: string
+          nullable: true
+          readOnly: true
+        zone_number:
+          type: integer
+          nullable: true
+          readOnly: true
+        zone_detector_type:
+          type: string
+          nullable: true
+          description: Return a friendly sensor type label using the same mapping
+            used in the site views.
+          readOnly: true
+        has_media:
+          type: boolean
+          description: True if this event has at least one picture/video attachment
+            stored in its payload.
+          readOnly: true
+        acknowledged:
+          type: boolean
+      required:
+      - event_type
+      - has_media
+      - id
+      - occurred_at
+      - site_name
+      - subsystem_name
+      - zone_detector_type
+      - zone_name
+      - zone_number
+    AlarmPanelDevice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        site:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 255
+        serialNumber:
+          type: string
+          readOnly: true
+        hikDeviceId:
+          type: string
+          readOnly: true
+        deviceType:
+          type: string
+          readOnly: true
+        isOnline:
+          type: boolean
+          readOnly: true
+        subsystems:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subsystem'
+          readOnly: true
+      required:
+      - deviceType
+      - hikDeviceId
+      - id
+      - isOnline
+      - name
+      - serialNumber
+      - site
+      - subsystems
+    AlarmPanelDeviceRequest:
+      type: object
+      properties:
+        site:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - name
+      - site
+    ArmDisarmCommand:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        site:
+          type: string
+          format: uuid
+        subsystem:
+          type: string
+          format: uuid
+        action:
+          $ref: '#/components/schemas/ActionEnum'
+        idempotency_key:
+          type: string
+          maxLength: 128
+        status:
+          $ref: '#/components/schemas/ArmDisarmCommandStatusEnum'
+        request_payload: {}
+        response_payload: {}
+        failure_reason:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - action
+      - created_at
+      - id
+      - idempotency_key
+      - site
+      - subsystem
+    ArmDisarmCommandStatusEnum:
+      enum:
+      - pending
+      - success
+      - failed
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `success` - Success
+        * `failed` - Failed
+    BroadcastMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        body:
+          type: string
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        recipient:
+          type: integer
+          nullable: true
+          description: Leave blank to send to all mobile users.
+        sent_by:
+          type: integer
+          readOnly: true
+          nullable: true
+        status:
+          allOf:
+          - $ref: '#/components/schemas/BroadcastMessageStatusEnum'
+          readOnly: true
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        sent_at:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - body
+      - created_at
+      - id
+      - sent_at
+      - sent_by
+      - status
+      - title
+    BroadcastMessageRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        body:
+          type: string
+          minLength: 1
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        recipient:
+          type: integer
+          nullable: true
+          description: Leave blank to send to all mobile users.
+      required:
+      - body
+      - title
+    BroadcastMessageStatusEnum:
+      enum:
+      - pending
+      - sent
+      - failed
+      type: string
+      description: |-
+        * `pending` - Pending
+        * `sent` - Sent
+        * `failed` - Failed
+    EventCategoryEnum:
+      enum:
+      - alarm
+      - arm
+      - system
+      - health
+      - info
+      type: string
+      description: |-
+        * `alarm` - Alarm
+        * `arm` - Arm/Disarm
+        * `system` - System
+        * `health` - Health
+        * `info` - Info
+    MessageTypeEnum:
+      enum:
+      - general
+      - billing
+      - alert
+      type: string
+      description: |-
+        * `general` - General
+        * `billing` - Billing Notice
+        * `alert` - System Alert
+    PaginatedAlarmEventList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmEvent'
+    PaginatedAlarmPanelDeviceList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmPanelDevice'
+    PaginatedArmDisarmCommandList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArmDisarmCommand'
+    PaginatedBroadcastMessageList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/BroadcastMessage'
+    PaginatedSiteList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Site'
+    PaginatedSubsystemList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subsystem'
+    PaginatedZoneList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Zone'
+    PatchedBroadcastMessageRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        body:
+          type: string
+          minLength: 1
+        message_type:
+          $ref: '#/components/schemas/MessageTypeEnum'
+        recipient:
+          type: integer
+          nullable: true
+          description: Leave blank to send to all mobile users.
+    SeverityEnum:
+      enum:
+      - critical
+      - high
+      - medium
+      - low
+      type: string
+      description: |-
+        * `critical` - Critical
+        * `high` - High
+        * `medium` - Medium
+        * `low` - Low
+    Site:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        address:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 120
+        country:
+          type: string
+          maxLength: 120
+        hikSiteId:
+          type: string
+          readOnly: true
+        timezone:
+          type: string
+          maxLength: 64
+        isActive:
+          type: boolean
+          readOnly: true
+        can_control_alarm:
+          type: string
+          readOnly: true
+        canControlAlarm:
+          type: string
+          readOnly: true
+        devices:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmPanelDevice'
+          readOnly: true
+      required:
+      - canControlAlarm
+      - can_control_alarm
+      - devices
+      - hikSiteId
+      - id
+      - isActive
+      - name
+    SiteRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        address:
+          type: string
+          maxLength: 255
+        city:
+          type: string
+          maxLength: 120
+        country:
+          type: string
+          maxLength: 120
+        timezone:
+          type: string
+          minLength: 1
+          maxLength: 64
+      required:
+      - name
+    SiteStatus:
+      type: object
+      properties:
+        site_id:
+          type: string
+          format: uuid
+        armed_subsystems:
+          type: integer
+        disarmed_subsystems:
+          type: integer
+        active_alarm_count:
+          type: integer
+        offline_device_count:
+          type: integer
+        subsystems:
+          type: array
+          items:
+            $ref: '#/components/schemas/Subsystem'
+      required:
+      - active_alarm_count
+      - armed_subsystems
+      - disarmed_subsystems
+      - offline_device_count
+      - site_id
+      - subsystems
+    StateEnum:
+      enum:
+      - normal
+      - open
+      - alarm
+      - bypassed
+      type: string
+      description: |-
+        * `normal` - Normal
+        * `open` - Open
+        * `alarm` - Alarm
+        * `bypassed` - Bypassed
+    Subsystem:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        site:
+          type: string
+          format: uuid
+        device:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 255
+        hikSubsystemId:
+          type: string
+          readOnly: true
+        subsystemNumber:
+          type: integer
+          readOnly: true
+        status:
+          $ref: '#/components/schemas/SubsystemStatusEnum'
+        zones:
+          type: string
+          readOnly: true
+      required:
+      - device
+      - hikSubsystemId
+      - id
+      - name
+      - site
+      - subsystemNumber
+      - zones
+    SubsystemRequest:
+      type: object
+      properties:
+        site:
+          type: string
+          format: uuid
+        device:
+          type: string
+          format: uuid
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        status:
+          $ref: '#/components/schemas/SubsystemStatusEnum'
+      required:
+      - device
+      - name
+      - site
+    SubsystemStatusEnum:
+      enum:
+      - disarmed
+      - armed
+      - stay
+      - alarm
+      type: string
+      description: |-
+        * `disarmed` - Disarmed
+        * `armed` - Armed
+        * `stay` - Stay Armed
+        * `alarm` - Alarm
+    TokenObtainPair:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+          readOnly: true
+      required:
+      - access
+      - refresh
+    TokenObtainPairRequest:
+      type: object
+      properties:
+        username:
+          type: string
+          writeOnly: true
+          minLength: 1
+        password:
+          type: string
+          writeOnly: true
+          minLength: 1
+      required:
+      - password
+      - username
+    TokenRefresh:
+      type: object
+      properties:
+        access:
+          type: string
+          readOnly: true
+        refresh:
+          type: string
+      required:
+      - access
+      - refresh
+    TokenRefreshRequest:
+      type: object
+      properties:
+        refresh:
+          type: string
+          minLength: 1
+      required:
+      - refresh
+    Zone:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        subsystem:
+          type: string
+          format: uuid
+        name:
+          type: string
+          maxLength: 255
+        zoneNumber:
+          type: integer
+          readOnly: true
+        deviceNumber:
+          type: integer
+          readOnly: true
+          nullable: true
+        deviceType:
+          type: string
+          readOnly: true
+        detectorType:
+          type: string
+          readOnly: true
+        state:
+          $ref: '#/components/schemas/StateEnum'
+        lowBattery:
+          type: boolean
+          readOnly: true
+        tamper:
+          type: boolean
+        signalStrength:
+          type: string
+          readOnly: true
+        isOnline:
+          type: boolean
+          readOnly: true
+        chargeValue:
+          type: integer
+          readOnly: true
+          nullable: true
+        displayType:
+          type: string
+          readOnly: true
+        iconType:
+          type: string
+          readOnly: true
+      required:
+      - chargeValue
+      - detectorType
+      - deviceNumber
+      - deviceType
+      - displayType
+      - iconType
+      - id
+      - isOnline
+      - lowBattery
+      - name
+      - signalStrength
+      - subsystem
+      - zoneNumber
+  securitySchemes:
+    cookieAuth:
+      type: apiKey
+      in: cookie
+      name: sessionid
+    jwtAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT

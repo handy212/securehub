@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline": "#76777b",
+                    "primary-container": "#1f2127",
+                    "surface-container-high": "#e9e8e5",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#46464b",
+                    "background": "#faf9f6",
+                    "on-tertiary-fixed": "#380d00",
+                    "secondary-container": "#aef673",
+                    "on-secondary-fixed-variant": "#275000",
+                    "on-secondary-fixed": "#0c2000",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#f4f3f0",
+                    "on-error-container": "#93000a",
+                    "inverse-primary": "#c5c6ce",
+                    "primary-fixed-dim": "#c5c6ce",
+                    "secondary": "#366b00",
+                    "on-secondary-container": "#3a7100",
+                    "inverse-on-surface": "#f2f1ee",
+                    "on-surface": "#1b1c1a",
+                    "tertiary-fixed": "#ffdbcf",
+                    "outline-variant": "#c7c6cb",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#5d5e65",
+                    "primary": "#080a10",
+                    "on-primary-container": "#878890",
+                    "tertiary": "#1b0400",
+                    "surface-dim": "#dbdad7",
+                    "on-tertiary-container": "#e55e25",
+                    "surface-bright": "#faf9f6",
+                    "on-tertiary-fixed-variant": "#812900",
+                    "tertiary-fixed-dim": "#ffb59b",
+                    "on-primary-fixed-variant": "#45464d",
+                    "surface": "#faf9f6",
+                    "on-background": "#1b1c1a",
+                    "surface-container-highest": "#e3e2df",
+                    "surface-container": "#efeeeb",
+                    "tertiary-container": "#411100",
+                    "secondary-fixed-dim": "#94d95a",
+                    "primary-fixed": "#e2e2ea",
+                    "secondary-fixed": "#aef673",
+                    "surface-variant": "#e3e2df",
+                    "on-secondary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed": "#191b21",
+                    "inverse-surface": "#2f312f",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .glass-card {
+        background: rgba(250, 249, 246, 0.8);
+        backdrop-filter: blur(32px);
+      }
+      .satin-gradient {
+        background: linear-gradient(45deg, #080a10 0%, #1f2127 100%);
+      }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body min-h-screen pb-32">
+<!-- TopAppBar Section -->
+<nav class="bg-[#FAF9F6] dark:bg-[#080A10] flex justify-between items-center w-full px-6 py-4 sticky top-0 z-50">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden">
+<img alt="User profile" class="w-full h-full object-cover" data-alt="Close-up studio portrait of a professional man with a friendly expression, soft cinematic lighting, neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCEPOUcal28LK_ktH7bvhRquFJJgZFF2rQBwZJ5_AQUsoinwcXzRjbkOV6MVIkrJCneYf58_2tW5C-mDK5M_7sp4pBijV7Jpj0o5WKIAwajdi0gvx5WT7ItAfFowkhbqNosrbw4qRHHhfy-jvPfhJJdTdbYeS1YPmPy6YVEbcDwo0GxZQNlyDCeSTffU6z7c7Ei3C-U9cCqMhrhiLDL2omcv5ALYlNLe4f4xTj4Q2MuuYLBgv7vJhzH8b5ZHfnEiGrazVqB1XshfNf"/>
+</div>
+<span class="text-xl font-bold text-[#080A10] dark:text-[#FAF9F6] font-headline tracking-tight">SecureHub</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="material-symbols-outlined text-[#080A10] dark:text-[#FAF9F6] hover:opacity-80 transition-opacity active:scale-95 transition-transform" data-icon="location_on">location_on</button>
+</div>
+</nav>
+<main class="px-6 pt-8 max-w-5xl mx-auto">
+<!-- Hero Status / Overview -->
+<header class="mb-10">
+<div class="flex justify-between items-end mb-6">
+<div>
+<p class="text-on-surface-variant font-medium mb-1">Device Management</p>
+<h1 class="text-4xl font-bold font-headline text-primary tracking-tight">System Hardware</h1>
+</div>
+<div class="flex items-center gap-2 px-4 py-2 bg-secondary-container rounded-full">
+<span class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-secondary opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-secondary"></span>
+</span>
+<span class="text-on-secondary-container font-semibold text-sm">All Systems Nominal</span>
+</div>
+</div>
+<!-- Bento Grid - Highlights -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Critical Device Status Card -->
+<div class="col-span-1 md:col-span-2 bg-surface-container-low rounded-xl p-8 relative overflow-hidden group">
+<div class="relative z-10">
+<div class="flex items-center gap-3 mb-4">
+<span class="material-symbols-outlined text-primary" data-icon="shield">shield</span>
+<span class="font-semibold text-lg">Active Security Mesh</span>
+</div>
+<p class="text-on-surface-variant max-w-xs mb-8">Your hardware mesh is protecting 12 entry points and 4 interior zones. Connectivity is 100% across all nodes.</p>
+<button class="satin-gradient text-on-primary px-6 py-3 rounded-md font-medium flex items-center gap-2 active:scale-95 transition-transform">
+                            Run Diagnostic
+                            <span class="material-symbols-outlined text-sm" data-icon="arrow_forward">arrow_forward</span>
+</button>
+</div>
+<div class="absolute -right-10 -bottom-10 opacity-5 group-hover:opacity-10 transition-opacity">
+<span class="material-symbols-outlined text-[200px]" data-icon="hub">hub</span>
+</div>
+</div>
+<!-- Summary Stat Card -->
+<div class="bg-primary text-on-primary rounded-xl p-8 flex flex-col justify-between">
+<span class="material-symbols-outlined text-4xl text-on-primary-container" data-icon="battery_full">battery_full</span>
+<div>
+<div class="text-4xl font-bold font-headline mb-1">94%</div>
+<div class="text-on-primary-container font-medium">Avg Battery Health</div>
+</div>
+</div>
+</div>
+</header>
+<!-- Device Sections -->
+<section class="space-y-12">
+<!-- Controllers & Keypads -->
+<div>
+<h2 class="text-xl font-bold font-headline mb-6 text-primary">Controllers &amp; Keypads</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Keypad Card -->
+<div class="bg-surface-container-lowest rounded-lg p-6 flex items-center justify-between shadow-[0_4px_40px_rgba(27,28,26,0.04)]">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 bg-surface-container-low rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl" data-icon="keyboard">keyboard</span>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Keypad 1</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-xs font-semibold px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-sm">Connected</span>
+<span class="text-on-surface-variant text-sm">80% Battery</span>
+</div>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="settings">settings</span>
+</button>
+</div>
+<!-- Key Fob Card -->
+<div class="bg-surface-container-lowest rounded-lg p-6 flex items-center justify-between shadow-[0_4px_40px_rgba(27,28,26,0.04)]">
+<div class="flex items-center gap-5">
+<div class="w-14 h-14 bg-surface-container-low rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined text-primary text-2xl" data-icon="key">key</span>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Master Key Fob</h3>
+<div class="flex items-center gap-2 mt-1">
+<span class="text-xs font-semibold px-2 py-0.5 bg-secondary-container text-on-secondary-container rounded-sm">Connected</span>
+<span class="text-on-surface-variant text-sm">100% Battery</span>
+</div>
+</div>
+</div>
+<button class="w-10 h-10 rounded-full flex items-center justify-center hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant" data-icon="settings">settings</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Sensors & Detection -->
+<div>
+<h2 class="text-xl font-bold font-headline mb-6 text-primary">Sensors &amp; Detection</h2>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Sensor Card 1 -->
+<div class="bg-surface-container-low rounded-lg p-6 relative overflow-hidden">
+<div class="flex justify-between items-start mb-10">
+<div class="p-3 bg-surface-container-lowest rounded-md">
+<span class="material-symbols-outlined text-primary" data-icon="door_front">door_front</span>
+</div>
+<div class="text-right">
+<span class="block text-sm font-bold text-secondary">Secure</span>
+<span class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">State</span>
+</div>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Front Door Sensor</h3>
+<div class="flex items-center justify-between mt-3">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="wifi" data-weight="fill" style="font-variation-settings: 'FILL' 1;">wifi</span>
+<span class="text-xs font-medium text-on-surface-variant">95% Signal</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="battery_std">battery_std</span>
+<span class="text-xs font-medium text-on-surface-variant">95%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sensor Card 2 -->
+<div class="bg-surface-container-low rounded-lg p-6 relative overflow-hidden border-l-4 border-secondary">
+<div class="flex justify-between items-start mb-10">
+<div class="p-3 bg-surface-container-lowest rounded-md">
+<span class="material-symbols-outlined text-primary" data-icon="window">window</span>
+</div>
+<div class="text-right">
+<span class="block text-sm font-bold text-secondary">Secure</span>
+<span class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">State</span>
+</div>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Kitchen Window</h3>
+<div class="flex items-center justify-between mt-3">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="wifi" data-weight="fill" style="font-variation-settings: 'FILL' 1;">wifi</span>
+<span class="text-xs font-medium text-on-surface-variant">88% Signal</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="battery_std">battery_std</span>
+<span class="text-xs font-medium text-on-surface-variant">72%</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Sensor Card 3 -->
+<div class="bg-surface-container-low rounded-lg p-6 relative overflow-hidden">
+<div class="flex justify-between items-start mb-10">
+<div class="p-3 bg-surface-container-lowest rounded-md">
+<span class="material-symbols-outlined text-primary" data-icon="motion_sensor">motion_sensor_active</span>
+</div>
+<div class="text-right">
+<span class="block text-sm font-bold text-on-surface-variant">Quiet</span>
+<span class="text-[10px] uppercase tracking-wider text-on-surface-variant font-bold">Activity</span>
+</div>
+</div>
+<div>
+<h3 class="font-bold text-on-surface">Living Room Motion</h3>
+<div class="flex items-center justify-between mt-3">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-secondary" data-icon="wifi" data-weight="fill" style="font-variation-settings: 'FILL' 1;">wifi</span>
+<span class="text-xs font-medium text-on-surface-variant">92% Signal</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-sm text-on-surface-variant" data-icon="battery_std">battery_std</span>
+<span class="text-xs font-medium text-on-surface-variant">84%</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Connectivity Map / Visual Layer -->
+<section class="mt-12 bg-surface-container-lowest rounded-xl p-8 shadow-[0_4px_40px_rgba(27,28,26,0.06)]">
+<div class="flex justify-between items-center mb-6">
+<h2 class="text-xl font-bold font-headline text-primary">Network Topology</h2>
+<span class="text-on-surface-variant text-sm font-medium">Last Scan: 2 mins ago</span>
+</div>
+<div class="aspect-[21/9] w-full rounded-lg bg-surface-container-low relative overflow-hidden">
+<!-- Representative image for a network map UI -->
+<img alt="Network visualization" class="w-full h-full object-cover opacity-20 grayscale" data-alt="Abstract digital network visualization with glowing nodes and lines on a clean white technical background, sophisticated high-tech aesthetic" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDvxUtXNFOEtpS0xDLAFnXWZJ4f3twkT0gGvhmiWcOR2B6LQmmdK0DSzy23zadLHVXYPeb0QzpzmF3gS4XNCdWGAs-3SNS-gD3AOeHrOehJrnvdV5YXy_yGWRQDB7dYpEMx4xO9MpVwWn0fByNOsJ3aRCn21g10Pbz_H9i_HPcRyiYHuByoU1FAl64zBfmbXr8UkUolFb9p8Wei52SG7cKWPbv1Lhau-79sQr6E_S8LyFVm8HXy2mAPsN4NzJy0gVxE94nBl6r20aYU"/>
+<div class="absolute inset-0 flex items-center justify-center">
+<div class="text-center">
+<span class="material-symbols-outlined text-5xl text-primary/20" data-icon="lan">lan</span>
+<p class="text-on-surface-variant text-sm font-medium mt-2">Visualizing Node Connections...</p>
+</div>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar Section -->
+<footer class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-[#FAF9F6]/80 dark:bg-[#080A10]/80 backdrop-blur-xl shadow-[0_-4px_40px_rgba(27,28,26,0.06)] rounded-t-[3rem]">
+<div class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Inter'] text-[11px] font-medium">Home</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="font-['Inter'] text-[11px] font-medium">Zones</span>
+</div>
+<!-- Active Tab: Devices -->
+<div class="flex flex-col items-center justify-center bg-[#080A10] dark:bg-[#FAF9F6] text-[#FAF9F6] dark:text-[#080A10] rounded-full px-5 py-2 active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="router">router</span>
+<span class="font-['Inter'] text-[11px] font-medium">Devices</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="history">history</span>
+<span class="font-['Inter'] text-[11px] font-medium">Events</span>
+</div>
+<div class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200">
+<span class="material-symbols-outlined" data-icon="videocam">videocam</span>
+<span class="font-['Inter'] text-[11px] font-medium">Cameras</span>
+</div>
+</footer>
+</body></html>

@@ -1,0 +1,90 @@
+name: securehub_mobile
+description: "A new Flutter project."
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  google_fonts: ^6.2.1
+  google_sign_in: ^6.2.1
+  font_awesome_flutter: ^10.8.0
+
+  # State management
+  flutter_riverpod: ^2.6.1
+  riverpod_annotation: ^2.6.1
+
+  # Navigation
+  go_router: ^14.6.3
+
+  # Networking
+  dio: ^5.7.0
+
+  # Secure token storage
+  flutter_secure_storage: ^9.2.2
+
+  # Immutable data models
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+
+  # Push notifications
+  firebase_core: ^3.8.1
+  firebase_messaging: ^15.1.6
+  flutter_local_notifications: ^21.0.0
+
+  # Biometric authentication
+  local_auth: ^2.3.0
+
+  # Utilities
+  uuid: ^4.5.1
+  intl: ^0.19.0
+  timeago: ^3.7.0
+  sliver_tools: ^0.2.12
+  video_player: ^2.9.1
+  url_launcher: ^6.3.1
+  shimmer: ^3.0.0
+  flutter_native_splash: ^2.4.0
+  shared_preferences: ^2.5.3
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  mockito: ^5.4.4
+
+  flutter_lints: ^6.0.0
+
+  # Code generation
+  riverpod_generator: ^2.6.2
+  build_runner: ^2.4.13
+  freezed: ^2.5.7
+  json_serializable: ^6.8.0
+  flutter_launcher_icons: ^0.13.1
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/Logo-WhiteBG.png"
+  adaptive_icon_background: "#FFFFFF"
+  adaptive_icon_foreground: "assets/images/Logo-WhiteBG.png"
+
+flutter_native_splash:
+  color: "#FFFFFF"
+  image: "assets/images/Logo-WhiteBG.png"
+  android_12:
+    image: "assets/images/Logo-WhiteBG.png"
+    color: "#FFFFFF"
+  fullscreen: true
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/devices/
+    - assets/icon/

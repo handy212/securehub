@@ -1,0 +1,106 @@
+services:
+
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    env_file: backend/.env.production
+    environment:
+      POSTGRES_DB: ${DJANGO_DB_NAME:-alarmhub}
+      POSTGRES_USER: ${DJANGO_DB_USER:-securehub}
+      POSTGRES_PASSWORD: ${DJANGO_DB_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DJANGO_DB_USER:-securehub}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --save 60 1 --loglevel warning
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: gunicorn
+    env_file: backend/.env.production
+    environment:
+      DJANGO_DB_HOST: db
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - static_files:/app/staticfiles
+      - firebase_creds:/run/secrets:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    expose:
+      - "8000"
+
+  celery-worker:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: celery-worker
+    env_file: backend/.env.production
+    environment:
+      DJANGO_DB_HOST: db
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - firebase_creds:/run/secrets:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-beat:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: celery-beat
+    env_file: backend/.env.production
+    environment:
+      DJANGO_DB_HOST: db
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  nginx:
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/securehub.conf:/etc/nginx/conf.d/default.conf:ro
+      - static_files:/static:ro
+      - ./nginx/certs:/etc/nginx/certs:ro   # place your SSL certs here
+    depends_on:
+      - web
+
+volumes:
+  postgres_data:
+  redis_data:
+  static_files:
+  firebase_creds:

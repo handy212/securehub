@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline": "#76777b",
+                    "primary-container": "#1f2127",
+                    "surface-container-high": "#e9e8e5",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#46464b",
+                    "background": "#faf9f6",
+                    "on-tertiary-fixed": "#380d00",
+                    "secondary-container": "#aef673",
+                    "on-secondary-fixed-variant": "#275000",
+                    "on-secondary-fixed": "#0c2000",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#f4f3f0",
+                    "on-error-container": "#93000a",
+                    "inverse-primary": "#c5c6ce",
+                    "primary-fixed-dim": "#c5c6ce",
+                    "secondary": "#366b00",
+                    "on-secondary-container": "#3a7100",
+                    "inverse-on-surface": "#f2f1ee",
+                    "on-surface": "#1b1c1a",
+                    "tertiary-fixed": "#ffdbcf",
+                    "outline-variant": "#c7c6cb",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#5d5e65",
+                    "primary": "#080a10",
+                    "on-primary-container": "#878890",
+                    "tertiary": "#1b0400",
+                    "surface-dim": "#dbdad7",
+                    "on-tertiary-container": "#e55e25",
+                    "surface-bright": "#faf9f6",
+                    "on-tertiary-fixed-variant": "#812900",
+                    "tertiary-fixed-dim": "#ffb59b",
+                    "on-primary-fixed-variant": "#45464d",
+                    "surface": "#faf9f6",
+                    "on-background": "#1b1c1a",
+                    "surface-container-highest": "#e3e2df",
+                    "surface-container": "#efeeeb",
+                    "tertiary-container": "#411100",
+                    "secondary-fixed-dim": "#94d95a",
+                    "primary-fixed": "#e2e2ea",
+                    "secondary-fixed": "#aef673",
+                    "surface-variant": "#e3e2df",
+                    "on-secondary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed": "#191b21",
+                    "inverse-surface": "#2f312f",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .urgent-pulse {
+            box-shadow: 0 0 0 0 rgba(186, 26, 26, 0.4);
+            animation: pulse-red 2s infinite;
+        }
+        @keyframes pulse-red {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(186, 26, 26, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 20px rgba(186, 26, 26, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(186, 26, 26, 0); }
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-error-container text-on-error-container min-h-screen flex flex-col overflow-hidden">
+<!-- TopAppBar Fragment (Suppressing main nav for urgency) -->
+<header class="w-full top-0 px-4 py-2 flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-error flex items-center justify-center text-on-error">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">security</span>
+</div>
+<span class="text-xl font-bold text-on-error-container">SecureHub</span>
+</div>
+<div class="text-on-error-container/60 font-medium">
+            System Live
+        </div>
+</header>
+<!-- Main Alert Content -->
+<main class="flex-1 flex flex-col items-center justify-center px-6 text-center">
+<!-- Visual Status Indicator -->
+<div class="relative mb-8">
+<div class="w-32 h-32 rounded-full bg-error flex items-center justify-center urgent-pulse">
+<span class="material-symbols-outlined text-on-error text-6xl" style="font-variation-settings: 'FILL' 1;">notifications_active</span>
+</div>
+</div>
+<!-- High-Urgency Typography -->
+<div class="max-w-md mx-auto space-y-4">
+<h1 class="text-4xl md:text-5xl font-extrabold tracking-tight text-on-error-container leading-none">
+                ALARM TRIGGERED: LIVING ROOM MOTION
+            </h1>
+<p class="text-lg font-medium text-on-error-container/80 uppercase tracking-widest">
+                Immediate Action Required
+            </p>
+</div>
+<!-- Camera Snapshot (Bento Style Context) -->
+<div class="mt-12 w-full max-w-2xl bg-surface-container-lowest rounded-xl overflow-hidden shadow-2xl p-2 relative">
+<div class="absolute top-6 left-6 bg-error text-on-error px-3 py-1 rounded-full text-xs font-bold flex items-center gap-1 z-10">
+<span class="w-2 h-2 rounded-full bg-white animate-pulse"></span>
+                LIVE • LIVING ROOM
+            </div>
+<img alt="Security camera view of a modern living room with motion detected highlighted in red" class="w-full h-64 object-cover rounded-lg" data-alt="Security camera view of a modern high-end living room with dark furniture, motion detection red bounding boxes appearing over the center" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDuPzKagGCZ3wJtBZbIpAPKlE51wSVlc8FftbAlAP2A_YjC-VOZN4l4hghwiBz4AXT9EKyACEmb_pgSIUmFJviokVx_ZsdMsmfaV6BGUEpDjmSVmq5B-vOhfiFe2Pwwdwg3NwiyCEfLfkFdyTDcqYqgl2dOgOxkd6SWuIiUXzfSdi7F3UCotKpWAXUTxE1unCPkJF1QFEMtYk8OZAXe4HeptveF64_ec-YX3yh_ub3ZfmQuR1w-gjBQVWjIy-CRIn6JA83RVwHgP6Rr"/>
+<div class="absolute bottom-6 right-6">
+<div class="bg-primary/80 backdrop-blur-md px-4 py-2 rounded-lg text-on-primary text-sm flex items-center gap-2">
+<span class="material-symbols-outlined text-sm">visibility</span>
+                    Verifying Source...
+                 </div>
+</div>
+</div>
+</main>
+<!-- Control Actions Area -->
+<section class="p-6 pb-12 space-y-4 max-w-2xl mx-auto w-full">
+<!-- Main Intervention Row -->
+<div class="grid grid-cols-2 gap-4">
+<button class="flex flex-col items-center justify-center bg-surface-container-lowest py-6 rounded-lg text-primary shadow-sm hover:opacity-90 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-3xl mb-2">volume_off</span>
+<span class="font-bold">SILENCE</span>
+</button>
+<button class="flex flex-col items-center justify-center bg-primary py-6 rounded-lg text-on-primary shadow-lg hover:opacity-95 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-3xl mb-2">lock_open</span>
+<span class="font-bold">DISARM</span>
+</button>
+</div>
+<!-- Primary Emergency Action -->
+<button class="w-full bg-error py-6 rounded-lg flex items-center justify-center gap-3 text-on-error shadow-[0_8px_30px_rgb(186,26,26,0.3)] hover:brightness-110 active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">emergency_share</span>
+<span class="text-xl font-extrabold tracking-tight">EMERGENCY CALL</span>
+</button>
+<p class="text-center text-sm font-medium text-on-error-container/60 mt-4">
+            Monitoring center has been notified and is on standby.
+        </p>
+</section>
+<!-- Tonal Layering Overlay for "Urgent Mode" -->
+<div class="fixed inset-0 bg-error/5 pointer-events-none mix-blend-overlay"></div>
+</body></html>

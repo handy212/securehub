@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SecureHub - Events</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline": "#76777b",
+                    "primary-container": "#1f2127",
+                    "surface-container-high": "#e9e8e5",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#46464b",
+                    "background": "#faf9f6",
+                    "on-tertiary-fixed": "#380d00",
+                    "secondary-container": "#aef673",
+                    "on-secondary-fixed-variant": "#275000",
+                    "on-secondary-fixed": "#0c2000",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#f4f3f0",
+                    "on-error-container": "#93000a",
+                    "inverse-primary": "#c5c6ce",
+                    "primary-fixed-dim": "#c5c6ce",
+                    "secondary": "#366b00",
+                    "on-secondary-container": "#3a7100",
+                    "inverse-on-surface": "#f2f1ee",
+                    "on-surface": "#1b1c1a",
+                    "tertiary-fixed": "#ffdbcf",
+                    "outline-variant": "#c7c6cb",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#5d5e65",
+                    "primary": "#080a10",
+                    "on-primary-container": "#878890",
+                    "tertiary": "#1b0400",
+                    "surface-dim": "#dbdad7",
+                    "on-tertiary-container": "#e55e25",
+                    "surface-bright": "#faf9f6",
+                    "on-tertiary-fixed-variant": "#812900",
+                    "tertiary-fixed-dim": "#ffb59b",
+                    "on-primary-fixed-variant": "#45464d",
+                    "surface": "#faf9f6",
+                    "on-background": "#1b1c1a",
+                    "surface-container-highest": "#e3e2df",
+                    "surface-container": "#efeeeb",
+                    "tertiary-container": "#411100",
+                    "secondary-fixed-dim": "#94d95a",
+                    "primary-fixed": "#e2e2ea",
+                    "secondary-fixed": "#aef673",
+                    "surface-variant": "#e3e2df",
+                    "on-secondary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed": "#191b21",
+                    "inverse-surface": "#2f312f",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .glass-card {
+            background: rgba(250, 249, 246, 0.8);
+            backdrop-filter: blur(24px);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #FAF9F6;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface text-on-surface antialiased min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="fixed top-0 z-50 w-full px-6 py-4 flex justify-between items-center bg-[#FAF9F6] dark:bg-[#080A10]">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden">
+<img alt="User profile photo" class="w-full h-full object-cover" data-alt="Close-up professional portrait of a man with friendly expression in soft studio lighting against a neutral grey background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuB6WsZWa-qNecdCkr9RWBcSS2OZjI0Yuj7qLZm1YFC3gAgKD5kIhpy4R_obHKM5HUngaGBq2cdlq7YiWvtQFcuivjiZ_akI8jdwlHbjwuxN-jbZuhG9DyAnSt8GwRVt4vtDvSHyxn-vqzhviuFbVkBjrzdcn0V9zs8RyG5itc9DvmCJUSpCBf-cCQnbc5VdZygN09lEjCEm5lOiGPPLyjRyG1oBUnP9TG-v8k9eH6365_xf0JusHz-j9bURvjTxeMHGbH1eK0UcoH6d"/>
+</div>
+<h1 class="text-xl font-bold text-[#080A10] dark:text-[#FAF9F6] font-headline tracking-tight">SecureHub</h1>
+</div>
+<button class="material-symbols-outlined text-[#080A10] dark:text-[#FAF9F6] hover:opacity-80 transition-opacity active:scale-95 transition-transform" data-icon="location_on">
+            location_on
+        </button>
+</header>
+<main class="pt-24 px-6 max-w-2xl mx-auto">
+<!-- Header Section -->
+<section class="mb-10">
+<h2 class="text-4xl font-extrabold text-primary mb-2 tracking-tighter">Security Activity</h2>
+<p class="text-on-surface-variant font-medium">Real-time surveillance monitoring</p>
+</section>
+<!-- Timeline Section -->
+<div class="relative">
+<!-- Continuous Timeline Line -->
+<div class="absolute left-6 top-2 bottom-0 w-[2px] bg-surface-container-high rounded-full"></div>
+<div class="space-y-12">
+<!-- Event: Today Label -->
+<div class="relative pl-14">
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant/50">Today, Oct 24</span>
+</div>
+<!-- Event 1: Disarmed -->
+<div class="relative pl-14 group">
+<div class="absolute left-4 top-2 w-4 h-4 rounded-full bg-secondary border-4 border-surface z-10"></div>
+<div class="surface-container-low p-6 rounded-lg transition-all duration-300 hover:bg-surface-container hover:shadow-sm">
+<div class="flex items-start justify-between mb-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="person">person</span>
+</div>
+<div>
+<h3 class="font-bold text-lg text-primary">Disarmed by Admin</h3>
+<p class="text-sm text-on-surface-variant font-medium">10:15 AM</p>
+</div>
+</div>
+<span class="px-3 py-1 rounded-full bg-secondary-container text-on-secondary-container text-[10px] font-bold uppercase tracking-wider">Secure</span>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">System transitioned to standby mode. Entrance monitoring active.</p>
+</div>
+</div>
+<!-- Event 2: Door Opened -->
+<div class="relative pl-14 group">
+<div class="absolute left-4 top-2 w-4 h-4 rounded-full bg-on-tertiary-container border-4 border-surface z-10"></div>
+<div class="surface-container-low p-6 rounded-lg transition-all duration-300 hover:bg-surface-container hover:shadow-sm">
+<div class="flex items-start justify-between mb-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="door_open">door_open</span>
+</div>
+<div>
+<h3 class="font-bold text-lg text-primary">Front Door Opened</h3>
+<p class="text-sm text-on-surface-variant font-medium">09:30 AM</p>
+</div>
+</div>
+</div>
+<div class="mt-4 rounded-lg overflow-hidden h-40 relative group/img">
+<img alt="Front Door Entry" class="w-full h-full object-cover" data-alt="Interior view of a modern minimalist hallway with a heavy black wood door slightly ajar, soft morning light hitting the polished floor" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC5rMPz69a_BPbdxRjH4UFmeiR8Q52uPpgsKjjA5OEJrFWp5bUDrKX5PlNCxeTnrqRBTzI0jjcq_0HxyoporujFLACa5BLPvPU_5Hz89oFvVRSQ6xL58UbqS2pao2WKe8p0ThBFwi7Cb6MNh-mWDiOM3OVVKLUOlzUaPm2hvTjbsscwv4nbh73ZPjYPi19Zk3Aohf3YfyEWEVJRC8ooFPY-s61BJ1wWoYiCuwY2DLObeiMPQSKfBpFOIkfEGgRZfTZOG_54gTkoFO4L"/>
+<div class="absolute inset-0 bg-primary/20 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity">
+<span class="bg-surface/90 px-4 py-2 rounded-full text-xs font-bold text-primary">View Stream</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Event 3: System Armed -->
+<div class="relative pl-14 group">
+<div class="absolute left-4 top-2 w-4 h-4 rounded-full bg-primary border-4 border-surface z-10"></div>
+<div class="surface-container-low p-6 rounded-lg transition-all duration-300 hover:bg-surface-container hover:shadow-sm">
+<div class="flex items-start justify-between mb-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="shield">shield</span>
+</div>
+<div>
+<h3 class="font-bold text-lg text-primary">System Armed Away</h3>
+<p class="text-sm text-on-surface-variant font-medium">08:00 AM</p>
+</div>
+</div>
+<div class="w-2 h-2 rounded-full bg-secondary animate-pulse"></div>
+</div>
+<p class="text-on-surface-variant text-sm leading-relaxed">Full perimeter defense active. All motion sensors operational.</p>
+</div>
+</div>
+<!-- Event: Yesterday Label -->
+<div class="relative pl-14 pt-4">
+<span class="text-xs font-bold uppercase tracking-widest text-on-surface-variant/50">Yesterday, Oct 23</span>
+</div>
+<!-- Event 4: Motion Detected -->
+<div class="relative pl-14 group">
+<div class="absolute left-4 top-2 w-4 h-4 rounded-full bg-outline border-4 border-surface z-10"></div>
+<div class="surface-container-low p-6 rounded-lg transition-all duration-300 hover:bg-surface-container hover:shadow-sm">
+<div class="flex items-start justify-between mb-2">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest flex items-center justify-center">
+<span class="material-symbols-outlined text-primary" data-icon="motion_sensor">motion_sensor_active</span>
+</div>
+<div>
+<h3 class="font-bold text-lg text-primary">Motion in Backyard</h3>
+<p class="text-sm text-on-surface-variant font-medium">11:45 PM</p>
+</div>
+</div>
+</div>
+<p class="text-on-surface-variant text-sm italic">Status: False Alarm (Pet movement detected)</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-[#FAF9F6]/80 dark:bg-[#080A10]/80 backdrop-blur-xl shadow-[0_-4px_40px_rgba(27,28,26,0.06)] rounded-t-[3rem]">
+<a class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="home">home</span>
+<span class="font-['Inter'] text-[11px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view">grid_view</span>
+<span class="font-['Inter'] text-[11px] font-medium">Zones</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="router">router</span>
+<span class="font-['Inter'] text-[11px] font-medium">Devices</span>
+</a>
+<a class="flex flex-col items-center justify-center bg-[#080A10] dark:bg-[#FAF9F6] text-[#FAF9F6] dark:text-[#080A10] rounded-full px-5 py-2 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="history" style="font-variation-settings: 'FILL' 1;">history</span>
+<span class="font-['Inter'] text-[11px] font-medium">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="videocam">videocam</span>
+<span class="font-['Inter'] text-[11px] font-medium">Cameras</span>
+</a>
+</nav>
+</body></html>

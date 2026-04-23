@@ -1,0 +1,576 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Billing & Subscriptions | SecureHub{% endblock %}
+{% block header_title %}Billing & Subscriptions{% endblock %}
+
+{% block content %}
+<script type="application/json" id="sub-packages-data">{{ packages_json|safe }}</script>
+<script>
+function subscriptionsPage() {
+    var pkgEl = document.getElementById('sub-packages-data');
+    var pkgList = pkgEl ? JSON.parse(pkgEl.textContent) : [];
+    return {
+        createModal: false, editModal: null, payModal: null, suspendModal: null,
+        reactivateModal: null, cancelModal: null, paymentEditModal: null,
+        paymentDeleteModal: null, search: '',
+        packages: pkgList,
+        createRate: '', createGrace: 7,
+        editRate: '', editGrace: 7,
+        applyCreatePkg: function(pkgId) {
+            for (var i = 0; i < this.packages.length; i++) {
+                if (this.packages[i].id === pkgId) {
+                    this.createRate = this.packages[i].rate;
+                    this.createGrace = this.packages[i].grace;
+                    return;
+                }
+            }
+        },
+        applyEditPkg: function(pkgId) {
+            for (var i = 0; i < this.packages.length; i++) {
+                if (this.packages[i].id === pkgId) {
+                    this.editRate = this.packages[i].rate;
+                    this.editGrace = this.packages[i].grace;
+                    return;
+                }
+            }
+        }
+    };
+}
+</script>
+<div class="space-y-4" x-data="subscriptionsPage()">
+
+    <!-- ── BILLING HEADER & BREADCRUMBS ────────────────── -->
+    <div class="mb-4">
+        <!-- Breadcrumbs -->
+        <nav class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-3">
+            <a href="{% url 'dashboard:home' %}" class="hover:text-brand transition-colors">Dashboard</a>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+            <span class="text-slate-900">Billing</span>
+        </nav>
+
+        <div class="flex flex-col gap-3 border-b border-slate-200 pb-3 xl:flex-row xl:items-center xl:justify-between">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-center">
+                <h1 class="text-lg font-black text-slate-900 tracking-tight leading-none">Billing</h1>
+                <div class="flex flex-wrap items-center gap-1 rounded bg-slate-100 p-1">
+                    <a href="?" class="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded {% if not current_status %}bg-white text-slate-900 shadow-sm{% else %}text-slate-400 hover:text-slate-600{% endif %}">
+                        All <span class="opacity-50 ml-0.5">{{ count_active|add:count_overdue|add:count_suspended }}</span>
+                    </a>
+                    <a href="?status=active" class="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded {% if current_status == 'active' %}bg-white text-emerald-600 shadow-sm{% else %}text-slate-400 hover:text-emerald-500{% endif %}">
+                        Active <span class="opacity-50 ml-0.5">{{ count_active }}</span>
+                    </a>
+                    <a href="?status=overdue" class="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded {% if current_status == 'overdue' %}bg-white text-amber-600 shadow-sm{% else %}text-slate-400 hover:text-amber-500{% endif %}">
+                        Overdue <span class="opacity-50 ml-0.5">{{ count_overdue }}</span>
+                    </a>
+                    <a href="?status=suspended" class="px-2 py-1 text-[9px] font-black uppercase tracking-widest rounded {% if current_status == 'suspended' %}bg-white text-red-600 shadow-sm{% else %}text-slate-400 hover:text-red-500{% endif %}">
+                        Suspended <span class="opacity-50 ml-0.5">{{ count_suspended }}</span>
+                    </a>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 self-start xl:self-auto">
+                <a href="{% url 'dashboard:packages' %}" class="inline-flex items-center gap-1.5 rounded border border-slate-200 bg-white px-3 py-2 text-[9px] font-black uppercase tracking-widest text-slate-600 hover:text-brand hover:border-brand/20 transition-all">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="2" y="3" width="20" height="14" rx="2"/><path d="M8 21h8"/><path d="M12 17v4"/></svg>
+                    Packages
+                </a>
+                {% if unsubscribed_sites %}
+                <button @click="createModal = true" class="inline-flex items-center justify-center gap-2 rounded bg-brand px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white transition-all hover:bg-slate-800">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    New Subscription
+                </button>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="grid gap-2 grid-cols-2 lg:grid-cols-4">
+        <div class="rounded-xl border border-emerald-100 bg-white px-3 py-2.5 shadow-sm flex items-center justify-between gap-3">
+            <p class="text-[9px] font-black uppercase tracking-widest text-emerald-600">Active Plans</p>
+            <p class="text-lg font-black text-slate-900">{{ count_active }}</p>
+        </div>
+        <div class="rounded-xl border border-amber-100 bg-white px-3 py-2.5 shadow-sm flex items-center justify-between gap-3">
+            <p class="text-[9px] font-black uppercase tracking-widest text-amber-600">Overdue</p>
+            <p class="text-lg font-black text-slate-900">{{ count_overdue }}</p>
+        </div>
+        <div class="rounded-xl border border-red-100 bg-white px-3 py-2.5 shadow-sm flex items-center justify-between gap-3">
+            <p class="text-[9px] font-black uppercase tracking-widest text-red-600">Suspended</p>
+            <p class="text-lg font-black text-slate-900">{{ count_suspended }}</p>
+        </div>
+        <div class="rounded-xl border border-brand/20 bg-brand/5 px-3 py-2.5 shadow-sm flex items-center justify-between gap-3 col-span-2 lg:col-span-1">
+            <p class="text-[9px] font-black uppercase tracking-widest text-brand">Monthly Revenue</p>
+            <p class="text-lg font-black text-slate-900">GH₵{{ total_mrr|floatformat:2 }}</p>
+        </div>
+    </div>
+
+    {% if count_overdue or count_suspended %}
+    <div class="rounded-2xl border {% if count_suspended %}border-red-200 bg-red-50/70{% else %}border-amber-200 bg-amber-50/70{% endif %} px-4 py-3 shadow-sm">
+        <div class="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <p class="text-[9px] font-black uppercase tracking-widest {% if count_suspended %}text-red-600{% else %}text-amber-600{% endif %}">Billing Attention Needed</p>
+                <p class="mt-1 text-[11px] font-medium text-slate-600">
+                    {% if count_overdue and count_suspended %}
+                        {{ count_overdue }} overdue plan{{ count_overdue|pluralize }} and {{ count_suspended }} suspended plan{{ count_suspended|pluralize }} need review.
+                    {% elif count_suspended %}
+                        {{ count_suspended }} suspended plan{{ count_suspended|pluralize }} need immediate review.
+                    {% else %}
+                        {{ count_overdue }} overdue plan{{ count_overdue|pluralize }} need payment follow-up.
+                    {% endif %}
+                </p>
+            </div>
+            <a href="?status={% if count_suspended %}suspended{% else %}overdue{% endif %}" class="text-[10px] font-black uppercase tracking-widest text-slate-700 hover:text-brand">
+                Review Queue &rarr;
+            </a>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Subscriptions Table -->
+    <div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+        <div class="px-4 py-2 border-b border-slate-100 bg-slate-50/50 flex items-center gap-2">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-slate-400 flex-shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" x-model="search" placeholder="Filter by site name or ID…"
+                   class="flex-1 bg-transparent text-[11px] font-bold text-slate-700 placeholder:text-slate-300 outline-none border-none shadow-none ring-0 h-auto py-0">
+            <button x-show="search" @click="search = ''" class="text-slate-300 hover:text-slate-500 transition-colors text-sm leading-none flex-shrink-0">&times;</button>
+        </div>
+        <div class="overflow-x-auto">
+        <table class="w-full text-left border-collapse">
+            <thead>
+                <tr class="bg-slate-50 border-b border-slate-200">
+                    <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Site</th>
+                    <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Rate</th>
+                    <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Next Due</th>
+                    <th class="px-4 py-2 text-right text-[9px] font-black uppercase tracking-[0.15em] text-slate-400"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for sub in subscriptions %}
+                <tr class="hover:bg-slate-50/40 transition-colors" x-show="!search || '{{ sub.site.name|lower|escapejs }} {{ sub.site.hik_site_id|lower|escapejs }}'.includes(search.toLowerCase())">
+
+                    <!-- Site + status -->
+                    <td class="px-4 py-2.5">
+                        <div class="flex items-center gap-2">
+                            <a href="{% url 'dashboard:site-console' sub.site.pk %}" class="text-[11px] font-black text-slate-800 hover:text-brand transition-colors uppercase tracking-tight leading-none">{{ sub.site.name }}</a>
+                            {% if sub.status == 'active' %}
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600 text-[8px] font-black uppercase border border-emerald-100 leading-none flex-shrink-0"><span class="w-1 h-1 rounded-full bg-emerald-500"></span>Active</span>
+                            {% elif sub.status == 'overdue' %}
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-amber-600 text-[8px] font-black uppercase border border-amber-100 leading-none flex-shrink-0"><span class="w-1 h-1 rounded-full bg-amber-500 animate-pulse"></span>Overdue</span>
+                            {% elif sub.status == 'suspended' %}
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[8px] font-black uppercase border border-red-100 leading-none flex-shrink-0"><span class="w-1 h-1 rounded-full bg-red-500"></span>Suspended</span>
+                            {% else %}
+                                <span class="px-1.5 py-0.5 rounded bg-slate-50 text-slate-500 text-[8px] font-black uppercase border border-slate-200 flex-shrink-0">{{ sub.status }}</span>
+                            {% endif %}
+                        </div>
+                        <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 leading-none">{{ sub.site.hik_site_id }}{% if sub.notes %} &middot; <span class="italic font-medium normal-case tracking-normal">{{ sub.notes|truncatechars:30 }}</span>{% endif %}</p>
+                    </td>
+
+                    <!-- Rate + package -->
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                        <span class="text-[12px] font-black text-slate-900 leading-none">GH₵{{ sub.monthly_rate }}</span>
+                        {% if sub.package %}
+                        <p class="text-[8px] text-brand font-black uppercase tracking-widest mt-0.5 leading-none">{{ sub.package.name }}</p>
+                        {% else %}
+                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 leading-none">Custom</p>
+                        {% endif %}
+                    </td>
+
+                    <!-- Due date + overdue info -->
+                    <td class="px-4 py-2.5">
+                        <div class="flex items-center gap-2 flex-wrap">
+                            <span class="text-[10px] font-bold {% if sub.days_delta > 0 and sub.status != 'suspended' %}text-red-500{% else %}text-slate-700{% endif %} uppercase tracking-tight leading-none">{{ sub.next_due_date|date:"d M Y" }}</span>
+                            {% if sub.status == 'overdue' %}
+                                <span class="px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-700 text-[8px] font-black uppercase leading-none">{{ sub.days_delta }}d overdue</span>
+                            {% elif sub.status == 'active' and sub.days_delta == 0 %}
+                                <span class="px-1.5 py-0.5 rounded bg-amber-50 border border-amber-200 text-amber-700 text-[8px] font-black uppercase leading-none">Due today</span>
+                            {% elif sub.status == 'active' and sub.days_delta < 0 %}
+                                <span class="text-[8px] font-bold text-slate-400 uppercase leading-none">in {{ sub.days_until_due }}d</span>
+                            {% endif %}
+                        </div>
+                        {% if sub.status == 'overdue' %}
+                        <div class="mt-1.5 flex items-center gap-1.5">
+                            <div class="flex-1 h-0.5 rounded-full bg-slate-100">
+                                <div class="h-0.5 rounded-full {{ sub.grace_bar_color }}" style="width: {{ sub.grace_pct }}%"></div>
+                            </div>
+                            <span class="text-[8px] text-slate-400 font-bold whitespace-nowrap">{{ sub.grace_pct }}% of {{ sub.grace_period_days }}d</span>
+                        </div>
+                        {% endif %}
+                    </td>
+
+                    <!-- Actions -->
+                    <td class="px-4 py-2.5 text-right">
+                        <div class="flex items-center justify-end gap-1">
+                            <button @click="editModal = '{{ sub.pk }}'; editRate = '{{ sub.monthly_rate }}'; editGrace = {{ sub.grace_period_days }}" class="p-1.5 text-slate-400 rounded hover:bg-brand/10 hover:text-brand transition-all border border-transparent hover:border-brand/20" title="Edit">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                            </button>
+                            <button @click="payModal = '{{ sub.pk }}'" class="p-1.5 text-slate-400 rounded hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-transparent hover:border-emerald-200" title="Record Payment">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><path d="M16 8h-6a2 2 0 1 0 0 4h4a2 2 0 1 1 0 4H8"/><path d="M12 18V6"/></svg>
+                            </button>
+                            {% if sub.status != 'suspended' and sub.status != 'cancelled' %}
+                            <button @click="suspendModal = '{{ sub.pk }}'" class="p-1.5 text-slate-400 rounded hover:bg-red-50 hover:text-red-500 transition-all border border-transparent hover:border-red-200" title="Suspend">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                            </button>
+                            {% else %}
+                            <button @click="reactivateModal = '{{ sub.pk }}'" class="p-1.5 text-slate-400 rounded hover:bg-brand/10 hover:text-brand transition-all border border-transparent hover:border-brand/20" title="Reactivate">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 9.9-1"/></svg>
+                            </button>
+                            {% endif %}
+                            <button @click="cancelModal = '{{ sub.pk }}'" class="p-1.5 text-slate-400 rounded hover:bg-red-50 hover:text-red-500 transition-all border border-transparent hover:border-red-200" title="Cancel">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><path d="m15 9-6 6"/><path d="m9 9 6 6"/></svg>
+                            </button>
+                        </div>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="4" class="px-4 py-12 text-center text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                        {% if current_status %}No {{ current_status }} subscriptions.{% else %}No subscriptions yet.{% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        </div>
+    </div>
+
+
+    {# Subscription action modals — rendered outside table for valid HTML #}
+    {% for sub in subscriptions %}
+                    <template x-if="editModal === '{{ sub.pk }}'">
+                        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md" @click.self="editModal = null" x-transition>
+                            <div class="bg-white rounded border border-slate-200 w-full max-w-md shadow-2xl overflow-hidden">
+                                <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                    <h2 class="text-xs font-black text-slate-900 uppercase tracking-widest">Edit Subscription</h2>
+                                    <button @click="editModal = null" class="text-slate-400 hover:text-slate-600">×</button>
+                                </div>
+                                <form action="{% url 'dashboard:subscription-update' sub.pk %}" method="POST" class="p-6 form-perfex space-y-4">
+                                    {% csrf_token %}
+                                    <div class="form-group">
+                                        <label>Package</label>
+                                        <select name="package_id" @change="applyEditPkg($event.target.value)" class="w-full">
+                                            <option value="">— Custom / No Package —</option>
+                                            {% for pkg in packages %}
+                                            <option value="{{ pkg.pk }}" {% if sub.package_id == pkg.pk %}selected{% endif %}>{{ pkg.name }} — GH₵{{ pkg.monthly_rate }}/mo · {{ pkg.grace_period_days }}d grace</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="form-group">
+                                            <label>Monthly Rate (GHS)</label>
+                                            <input type="number" name="monthly_rate" step="0.01" min="0" required x-model="editRate" class="w-full">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Cycle Day (1-28)</label>
+                                            <input type="number" name="billing_day" min="1" max="28" required value="{{ sub.billing_day }}" class="w-full">
+                                        </div>
+                                    </div>
+                                    <div class="grid grid-cols-2 gap-3">
+                                        <div class="form-group">
+                                            <label>Next Due Date</label>
+                                            <input type="date" name="next_due_date" required value="{{ sub.next_due_date|date:'Y-m-d' }}" class="w-full">
+                                        </div>
+                                        <div class="form-group">
+                                            <label>Grace Days</label>
+                                            <input type="number" name="grace_period_days" min="0" max="30" required x-model="editGrace" class="w-full">
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Notes</label>
+                                        <input type="text" name="notes" value="{{ sub.notes }}" class="w-full">
+                                    </div>
+                                    <button type="submit" class="w-full py-2.5 bg-slate-900 text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-brand transition-all">Save Subscription</button>
+                                </form>
+                            </div>
+                        </div>
+                    </template>
+
+                <!-- Pay Modal -->
+                <template x-if="payModal === '{{ sub.pk }}'">
+                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm" @click.self="payModal = null" x-transition>
+                        <div class="bg-white rounded border border-slate-200 w-full max-w-sm shadow-2xl overflow-hidden">
+                            <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between bg-slate-50">
+                                <div>
+                                    <h2 class="text-xs font-black text-slate-900 uppercase tracking-widest">Record Payment</h2>
+                                    <p class="text-[9px] font-black text-slate-400 uppercase tracking-widest">{{ sub.site.name }}</p>
+                                </div>
+                                <button @click="payModal = null" class="text-slate-400 hover:text-slate-600">
+                                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </button>
+                            </div>
+                            <form action="{% url 'dashboard:subscription-pay' sub.pk %}" method="POST" class="p-6 form-perfex space-y-4">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label>Verified Amount (GHS)</label>
+                                    <input type="number" name="amount" step="0.01" required value="{{ sub.monthly_rate }}" class="w-full">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="form-group">
+                                        <label>Period Start</label>
+                                        <input type="date" name="period_start" required class="w-full">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Period End</label>
+                                        <input type="date" name="period_end" required class="w-full">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="form-group">
+                                        <label>Payment Method</label>
+                                        <select name="method" class="w-full">
+                                            <option value="">— Not captured —</option>
+                                            <option value="cash">Cash</option>
+                                            <option value="mobile_money">Mobile Money</option>
+                                            <option value="bank_transfer">Bank Transfer</option>
+                                            <option value="card">Card</option>
+                                            <option value="other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Reference</label>
+                                        <input type="text" name="reference" placeholder="Receipt / MoMo / bank ref" class="w-full">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full py-2.5 bg-emerald-500 text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all shadow shadow-emerald-100 active:scale-[0.98]">
+                                    Commit Transaction
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </template>
+
+                <!-- Suspend Modal -->
+                <template x-if="suspendModal === '{{ sub.pk }}'">
+                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md" @click.self="suspendModal = null" x-transition>
+                        <div class="bg-white rounded border border-slate-200 w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                            <div class="p-6 text-center">
+                                <div class="w-12 h-12 bg-red-50 rounded flex items-center justify-center text-red-500 mx-auto mb-4">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+                                </div>
+                                <h2 class="text-sm font-black text-slate-900 tracking-tight mb-1 uppercase">Suspend Access?</h2>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest mb-6 leading-relaxed px-4">
+                                    Lockout for <span class="text-slate-900">{{ sub.site.name }}</span>. Controls will be disabled.
+                                </p>
+                                <div class="flex gap-2 px-2">
+                                    <button @click="suspendModal = null" class="flex-1 py-2 bg-slate-50 border border-slate-100 rounded text-[10px] font-black text-slate-400 hover:text-slate-600 uppercase tracking-widest transition-all">Abort</button>
+                                    <form action="{% url 'dashboard:subscription-suspend' sub.pk %}" method="POST" class="flex-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-full py-2 bg-red-500 border border-red-600 rounded text-[10px] font-black text-white hover:bg-red-600 transition-all uppercase tracking-widest">Execute</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+
+	                <!-- Reactivate Modal -->
+                <template x-if="reactivateModal === '{{ sub.pk }}'">
+                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md" @click.self="reactivateModal = null" x-transition>
+                        <div class="bg-white rounded border border-slate-200 w-full max-w-sm shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                            <div class="px-5 py-4 border-b border-slate-50 flex items-center justify-between bg-emerald-50/30">
+                                <div>
+                                    <h3 class="text-[9px] font-black uppercase tracking-widest text-emerald-600 mb-0.5">Provisioning</h3>
+                                    <h2 class="text-xs font-black text-slate-900 uppercase tracking-widest">Reactivate Access</h2>
+                                </div>
+                                <button @click="reactivateModal = null" class="text-slate-400 hover:text-slate-600">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                                </button>
+                            </div>
+                            <form action="{% url 'dashboard:subscription-reactivate' sub.pk %}" method="POST" class="p-6 form-perfex space-y-4">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label>New Cycle Due Date</label>
+                                    <input type="date" name="next_due_date" class="w-full">
+                                    <p class="text-[9px] text-slate-400 font-bold uppercase tracking-widest italic mt-1 leading-none">Optional: Auto-calculated if blank</p>
+                                </div>
+                                <button type="submit" class="w-full py-2.5 bg-brand text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-slate-900 transition-all shadow shadow-brand/10">Authorize Restore</button>
+                            </form>
+                        </div>
+                    </div>
+	                </template>
+
+                    <template x-if="cancelModal === '{{ sub.pk }}'">
+                        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md" @click.self="cancelModal = null" x-transition>
+                            <div class="bg-white rounded border border-slate-200 w-full max-w-sm shadow-2xl overflow-hidden">
+                                <div class="p-6 text-center space-y-4">
+                                    <h2 class="text-sm font-black text-slate-900 uppercase tracking-tight">Cancel Subscription?</h2>
+                                    <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">This marks the billing plan for {{ sub.site.name }} as cancelled.</p>
+                                    <div class="flex gap-2">
+                                        <button @click="cancelModal = null" class="flex-1 py-2 bg-slate-50 border border-slate-100 rounded text-[10px] font-black text-slate-400 uppercase tracking-widest">Back</button>
+                                        <form action="{% url 'dashboard:subscription-cancel' sub.pk %}" method="POST" class="flex-1">
+                                            {% csrf_token %}
+                                            <button type="submit" class="w-full py-2 bg-red-500 border border-red-600 rounded text-[10px] font-black text-white uppercase tracking-widest hover:bg-red-600 transition-all">Cancel Plan</button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+    {% endfor %}
+
+        <div class="bg-white border border-slate-200 rounded shadow-sm overflow-hidden">
+            <div class="px-4 py-3 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                <h3 class="text-xs font-black text-slate-900 uppercase tracking-widest">Recent Payments</h3>
+                <div class="flex items-center gap-3">
+                    {% if total_collected_recent %}
+                    <span class="text-[9px] font-black text-emerald-600 uppercase tracking-widest">GH₵{{ total_collected_recent|floatformat:2 }} collected</span>
+                    <span class="text-slate-200">|</span>
+                    {% endif %}
+                    <span class="text-[9px] font-black text-slate-400 uppercase tracking-widest">Last 20</span>
+                </div>
+            </div>
+            <div class="divide-y divide-slate-100">
+                {% for payment in recent_payments %}
+                <div class="px-4 py-3 hover:bg-slate-50/50 transition-colors">
+                    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <p class="text-[11px] font-black text-slate-900 uppercase tracking-tight">{{ payment.subscription.site.name }}</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{{ payment.period_start|date:"d M Y" }} to {{ payment.period_end|date:"d M Y" }}{% if payment.reference %} · Ref {{ payment.reference }}{% endif %}</p>
+                    </div>
+                    <div class="text-left lg:text-right">
+                        <p class="text-[11px] font-black text-slate-900">GH₵{{ payment.amount }}</p>
+                        <p class="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{{ payment.paid_at|date:"d M Y" }}</p>
+                    </div>
+                    <div class="flex items-center gap-2 lg:justify-end">
+                        <button @click="paymentEditModal = '{{ payment.pk }}'" class="px-2 py-1 rounded border border-slate-200 bg-white text-[9px] font-black uppercase tracking-widest text-slate-500 hover:text-brand hover:border-brand transition-all">Edit</button>
+                        <button @click="paymentDeleteModal = '{{ payment.pk }}'" class="px-2 py-1 rounded border border-red-200 bg-white text-[9px] font-black uppercase tracking-widest text-red-400 hover:bg-red-50 transition-all">Delete</button>
+                    </div>
+                    </div>
+                </div>
+
+                <template x-if="paymentEditModal === '{{ payment.pk }}'">
+                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md" @click.self="paymentEditModal = null" x-transition>
+                        <div class="bg-white rounded border border-slate-200 w-full max-w-md shadow-2xl overflow-hidden">
+                            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/50 flex items-center justify-between">
+                                <h2 class="text-xs font-black text-slate-900 uppercase tracking-widest">Edit Payment</h2>
+                                <button @click="paymentEditModal = null" class="text-slate-400 hover:text-slate-600">×</button>
+                            </div>
+                            <form action="{% url 'dashboard:payment-update' payment.pk %}" method="POST" class="p-6 form-perfex space-y-4">
+                                {% csrf_token %}
+                                <div class="form-group">
+                                    <label>Amount</label>
+                                    <input type="number" name="amount" step="0.01" min="0.01" required value="{{ payment.amount }}" class="w-full">
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="form-group">
+                                        <label>Period Start</label>
+                                        <input type="date" name="period_start" required value="{{ payment.period_start|date:'Y-m-d' }}" class="w-full">
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Period End</label>
+                                        <input type="date" name="period_end" required value="{{ payment.period_end|date:'Y-m-d' }}" class="w-full">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="form-group">
+                                        <label>Payment Method</label>
+                                        <select name="method" class="w-full">
+                                            <option value="" {% if not payment.method %}selected{% endif %}>— Not captured —</option>
+                                            <option value="cash" {% if payment.method == 'cash' %}selected{% endif %}>Cash</option>
+                                            <option value="mobile_money" {% if payment.method == 'mobile_money' %}selected{% endif %}>Mobile Money</option>
+                                            <option value="bank_transfer" {% if payment.method == 'bank_transfer' %}selected{% endif %}>Bank Transfer</option>
+                                            <option value="card" {% if payment.method == 'card' %}selected{% endif %}>Card</option>
+                                            <option value="other" {% if payment.method == 'other' %}selected{% endif %}>Other</option>
+                                        </select>
+                                    </div>
+                                    <div class="form-group">
+                                        <label>Reference</label>
+                                        <input type="text" name="reference" value="{{ payment.reference }}" class="w-full">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label>Notes</label>
+                                    <input type="text" name="notes" value="{{ payment.notes }}" class="w-full">
+                                </div>
+                                <button type="submit" class="w-full py-2.5 bg-slate-900 text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-brand transition-all">Save Payment</button>
+                            </form>
+                        </div>
+                    </div>
+                </template>
+
+                <template x-if="paymentDeleteModal === '{{ payment.pk }}'">
+                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md" @click.self="paymentDeleteModal = null" x-transition>
+                        <div class="bg-white rounded border border-slate-200 w-full max-w-sm shadow-2xl overflow-hidden">
+                            <div class="p-6 text-center space-y-4">
+                                <h2 class="text-sm font-black text-slate-900 uppercase tracking-tight">Delete Payment?</h2>
+                                <p class="text-[10px] text-slate-400 font-bold uppercase tracking-widest leading-relaxed">This removes the payment record for {{ payment.subscription.site.name }}.</p>
+                                <div class="flex gap-2">
+                                    <button @click="paymentDeleteModal = null" class="flex-1 py-2 bg-slate-50 border border-slate-100 rounded text-[10px] font-black text-slate-400 uppercase tracking-widest">Back</button>
+                                    <form action="{% url 'dashboard:payment-delete' payment.pk %}" method="POST" class="flex-1">
+                                        {% csrf_token %}
+                                        <button type="submit" class="w-full py-2 bg-red-500 border border-red-600 rounded text-[10px] font-black text-white uppercase tracking-widest hover:bg-red-600 transition-all">Delete Payment</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </template>
+                {% empty %}
+                <div class="px-4 py-10 text-center text-slate-300 text-[10px] font-black uppercase tracking-widest">No payments recorded yet.</div>
+                {% endfor %}
+            </div>
+        </div>
+
+	    <!-- Create Modal -->
+    <template x-if="createModal">
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md" @click.self="createModal = false" x-transition>
+            <div class="bg-white rounded border border-slate-200 w-full max-w-md shadow-2xl overflow-hidden animate-in fade-in zoom-in duration-300">
+                <div class="px-6 py-4 border-b border-slate-50 flex items-center justify-between bg-slate-50/50">
+                    <div>
+                        <h2 class="text-xs font-black text-slate-900 uppercase tracking-widest">New Subscription</h2>
+                    </div>
+                    <button @click="createModal = false" class="text-slate-400 hover:text-slate-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+                    </button>
+                </div>
+                <form action="{% url 'dashboard:subscription-create' %}" method="POST" class="p-6 form-perfex space-y-4">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Select Site Context</label>
+                        <select name="site_id" required class="w-full">
+                            <option value="">— Choose a Site —</option>
+                            {% for site in unsubscribed_sites %}
+                            <option value="{{ site.pk }}">{{ site.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Package</label>
+                        <select name="package_id" @change="applyCreatePkg($event.target.value)" class="w-full">
+                            <option value="">— Custom / No Package —</option>
+                            {% for pkg in packages %}
+                            <option value="{{ pkg.pk }}">{{ pkg.name }} — GH₵{{ pkg.monthly_rate }}/mo · {{ pkg.grace_period_days }}d grace</option>
+                            {% endfor %}
+                        </select>
+                        {% if not packages %}<p class="text-[9px] text-amber-600 font-bold mt-1">No active packages. <a href="{% url 'dashboard:packages' %}" class="underline">Create one first.</a></p>{% endif %}
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>Monthly Rate (GHS)</label>
+                            <input type="number" name="monthly_rate" step="0.01" min="0" required x-model="createRate" placeholder="0.00" class="w-full">
+                        </div>
+                        <div class="form-group">
+                            <label>Cycle Day (1-28)</label>
+                            <input type="number" name="billing_day" min="1" max="28" value="1" required class="w-full">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>Initial Due Date</label>
+                            <input type="date" name="next_due_date" required class="w-full">
+                        </div>
+                        <div class="form-group">
+                            <label>Grace Days</label>
+                            <input type="number" name="grace_period_days" min="0" max="30" x-model="createGrace" class="w-full">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Legacy Reference / Notes</label>
+                        <input type="text" name="notes" placeholder="e.g. Contract #..." class="w-full">
+                    </div>
+                    <button type="submit" class="w-full py-3 bg-slate-900 text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-brand transition-all shadow active:scale-98">
+                        Launch Infrastructure Billing
+                    </button>
+                </form>
+            </div>
+        </div>
+    </template>
+
+</div>
+{% endblock %}

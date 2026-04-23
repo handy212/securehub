@@ -1,0 +1,194 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Site Configuration — {{ site.name }}{% endblock %}
+{% block header_title %}Site Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-6">
+    <div class="space-y-4">
+        <nav class="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+            <a href="{% url 'dashboard:home' %}" class="hover:text-brand transition-colors">Dashboard</a>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+            <a href="{% url 'dashboard:sites' %}" class="hover:text-brand transition-colors">Sites</a>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+            <a href="{% url 'dashboard:site-console' site.pk %}" class="hover:text-brand transition-colors">{{ site.name }}</a>
+            <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+            <span class="text-slate-900">Edit Site</span>
+        </nav>
+
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+            <div class="space-y-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    </div>
+                    <div>
+                        <h1 class="text-2xl font-black tracking-tight text-slate-900">{{ site.name }}</h1>
+                        <p class="text-[11px] font-medium text-slate-500">Keep location, scene, and Hik linkage clean so sync, map, and onboarding stay predictable.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <span class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-600">{{ site.primary_industry|default:"No Scene" }}</span>
+                <span class="px-3 py-2 rounded-lg border {% if site.is_active %}border-emerald-200 bg-emerald-50 text-emerald-700{% else %}border-red-200 bg-red-50 text-red-600{% endif %} text-[10px] font-black uppercase tracking-widest">{% if site.is_active %}Active{% else %}Inactive{% endif %}</span>
+                <span class="px-3 py-2 rounded-lg border border-slate-200 bg-white text-[10px] font-black uppercase tracking-widest text-slate-500">{{ site.hik_site_id }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
+                <div>
+                    <h2 class="text-xs font-black text-slate-900 uppercase tracking-widest">Site Configuration</h2>
+                    <p class="mt-1 text-[10px] font-medium text-slate-500">Compact edit flow for location, mapping, scene, and platform linkage.</p>
+                </div>
+                <span class="px-2.5 py-1 rounded bg-white border border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-500">ID {{ site.id }}</span>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="px-6 py-6 form-perfex space-y-6">
+                    <section class="space-y-4">
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Identity</h3>
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="form-group md:col-span-2">
+                                <label>Display Name</label>
+                                <input type="text" name="name" value="{{ site.name }}" required class="w-full">
+                            </div>
+                            <div class="form-group md:col-span-2">
+                                <label>Hik-Partner Pro Site ID</label>
+                                <input type="text" name="hik_site_id" value="{{ site.hik_site_id|default:'' }}" class="w-full font-mono" placeholder="External linkage ID">
+                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter px-1 mt-1">Used for Hik sync, device discovery, and metadata refresh.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="pt-5 border-t border-slate-100 space-y-4">
+                        <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Location</h3>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="form-group md:col-span-2">
+                                <label>Street Address</label>
+                                <input type="text" name="address" value="{{ site.address|default:'' }}" class="w-full">
+                            </div>
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" name="city" value="{{ site.city|default:'' }}" class="w-full">
+                            </div>
+                            <div class="form-group">
+                                <label>State / Province</label>
+                                <input type="text" name="state" value="{{ site.state|default:'' }}" class="w-full">
+                            </div>
+                            <div class="form-group">
+                                <label>Country</label>
+                                <input type="text" name="country" value="{{ site.country|default:'' }}" class="w-full">
+                            </div>
+                            <div class="form-group">
+                                <label>Timezone</label>
+                                <select name="timezone" class="w-full">
+                                    <option value="UTC" {% if site.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                                    <optgroup label="Africa">
+                                        <option value="Africa/Accra" {% if site.timezone == 'Africa/Accra' %}selected{% endif %}>Africa/Accra (GMT +00:00)</option>
+                                        <option value="Africa/Lagos" {% if site.timezone == 'Africa/Lagos' %}selected{% endif %}>Africa/Lagos (WAT +01:00)</option>
+                                        <option value="Africa/Nairobi" {% if site.timezone == 'Africa/Nairobi' %}selected{% endif %}>Africa/Nairobi (EAT +03:00)</option>
+                                        <option value="Africa/Johannesburg" {% if site.timezone == 'Africa/Johannesburg' %}selected{% endif %}>Africa/Johannesburg (SAST +02:00)</option>
+                                        <option value="Africa/Cairo" {% if site.timezone == 'Africa/Cairo' %}selected{% endif %}>Africa/Cairo (EET +02:00)</option>
+                                    </optgroup>
+                                    <optgroup label="Europe">
+                                        <option value="Europe/London" {% if site.timezone == 'Europe/London' %}selected{% endif %}>Europe/London (GMT/BST)</option>
+                                        <option value="Europe/Paris" {% if site.timezone == 'Europe/Paris' %}selected{% endif %}>Europe/Paris (CET +01:00)</option>
+                                    </optgroup>
+                                    <optgroup label="Americas">
+                                        <option value="America/New_York" {% if site.timezone == 'America/New_York' %}selected{% endif %}>America/New_York (EST/EDT)</option>
+                                        <option value="America/Chicago" {% if site.timezone == 'America/Chicago' %}selected{% endif %}>America/Chicago (CST/CDT)</option>
+                                        <option value="America/Los_Angeles" {% if site.timezone == 'America/Los_Angeles' %}selected{% endif %}>America/Los_Angeles (PST/PDT)</option>
+                                    </optgroup>
+                                    <optgroup label="Asia / Pacific">
+                                        <option value="Asia/Dubai" {% if site.timezone == 'Asia/Dubai' %}selected{% endif %}>Asia/Dubai (GST +04:00)</option>
+                                        <option value="Asia/Singapore" {% if site.timezone == 'Asia/Singapore' %}selected{% endif %}>Asia/Singapore (SGT +08:00)</option>
+                                        <option value="Australia/Sydney" {% if site.timezone == 'Australia/Sydney' %}selected{% endif %}>Australia/Sydney (AEST/AEDT)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="pt-5 border-t border-slate-100 space-y-4">
+                        <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Map & Scene</h3>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="form-group">
+                                <label>Latitude</label>
+                                <input type="text" name="latitude" value="{{ site.latitude|default:'' }}" class="w-full font-mono">
+                            </div>
+                            <div class="form-group">
+                                <label>Longitude</label>
+                                <input type="text" name="longitude" value="{{ site.longitude|default:'' }}" class="w-full font-mono">
+                            </div>
+                            <div class="form-group">
+                                <label>Primary Scene</label>
+                                <select name="primary_industry" class="w-full">
+                                    <option value="">Select Scene...</option>
+                                    {% for scene in scene_options %}
+                                    <option value="{{ scene }}" {% if site.primary_industry == scene %}selected{% endif %}>{{ scene }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Secondary Label</label>
+                                <input type="text" name="secondary_industry" value="{{ site.secondary_industry|default:'' }}" class="w-full" placeholder="Optional business label">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="pt-5 border-t border-slate-100">
+                        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div>
+                                <p class="text-[11px] font-black text-slate-900 uppercase tracking-widest">Active Client</p>
+                                <p class="mt-1 text-[10px] font-medium text-slate-500">Inactive sites stay in the directory but should not be treated as live operations.</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="is_active" class="sr-only peer" {% if site.is_active %}checked{% endif %}>
+                                <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-brand peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:w-5 after:h-5 after:bg-white after:border after:border-slate-300 after:rounded-full after:transition-all"></div>
+                            </label>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <a href="{% url 'dashboard:site-console' site.pk %}" class="text-[10px] font-black uppercase tracking-widest text-slate-400 hover:text-slate-700 transition-colors">Back To Site Console</a>
+                    <button type="submit" class="px-5 py-2.5 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-brand transition-all shadow-lg active:scale-95">Save Changes</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="space-y-4">
+            <section class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+                <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Operator Notes</h3>
+                <div class="mt-4 space-y-3 text-[11px] font-medium text-slate-600">
+                    <p>Address changes should be followed by a metadata refresh so geocoding and the map stay accurate.</p>
+                    <p>Use a normalized scene so the map marker icon and legend stay consistent.</p>
+                    <p>Only change the Hik site ID when you are intentionally re-linking this site to a different Hik record.</p>
+                </div>
+            </section>
+
+            <section class="p-5 border border-red-100 bg-red-50/60 rounded-2xl">
+                <div class="flex items-center gap-3 mb-4">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-red-500"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    <h3 class="text-[10px] font-black uppercase tracking-widest text-red-600">Delete Site</h3>
+                </div>
+                <p class="text-[11px] font-medium text-red-500 leading-relaxed mb-4">This permanently removes linked devices, zone history, and site access records.</p>
+                <form action="{% url 'dashboard:delete-site' site.pk %}" method="POST" class="form-perfex space-y-3">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Confirm Site Name</label>
+                        <input type="text" name="confirm_name" placeholder="Type '{{ site.name }}' to confirm" class="w-full !border-red-200">
+                    </div>
+                    <button type="submit" class="w-full px-4 py-2.5 border border-red-200 text-red-500 rounded-lg text-[9px] font-black uppercase tracking-widest hover:bg-red-50 transition-all">Permanently Delete Site</button>
+                </form>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

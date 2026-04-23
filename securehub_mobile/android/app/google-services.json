@@ -1,0 +1,38 @@
+{
+  "project_info": {
+    "project_number": "90169853070",
+    "project_id": "responseone-1501770779021",
+    "storage_bucket": "responseone-1501770779021.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:90169853070:android:c0403ac934a5c55a06b5df",
+        "android_client_info": {
+          "package_name": "com.securehub.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "90169853070-hpdtknql0g0s2kiaen783knqbpku05c7.apps.googleusercontent.com",
+          "client_type": 1
+        },
+        {
+          "client_id": "90169853070-d8arkj88mm4oo1v5u8ii0smvahhphghg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBVVY01PlmdomzVA2sX5M4O1fSxtv34dJA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

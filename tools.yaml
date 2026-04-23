@@ -1,0 +1,24 @@
+# tools.yaml
+# Configuration for mcp-toolbox-for-databases (Google GenAI Toolbox)
+
+sources:
+  - name: securehub
+    type: sqlite
+    connection:
+      path: backend/db.sqlite3
+
+tools:
+  - name: query_securehub
+    type: sql_query
+    source: securehub
+    description: "Query the SecureHub database using standard SQL SELECT statements."
+  - name: list_tables
+    type: sql_query
+    source: securehub
+    statement: "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'django_%' AND name NOT LIKE 'auth_%';"
+    description: "List the core application tables (excluding internal Django tables)."
+  - name: describe_table
+    type: sql_query
+    source: securehub
+    statement: "PRAGMA table_info(?);"
+    description: "Get the column definitions for a given table name."

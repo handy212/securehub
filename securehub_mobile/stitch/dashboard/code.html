@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>SecureHub - My Home</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "outline": "#76777b",
+                    "primary-container": "#1f2127",
+                    "surface-container-high": "#e9e8e5",
+                    "surface-container-lowest": "#ffffff",
+                    "on-surface-variant": "#46464b",
+                    "background": "#faf9f6",
+                    "on-tertiary-fixed": "#380d00",
+                    "secondary-container": "#aef673",
+                    "on-secondary-fixed-variant": "#275000",
+                    "on-secondary-fixed": "#0c2000",
+                    "on-error": "#ffffff",
+                    "surface-container-low": "#f4f3f0",
+                    "on-error-container": "#93000a",
+                    "inverse-primary": "#c5c6ce",
+                    "primary-fixed-dim": "#c5c6ce",
+                    "secondary": "#366b00",
+                    "on-secondary-container": "#3a7100",
+                    "inverse-on-surface": "#f2f1ee",
+                    "on-surface": "#1b1c1a",
+                    "tertiary-fixed": "#ffdbcf",
+                    "outline-variant": "#c7c6cb",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#5d5e65",
+                    "primary": "#080a10",
+                    "on-primary-container": "#878890",
+                    "tertiary": "#1b0400",
+                    "surface-dim": "#dbdad7",
+                    "on-tertiary-container": "#e55e25",
+                    "surface-bright": "#faf9f6",
+                    "on-tertiary-fixed-variant": "#812900",
+                    "tertiary-fixed-dim": "#ffb59b",
+                    "on-primary-fixed-variant": "#45464d",
+                    "surface": "#faf9f6",
+                    "on-background": "#1b1c1a",
+                    "surface-container-highest": "#e3e2df",
+                    "surface-container": "#efeeeb",
+                    "tertiary-container": "#411100",
+                    "secondary-fixed-dim": "#94d95a",
+                    "primary-fixed": "#e2e2ea",
+                    "secondary-fixed": "#aef673",
+                    "surface-variant": "#e3e2df",
+                    "on-secondary": "#ffffff",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed": "#191b21",
+                    "inverse-surface": "#2f312f",
+                    "on-primary": "#ffffff",
+                    "error-container": "#ffdad6"
+            },
+            "borderRadius": {
+                    "DEFAULT": "1rem",
+                    "lg": "2rem",
+                    "xl": "3rem",
+                    "full": "9999px"
+            },
+            "fontFamily": {
+                    "headline": ["Inter"],
+                    "body": ["Inter"],
+                    "label": ["Inter"]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-glass {
+            background: rgba(250, 249, 246, 0.8);
+            backdrop-filter: blur(20px);
+        }
+        .status-glow {
+            box-shadow: 0 0 20px rgba(54, 107, 0, 0.2);
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-background font-body min-h-screen pb-32">
+<!-- TopAppBar -->
+<header class="sticky top-0 z-50 bg-[#FAF9F6] dark:bg-[#080A10] flex justify-between items-center w-full px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden bg-surface-container-high">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="professional headshot of a smiling man with a clean beard in soft natural studio lighting with a neutral background" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBCzIOa5P4thWUZtpHDAFYj2_CrAB_TzgDfUudbMCNqweRkQRJ5QvkLeeXVYCnBopxYE9JhrOwoXzoNCJ8JrjdDH3eWtD8QxQjUX22LL4B3b78C0hjLQ4SBWDXYI4pQv0zrM326a4Ko4Q-AFhhlO1eDhQysapKiUpEU_0gna179-f6ooNYHb0triiPIbGCSxsJRxAXlV3mjzJCujJd3UKRl_bSHdyV56wT9Iy1Fag8QHjNulfwwj3QOvjnkXj9At2VrbOv4LULo38HF"/>
+</div>
+<span class="text-xl font-bold text-[#08010] dark:text-[#FAF9F6] font-headline tracking-tight">SecureHub</span>
+</div>
+<div class="flex items-center gap-4">
+<span class="text-[#08010] dark:text-[#FAF9F6] material-symbols-outlined transition-opacity hover:opacity-80 active:scale-95">location_on</span>
+</div>
+</header>
+<main class="px-6 pt-4 max-w-5xl mx-auto space-y-8">
+<!-- Welcome Section -->
+<section class="flex flex-col gap-1">
+<h1 class="text-3xl font-extrabold tracking-tight text-primary">My Home</h1>
+<p class="text-on-surface-variant text-sm">All zones are currently monitored.</p>
+</section>
+<!-- Central Status Display -->
+<section class="relative group">
+<div class="bg-surface-container-lowest rounded-xl p-10 flex flex-col items-center justify-center text-center space-y-6 shadow-[0_4px_40px_rgba(27,28,26,0.04)] border-none">
+<div class="relative">
+<!-- Breathing Glow Animation Effect Simulated via Color -->
+<div class="w-40 h-40 rounded-full bg-secondary-container/20 flex items-center justify-center status-glow">
+<div class="w-28 h-28 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container">
+<span class="material-symbols-outlined text-5xl" style="font-variation-settings: 'FILL' 1;">shield</span>
+</div>
+</div>
+</div>
+<div class="space-y-1">
+<h2 class="text-display-sm font-bold text-primary">System Disarmed</h2>
+<p class="text-secondary font-medium uppercase tracking-widest text-[10px]">Secure &amp; Monitoring</p>
+</div>
+</div>
+</section>
+<!-- Quick Actions Bento Grid -->
+<section class="grid grid-cols-2 gap-4">
+<!-- Arm Away -->
+<button class="flex flex-col items-start justify-between p-6 h-44 rounded-lg bg-gradient-to-br from-primary to-primary-container text-on-primary shadow-lg active:scale-95 transition-all">
+<span class="material-symbols-outlined text-3xl">exit_to_app</span>
+<div class="text-left">
+<p class="font-bold text-lg">Arm Away</p>
+<p class="text-on-primary/60 text-xs">Full perimeter lock</p>
+</div>
+</button>
+<!-- Arm Stay -->
+<button class="flex flex-col items-start justify-between p-6 h-44 rounded-lg bg-surface-container-lowest text-primary shadow-[0_4px_40px_rgba(27,28,26,0.04)] active:scale-95 transition-all">
+<span class="material-symbols-outlined text-3xl text-secondary">house</span>
+<div class="text-left">
+<p class="font-bold text-lg text-on-surface">Arm Stay</p>
+<p class="text-on-surface-variant text-xs">Internal sensors off</p>
+</div>
+</button>
+</section>
+<!-- Dynamic Insights (Asymmetric Layout) -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<!-- Active Cameras Peek -->
+<div class="md:col-span-2 rounded-lg overflow-hidden relative h-56 shadow-[0_4px_40px_rgba(27,28,26,0.06)] group">
+<img alt="Front Porch Camera" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" data-alt="wide angle security camera view of a modern house porch with clean lines and warm evening porch light" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCL_A8tzJqbOF02p6_ODw2DxErr2JLWvUf4iDyWOhS9H-WQI0ZAH7VWl542_ksg0L8oy_ujqWp8zT1o5UWhxEWEDv1lTiF0D60rPSqimnjqAduvZ4_Ptzw3zcFfWflcDde60LhTHdf1PumhYxepZCr2zAz3n7yzIkwvta8yPiIg4KPnUit-F2PVVOz1yTHT6Xw3PzW_jO42fPy1724NuoP2cfHxIXIK-VbxUtTzLiktTd2gaKPkaKMjVJz4TMp4TnXa7pA396gbj1Hw"/>
+<div class="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent"></div>
+<div class="absolute top-4 left-4 flex items-center gap-2 bg-red-600 px-2 py-1 rounded-full text-[10px] text-white font-bold uppercase tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-white animate-pulse"></span> Live
+                </div>
+<div class="absolute bottom-4 left-4 text-white">
+<p class="font-bold">Front Porch</p>
+<p class="text-xs opacity-80">No motion detected</p>
+</div>
+</div>
+<!-- Temperature/Environment -->
+<div class="bg-surface-container-low rounded-lg p-6 flex flex-col justify-between shadow-[0_4px_40px_rgba(27,28,26,0.04)]">
+<div class="flex justify-between items-start">
+<span class="material-symbols-outlined text-on-surface-variant">thermostat</span>
+<span class="text-on-surface-variant text-xs font-medium">Indoor</span>
+</div>
+<div class="space-y-0">
+<p class="text-4xl font-bold text-primary">72°</p>
+<p class="text-on-surface-variant text-xs">Optimal comfort</p>
+</div>
+<div class="h-1 w-full bg-surface-container-high rounded-full overflow-hidden">
+<div class="h-full bg-secondary w-3/4"></div>
+</div>
+</div>
+</div>
+<!-- Recent Events Timeline -->
+<section class="space-y-4">
+<div class="flex justify-between items-end">
+<h3 class="text-xl font-bold text-primary">Recent Events</h3>
+<button class="text-primary text-sm font-semibold">View History</button>
+</div>
+<div class="bg-surface-container-low rounded-lg p-2 space-y-1">
+<!-- Event 1 -->
+<div class="flex items-center gap-4 p-4 bg-surface-container-lowest rounded-lg shadow-sm">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl">door_front</span>
+</div>
+<div class="flex-1">
+<p class="font-semibold text-sm text-on-surface">Front Door Opened</p>
+<p class="text-xs text-on-surface-variant">2 mins ago • Main Entrance</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-lg">chevron_right</span>
+</div>
+<!-- Event 2 -->
+<div class="flex items-center gap-4 p-4 rounded-lg">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-xl">verified_user</span>
+</div>
+<div class="flex-1">
+<p class="font-semibold text-sm text-on-surface">System Disarmed</p>
+<p class="text-xs text-on-surface-variant">15 mins ago • User: David</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-lg">chevron_right</span>
+</div>
+<!-- Event 3 -->
+<div class="flex items-center gap-4 p-4 rounded-lg">
+<div class="w-10 h-10 rounded-full bg-surface-container-low flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-xl">motion_sensor_active</span>
+</div>
+<div class="flex-1">
+<p class="font-semibold text-sm text-on-surface">Motion Detected</p>
+<p class="text-xs text-on-surface-variant">1 hour ago • Backyard Camera</p>
+</div>
+<span class="material-symbols-outlined text-on-surface-variant text-lg">chevron_right</span>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 pb-8 pt-4 bg-[#FAF9F6]/80 dark:bg-[#080A10]/80 backdrop-blur-xl shadow-[0_-4px_40px_rgba(27,28,26,0.06)] rounded-t-[3rem]">
+<a class="flex flex-col items-center justify-center bg-[#080A10] dark:bg-[#FAF9F6] text-[#FAF9F6] dark:text-[#080A10] rounded-full px-5 py-2 active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">home</span>
+<span class="font-['Inter'] text-[11px] font-medium">Home</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">grid_view</span>
+<span class="font-['Inter'] text-[11px] font-medium">Zones</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">router</span>
+<span class="font-['Inter'] text-[11px] font-medium">Devices</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">history</span>
+<span class="font-['Inter'] text-[11px] font-medium">Events</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#1B1C1A]/70 dark:text-[#FAF9F6]/70 px-5 py-2 hover:bg-[#FAF9F6] dark:hover:bg-[#1F2127] transition-colors active:scale-90 transition-all duration-200" href="#">
+<span class="material-symbols-outlined">videocam</span>
+<span class="font-['Inter'] text-[11px] font-medium">Cameras</span>
+</a>
+</nav>
+</body></html>

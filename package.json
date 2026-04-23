@@ -1,0 +1,6 @@
+{
+  "devDependencies": {
+    "@toolbox-sdk/server": "^0.30.0",
+    "prisma": "^7.6.0"
+  }
+}

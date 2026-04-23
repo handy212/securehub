@@ -1,0 +1,61 @@
+from django.contrib.auth.views import LogoutView
+from django.urls import path
+from . import views
+
+app_name = "dashboard"
+
+urlpatterns = [
+    path("login/", views.ConsoleLoginView.as_view(), name="login"),
+    path("logout/", LogoutView.as_view(next_page="dashboard:login"), name="logout"),
+    path("", views.DashboardHomeView.as_view(), name="home"),
+    path("sites/", views.SiteDirectoryView.as_view(), name="sites"),
+    path("map/", views.SiteMapView.as_view(), name="site-map"),
+    path("sites/provision/", views.ProvisionSiteView.as_view(), name="provision-site"),
+    path("sites/<uuid:pk>/", views.SiteConsoleView.as_view(), name="site-console"),
+    path("sites/<uuid:pk>/actions/<str:action>/", views.SiteActionView.as_view(), name="site-action"),
+    path("sites/<uuid:pk>/update/", views.UpdateSiteView.as_view(), name="update-site"),
+    path("logs/", views.WebhookLogsView.as_view(), name="logs"),
+    path("users/", views.UserListView.as_view(), name="user-list"),
+    path("users/create/", views.StaffUserCreateView.as_view(), name="user-create"),
+    path("users/<int:user_id>/update/", views.StaffUserUpdateView.as_view(), name="user-update"),
+    path("users/<int:user_id>/delete/", views.StaffUserDeleteView.as_view(), name="user-delete"),
+    path("customers/", views.CustomerDirectoryView.as_view(), name="customer-list"),
+    path("customers/create/", views.CustomerUserCreateView.as_view(), name="customer-create"),
+    path("customers/<int:user_id>/update/", views.CustomerUserUpdateView.as_view(), name="customer-update"),
+    path("customers/<int:user_id>/delete/", views.CustomerUserDeleteView.as_view(), name="customer-delete"),
+    path("customers/groups/", views.CustomerGroupListView.as_view(), name="customer-groups"),
+    path("customers/groups/<uuid:pk>/update/", views.CustomerGroupUpdateView.as_view(), name="customer-group-update"),
+    path("customers/groups/<uuid:pk>/delete/", views.CustomerGroupDeleteView.as_view(), name="customer-group-delete"),
+    path("settings/", views.PlatformSettingsView.as_view(), name="settings"),
+    path("sync/global/", views.GlobalSyncView.as_view(), name="global-sync"),
+    # Subscription management
+    path("subscriptions/", views.SubscriptionListView.as_view(), name="subscriptions"),
+    path("subscriptions/create/", views.CreateSubscriptionView.as_view(), name="subscription-create"),
+    path("subscriptions/packages/", views.SubscriptionPackageListView.as_view(), name="packages"),
+    path("subscriptions/packages/<uuid:pk>/update/", views.UpdateSubscriptionPackageView.as_view(), name="package-update"),
+    path("subscriptions/packages/<uuid:pk>/delete/", views.DeleteSubscriptionPackageView.as_view(), name="package-delete"),
+    path("subscriptions/<uuid:pk>/update/", views.UpdateSubscriptionView.as_view(), name="subscription-update"),
+    path("payments/<uuid:payment_id>/update/", views.UpdateSubscriptionPaymentView.as_view(), name="payment-update"),
+    path("payments/<uuid:payment_id>/delete/", views.DeleteSubscriptionPaymentView.as_view(), name="payment-delete"),
+    path("subscriptions/<uuid:pk>/pay/", views.RecordPaymentView.as_view(), name="subscription-pay"),
+    path("subscriptions/<uuid:pk>/suspend/", views.SuspendSubscriptionView.as_view(), name="subscription-suspend"),
+    path("subscriptions/<uuid:pk>/cancel/", views.CancelSubscriptionView.as_view(), name="subscription-cancel"),
+    path("subscriptions/<uuid:pk>/reactivate/", views.ReactivateSubscriptionView.as_view(), name="subscription-reactivate"),
+    # Panel registration
+    path("sites/<uuid:pk>/register-panel/", views.RegisterPanelView.as_view(), name="register-panel"),
+    path("sites/<uuid:pk>/delete/", views.SiteDeleteView.as_view(), name="delete-site"),
+    # Hik platform device management
+    path("sites/<uuid:pk>/hik-add-device/", views.HikAddDeviceView.as_view(), name="hik-add-device"),
+    path("sites/<uuid:pk>/hik-remove-device/", views.HikRemoveDeviceView.as_view(), name="hik-remove-device"),
+    # Client onboarding
+    path("sites/<uuid:pk>/onboard/", views.OnboardClientView.as_view(), name="onboard-client"),
+    path("sites/<uuid:pk>/access/<uuid:access_id>/update/", views.SiteAccessUpdateView.as_view(), name="site-access-update"),
+    path("sites/<uuid:pk>/access/<uuid:access_id>/delete/", views.SiteAccessDeleteView.as_view(), name="site-access-delete"),
+    # Alarm event pictures (session-auth JSON)
+    path("sites/<uuid:pk>/events/<uuid:event_id>/pictures/", views.EventPicturesView.as_view(), name="event-pictures"),
+    # Broadcast Messaging
+    path("broadcast/", views.BroadcastManagementView.as_view(), name="broadcast"),
+    path("broadcast/<uuid:message_id>/update/", views.BroadcastUpdateView.as_view(), name="broadcast-update"),
+    path("broadcast/<uuid:message_id>/resend/", views.BroadcastResendView.as_view(), name="broadcast-resend"),
+    path("broadcast/<uuid:message_id>/delete/", views.BroadcastDeleteView.as_view(), name="broadcast-delete"),
+]
