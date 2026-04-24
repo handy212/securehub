@@ -273,7 +273,7 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
-# Security headers
+# Security headers and cookie settings
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"
