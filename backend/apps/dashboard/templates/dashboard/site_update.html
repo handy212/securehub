@@ -24,7 +24,6 @@
                     </div>
                     <div>
                         <h1 class="text-2xl font-black tracking-tight text-slate-900">{{ site.name }}</h1>
-                        <p class="text-[11px] font-medium text-slate-500">Keep location, scene, and Hik linkage clean so sync, map, and onboarding stay predictable.</p>
                     </div>
                 </div>
             </div>
@@ -41,7 +40,6 @@
             <div class="px-6 py-4 border-b border-slate-100 bg-slate-50/70 flex items-center justify-between">
                 <div>
                     <h2 class="text-xs font-black text-slate-900 uppercase tracking-widest">Site Configuration</h2>
-                    <p class="mt-1 text-[10px] font-medium text-slate-500">Compact edit flow for location, mapping, scene, and platform linkage.</p>
                 </div>
                 <span class="px-2.5 py-1 rounded bg-white border border-slate-200 text-[9px] font-black uppercase tracking-widest text-slate-500">ID {{ site.id }}</span>
             </div>
@@ -51,7 +49,6 @@
                 <div class="px-6 py-6 form-perfex space-y-6">
                     <section class="space-y-4">
                         <div class="flex items-center justify-between">
-                            <h3 class="text-[10px] font-black uppercase tracking-widest text-slate-400">Identity</h3>
                         </div>
                         <div class="grid gap-4 md:grid-cols-2">
                             <div class="form-group md:col-span-2">
@@ -61,7 +58,6 @@
                             <div class="form-group md:col-span-2">
                                 <label>Hik-Partner Pro Site ID</label>
                                 <input type="text" name="hik_site_id" value="{{ site.hik_site_id|default:'' }}" class="w-full font-mono" placeholder="External linkage ID">
-                                <p class="text-[9px] text-slate-400 font-bold uppercase tracking-tighter px-1 mt-1">Used for Hik sync, device discovery, and metadata refresh.</p>
                             </div>
                         </div>
                     </section>
@@ -146,7 +142,6 @@
                         <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
                             <div>
                                 <p class="text-[11px] font-black text-slate-900 uppercase tracking-widest">Active Client</p>
-                                <p class="mt-1 text-[10px] font-medium text-slate-500">Inactive sites stay in the directory but should not be treated as live operations.</p>
                             </div>
                             <label class="relative inline-flex items-center cursor-pointer">
                                 <input type="checkbox" name="is_active" class="sr-only peer" {% if site.is_active %}checked{% endif %}>
