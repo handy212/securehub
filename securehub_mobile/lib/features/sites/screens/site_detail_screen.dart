@@ -9,6 +9,7 @@ import '../../../core/api/exceptions.dart';
 import '../../../core/models/site.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../alarms/providers/alarm_control_provider.dart';
+import '../../emergency/widgets/emergency_action_card.dart';
 import '../providers/sites_provider.dart';
 import '../widgets/subsystem_card.dart';
 import 'package:sliver_tools/sliver_tools.dart';
@@ -127,42 +128,46 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
     final isArmedStay = allSubsystems.any((s) => s.status == 'stay');
     final hasAlarm = (poll?.activeAlarmCount ?? 0) > 0;
     final isArmed = isArmedAway || isArmedStay;
-    final openZones = allSubsystems.expand((subsystem) => subsystem.zones).where(
-      (zone) => zone.state.toLowerCase() == 'open',
-    ).toList();
+    final openZones = allSubsystems
+        .expand((subsystem) => subsystem.zones)
+        .where((zone) => zone.state.toLowerCase() == 'open')
+        .toList();
     final hasOpenZone = openZones.isNotEmpty;
-    final openZoneSummary = openZones.take(3).map((zone) => zone.name).join(', ');
+    final openZoneSummary = openZones
+        .take(3)
+        .map((zone) => zone.name)
+        .join(', ');
     final hasMoreOpenZones = openZones.length > 3;
     final statusTitle = hasAlarm
         ? 'Alarm response required'
         : hasOpenZone
-            ? 'System not ready'
-            : isArmedAway
-                ? 'Perimeter fully armed'
-                : isArmedStay
-                    ? 'Stay mode active'
-                    : 'System ready';
+        ? 'System not ready'
+        : isArmedAway
+        ? 'Perimeter fully armed'
+        : isArmedStay
+        ? 'Stay mode active'
+        : 'System ready';
     final statusSubtitle = hasAlarm
         ? 'Review event history and camera verification before issuing further commands.'
         : hasOpenZone
-            ? 'Open zone${openZones.length == 1 ? '' : 's'}: $openZoneSummary${hasMoreOpenZones ? ' +${openZones.length - 3} more' : ''}.'
-            : (poll?.offlineDeviceCount ?? 0) > 0 ||
-                    (site?.devices.any((d) => !d.isOnline) ?? false)
-                ? 'Some devices are currently offline. Verify device health before relying on site status.'
-                : 'All zones are reporting normally.';
+        ? 'Open zone${openZones.length == 1 ? '' : 's'}: $openZoneSummary${hasMoreOpenZones ? ' +${openZones.length - 3} more' : ''}.'
+        : (poll?.offlineDeviceCount ?? 0) > 0 ||
+              (site?.devices.any((d) => !d.isOnline) ?? false)
+        ? 'Some devices are currently offline. Verify device health before relying on site status.'
+        : 'All zones are reporting normally.';
     final statusMessageColor = hasAlarm
         ? AppTheme.error
         : hasOpenZone
-            ? AppTheme.error
-            : ((poll?.offlineDeviceCount ?? 0) > 0 ||
-                    (site?.devices.any((d) => !d.isOnline) ?? false))
-                ? AppTheme.onSurfaceVariant
-                : AppTheme.secondary;
+        ? AppTheme.error
+        : ((poll?.offlineDeviceCount ?? 0) > 0 ||
+              (site?.devices.any((d) => !d.isOnline) ?? false))
+        ? AppTheme.onSurfaceVariant
+        : AppTheme.secondary;
     final readinessTone = hasAlarm
         ? AppTheme.error
         : hasOpenZone
-            ? AppTheme.error
-            : (isArmed ? AppTheme.primary : AppTheme.secondary);
+        ? AppTheme.error
+        : (isArmed ? AppTheme.primary : AppTheme.secondary);
     final cameraCount = (site?.videoDevices ?? const <VideoDevice>[]).fold<int>(
       0,
       (count, device) => count + device.channels.length,
@@ -247,6 +252,10 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                     ),
                   ),
                   SizedBox(height: sectionGap),
+                  if (!isSuspended && site != null) ...[
+                    EmergencyActionCard(site: site, triggerContext: 'on_site'),
+                    SizedBox(height: isCompactHeight ? 8 : 12),
+                  ],
 
                   // Arm/Disarm bento grid
                   if (!isSuspended) ...[
@@ -531,9 +540,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
               child: const Text('Cancel'),
             ),
             FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppTheme.primary,
-              ),
+              style: FilledButton.styleFrom(backgroundColor: AppTheme.primary),
               onPressed: () => Navigator.of(dialogContext).pop(true),
               child: const Text('Arm Anyway'),
             ),
@@ -652,9 +659,11 @@ class _StatusHeroState extends State<_StatusHero>
                 boxShadow: [
                   BoxShadow(
                     color: glowColor.withValues(alpha: 0.15 * _animation.value),
-                    blurRadius: (widget.compact ? 28 : 40) +
+                    blurRadius:
+                        (widget.compact ? 28 : 40) +
                         ((widget.compact ? 12 : 20) * _animation.value),
-                    spreadRadius: (widget.compact ? 6 : 10) +
+                    spreadRadius:
+                        (widget.compact ? 6 : 10) +
                         ((widget.compact ? 6 : 10) * _animation.value),
                   ),
                 ],
@@ -747,19 +756,35 @@ class _AreasSectionHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 4),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.end,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Expanded(
-            child: Text(
-              'Areas',
-              style: GoogleFonts.inter(
-                fontSize: 16,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.6,
-                color: AppTheme.primary,
-              ),
+          Text(
+            'Areas',
+            style: GoogleFonts.inter(
+              fontSize: 16,
+              fontWeight: FontWeight.w800,
+              letterSpacing: -0.6,
+              color: AppTheme.primary,
             ),
           ),
+          if (count != null && count! > 0) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+              decoration: BoxDecoration(
+                color: AppTheme.primary.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(6),
+              ),
+              child: Text(
+                count.toString(),
+                style: GoogleFonts.inter(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  color: AppTheme.primary,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
@@ -900,8 +925,7 @@ class _BentoActionButtonState extends State<_BentoActionButton> {
                   ],
                 ),
 
-// ── Sliver Site Body ──────────────────────────────────────────────────────────
-
+          // ── Sliver Site Body ──────────────────────────────────────────────────────────
         ),
       ),
     );
@@ -920,10 +944,6 @@ class _SliverSiteBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final crossAxisCount = screenWidth < 390 ? 1 : 2;
-    final childAspectRatio = screenWidth < 390 ? 2.9 : 2.2;
-
     if (allSubsystems.isEmpty) {
       return const SliverToBoxAdapter(
         child: Padding(
@@ -933,14 +953,32 @@ class _SliverSiteBody extends StatelessWidget {
       );
     }
 
+    if (allSubsystems.length == 1) {
+      return SliverPadding(
+        padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+        sliver: SliverToBoxAdapter(
+          child: AspectRatio(
+            aspectRatio: 2.4,
+            child: SubsystemCard(
+              subsystem: allSubsystems[0],
+              isHero: true,
+              onTap: () => _showAreaOptions(context, allSubsystems[0]),
+              onArmAway: () => onAction(allSubsystems[0], 'arm'),
+              onArmStay: () => onAction(allSubsystems[0], 'stay-arm'),
+            ),
+          ),
+        ),
+      );
+    }
+
     return SliverPadding(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
       sliver: SliverGrid(
-        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-          crossAxisCount: crossAxisCount,
+        gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+          maxCrossAxisExtent: 220,
           mainAxisSpacing: 12,
           crossAxisSpacing: 12,
-          childAspectRatio: childAspectRatio,
+          mainAxisExtent: 110,
         ),
         delegate: SliverChildBuilderDelegate(
           (_, i) => SubsystemCard(
@@ -1001,34 +1039,34 @@ class _SliverSiteBody extends StatelessWidget {
               icon: Icons.shield_rounded,
               label: 'Arm Away (Area)',
               color: AppTheme.primary,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(ctx);
-                  onAction(subsystem, 'arm');
-                },
-              ),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Navigator.pop(ctx);
+                onAction(subsystem, 'arm');
+              },
+            ),
             const SizedBox(height: 12),
             _AreaOptionTile(
               icon: Icons.home_rounded,
               label: 'Arm Stay (Area)',
               color: AppTheme.primary,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(ctx);
-                  onAction(subsystem, 'stay-arm');
-                },
-              ),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Navigator.pop(ctx);
+                onAction(subsystem, 'stay-arm');
+              },
+            ),
             const SizedBox(height: 12),
             _AreaOptionTile(
               icon: Icons.lock_open_rounded,
               label: 'Disarm Area',
               color: AppTheme.secondary,
-                onTap: () {
-                  HapticFeedback.lightImpact();
-                  Navigator.pop(ctx);
-                  onAction(subsystem, 'disarm');
-                },
-              ),
+              onTap: () {
+                HapticFeedback.lightImpact();
+                Navigator.pop(ctx);
+                onAction(subsystem, 'disarm');
+              },
+            ),
           ],
         ),
       ),

@@ -9,7 +9,6 @@ class SiteStatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     final hasAlarm = poll.activeAlarmCount > 0;
     final hasOffline = poll.offlineDeviceCount > 0;
 
@@ -18,7 +17,7 @@ class SiteStatusBadge extends StatelessWidget {
       runSpacing: 8,
       children: [
         if (hasAlarm)
-          _StatusPill(
+          const _StatusPill(
             label: 'ALARM',
             color: AppTheme.error,
             showDot: true,
@@ -67,7 +66,9 @@ class _StatusPill extends StatelessWidget {
         color: isOutline ? Colors.transparent : color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
-          color: isOutline ? color.withValues(alpha: 0.3) : color.withValues(alpha: 0.1),
+          color: isOutline
+              ? color.withValues(alpha: 0.3)
+              : color.withValues(alpha: 0.1),
           width: 0.8,
         ),
       ),

@@ -14,13 +14,15 @@ function subscriptionsPage() {
         reactivateModal: null, cancelModal: null, paymentEditModal: null,
         paymentDeleteModal: null, search: '',
         packages: pkgList,
-        createRate: '', createGrace: 7,
-        editRate: '', editGrace: 7,
+        createRate: '', createGrace: 7, createEmergencyEnabled: false, createEmergencyRate: '',
+        editRate: '', editGrace: 7, editEmergencyEnabled: false, editEmergencyRate: '',
         applyCreatePkg: function(pkgId) {
             for (var i = 0; i < this.packages.length; i++) {
                 if (this.packages[i].id === pkgId) {
                     this.createRate = this.packages[i].rate;
                     this.createGrace = this.packages[i].grace;
+                    this.createEmergencyEnabled = !!this.packages[i].emergency;
+                    this.createEmergencyRate = this.packages[i].emergencyRate || '';
                     return;
                 }
             }
@@ -30,6 +32,8 @@ function subscriptionsPage() {
                 if (this.packages[i].id === pkgId) {
                     this.editRate = this.packages[i].rate;
                     this.editGrace = this.packages[i].grace;
+                    this.editEmergencyEnabled = !!this.packages[i].emergency;
+                    this.editEmergencyRate = this.packages[i].emergencyRate || '';
                     return;
                 }
             }
@@ -96,9 +100,24 @@ function subscriptionsPage() {
             <p class="text-lg font-black text-slate-900">{{ count_suspended }}</p>
         </div>
         <div class="rounded-xl border border-brand/20 bg-brand/5 px-3 py-2.5 shadow-sm flex items-center justify-between gap-3 col-span-2 lg:col-span-1">
-            <p class="text-[9px] font-black uppercase tracking-widest text-brand">Monthly Revenue</p>
+            <p class="text-[9px] font-black uppercase tracking-widest text-brand">Core MRR</p>
             <p class="text-lg font-black text-slate-900">GH₵{{ total_mrr|floatformat:2 }}</p>
         </div>
+    </div>
+
+    <div class="grid gap-2 md:grid-cols-3">
+        <div class="rounded-xl border border-red-100 bg-red-50/50 px-3 py-2.5 shadow-sm flex items-center justify-between gap-3">
+            <p class="text-[9px] font-black uppercase tracking-widest text-red-600">Emergency MRR</p>
+            <p class="text-lg font-black text-slate-900">GH₵{{ emergency_total_mrr|floatformat:2 }}</p>
+        </div>
+        <div class="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm flex items-center justify-between gap-3">
+            <p class="text-[9px] font-black uppercase tracking-widest text-slate-500">Combined MRR</p>
+            <p class="text-lg font-black text-slate-900">GH₵{{ combined_mrr|floatformat:2 }}</p>
+        </div>
+        <a href="{% url 'dashboard:emergency-services' %}" class="rounded-xl border border-slate-200 bg-white px-3 py-2.5 shadow-sm flex items-center justify-between gap-3 hover:border-red-200 hover:text-red-600 transition-all">
+            <span class="text-[9px] font-black uppercase tracking-widest">Manage Emergency Add-ons</span>
+            <span class="text-lg font-black">→</span>
+        </a>
     </div>
 
     {% if count_overdue or count_suspended %}
@@ -137,6 +156,7 @@ function subscriptionsPage() {
                 <tr class="bg-slate-50 border-b border-slate-200">
                     <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Site</th>
                     <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Rate</th>
+                    <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Emergency</th>
                     <th class="px-4 py-2 text-[9px] font-black uppercase tracking-[0.15em] text-slate-400">Next Due</th>
                     <th class="px-4 py-2 text-right text-[9px] font-black uppercase tracking-[0.15em] text-slate-400"></th>
                 </tr>
@@ -172,6 +192,17 @@ function subscriptionsPage() {
                         {% endif %}
                     </td>
 
+                    <td class="px-4 py-2.5 whitespace-nowrap">
+                        {% if sub.emergency_service %}
+                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-black uppercase border leading-none flex-shrink-0 {% if sub.emergency_service.status == 'active' %}bg-red-50 text-red-600 border-red-100{% elif sub.emergency_service.status == 'overdue' %}bg-amber-50 text-amber-600 border-amber-100{% else %}bg-slate-50 text-slate-500 border-slate-200{% endif %}">
+                            Patrol {{ sub.emergency_service.status }}
+                        </span>
+                        <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-0.5 leading-none">GH₵{{ sub.emergency_service.monthly_rate }}/mo</p>
+                        {% else %}
+                        <a href="{% url 'dashboard:emergency-services' %}" class="text-[9px] font-black uppercase tracking-widest text-slate-400 hover:text-red-600">Add patrol</a>
+                        {% endif %}
+                    </td>
+
                     <!-- Due date + overdue info -->
                     <td class="px-4 py-2.5">
                         <div class="flex items-center gap-2 flex-wrap">
@@ -197,7 +228,7 @@ function subscriptionsPage() {
                     <!-- Actions -->
                     <td class="px-4 py-2.5 text-right">
                         <div class="flex items-center justify-end gap-1">
-                            <button @click="editModal = '{{ sub.pk }}'; editRate = '{{ sub.monthly_rate }}'; editGrace = {{ sub.grace_period_days }}" class="p-1.5 text-slate-400 rounded hover:bg-brand/10 hover:text-brand transition-all border border-transparent hover:border-brand/20" title="Edit">
+                            <button @click="editModal = '{{ sub.pk }}'; editRate = '{{ sub.monthly_rate }}'; editGrace = {{ sub.grace_period_days }}; editEmergencyEnabled = {{ sub.emergency_service|yesno:'true,false' }}; editEmergencyRate = '{% if sub.emergency_service %}{{ sub.emergency_service.monthly_rate }}{% endif %}'" class="p-1.5 text-slate-400 rounded hover:bg-brand/10 hover:text-brand transition-all border border-transparent hover:border-brand/20" title="Edit">
                                 <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
                             </button>
                             <button @click="payModal = '{{ sub.pk }}'" class="p-1.5 text-slate-400 rounded hover:bg-emerald-50 hover:text-emerald-600 transition-all border border-transparent hover:border-emerald-200" title="Record Payment">
@@ -220,7 +251,7 @@ function subscriptionsPage() {
                 </tr>
                 {% empty %}
                 <tr>
-                    <td colspan="4" class="px-4 py-12 text-center text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                    <td colspan="5" class="px-4 py-12 text-center text-slate-400 text-[10px] font-black uppercase tracking-widest">
                         {% if current_status %}No {{ current_status }} subscriptions.{% else %}No subscriptions yet.{% endif %}
                     </td>
                 </tr>
@@ -274,6 +305,26 @@ function subscriptionsPage() {
                                     <div class="form-group">
                                         <label>Notes</label>
                                         <input type="text" name="notes" value="{{ sub.notes }}" class="w-full">
+                                    </div>
+                                    <div class="rounded border border-red-100 bg-red-50/50 p-3 space-y-3">
+                                        <label class="flex items-center gap-2 cursor-pointer">
+                                            <input type="checkbox" name="emergency_enabled" value="1" x-model="editEmergencyEnabled" class="h-3 w-3 rounded border-slate-200 text-red-600 focus:ring-red-600">
+                                            <span class="text-[9px] font-black uppercase tracking-widest text-red-600">Emergency patrol add-on</span>
+                                        </label>
+                                        <div class="grid grid-cols-2 gap-3" x-show="editEmergencyEnabled">
+                                            <div class="form-group">
+                                                <label>Add-on Rate (GHS)</label>
+                                                <input type="number" name="emergency_monthly_rate" step="0.01" min="0" x-model="editEmergencyRate" class="w-full">
+                                            </div>
+                                            <div class="form-group">
+                                                <label>Add-on Status</label>
+                                                <select name="emergency_status" class="w-full">
+                                                    {% for value,label in emergency_statuses %}
+                                                    <option value="{{ value }}" {% if sub.emergency_service and sub.emergency_service.status == value %}selected{% elif not sub.emergency_service and value == 'active' %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
                                     <button type="submit" class="w-full py-2.5 bg-slate-900 text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-brand transition-all">Save Subscription</button>
                                 </form>
@@ -563,6 +614,16 @@ function subscriptionsPage() {
                     <div class="form-group">
                         <label>Legacy Reference / Notes</label>
                         <input type="text" name="notes" placeholder="e.g. Contract #..." class="w-full">
+                    </div>
+                    <div class="rounded border border-red-100 bg-red-50/50 p-3 space-y-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="emergency_enabled" value="1" x-model="createEmergencyEnabled" class="h-3 w-3 rounded border-slate-200 text-red-600 focus:ring-red-600">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-red-600">Emergency patrol add-on</span>
+                        </label>
+                        <div class="form-group" x-show="createEmergencyEnabled">
+                            <label>Add-on Rate (GHS)</label>
+                            <input type="number" name="emergency_monthly_rate" step="0.01" min="0" x-model="createEmergencyRate" class="w-full">
+                        </div>
                     </div>
                     <button type="submit" class="w-full py-3 bg-slate-900 text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-brand transition-all shadow active:scale-98">
                         Launch Infrastructure Billing

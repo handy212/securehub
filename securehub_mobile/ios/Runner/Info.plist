@@ -79,6 +79,8 @@
 		</array>
 		<key>NSFaceIDUsageDescription</key>
 		<string>SecureHub requires Biometric access to lock your security dashboard.</string>
+		<key>NSLocationWhenInUseUsageDescription</key>
+		<string>SecureHub shares your location with the dispatch team when you request emergency patrol support.</string>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>remote-notification</string>

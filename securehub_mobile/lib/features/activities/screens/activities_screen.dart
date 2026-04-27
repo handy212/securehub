@@ -18,21 +18,40 @@ class ActivitiesScreen extends ConsumerStatefulWidget {
 }
 
 class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
+  final _scrollController = ScrollController();
   String _searchQuery = '';
   String _typeFilter = 'all';
   String? _expandedEventId;
 
-  bool _onScrollNotification(ScrollNotification notification, String siteId) {
-    if (notification is ScrollEndNotification &&
-        notification.metrics.extentAfter < 300) {
-      // Use a microtask or scheduleFrame to avoid calling during build if triggered by layout
-      Future.microtask(() {
-        if (mounted) {
-          ref.read(eventListNotifierProvider(siteId).notifier).loadMore();
-        }
-      });
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_onScroll);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _onScroll() {
+    if (!_scrollController.hasClients ||
+        _searchQuery.isNotEmpty ||
+        _typeFilter != 'all') {
+      return;
     }
-    return false;
+
+    final siteId = ref.read(currentSiteIdProvider);
+    if (siteId == null) return;
+
+    final position = _scrollController.position;
+    if (position.pixels < position.maxScrollExtent - 360) return;
+
+    final notifier = ref.read(eventListNotifierProvider(siteId).notifier);
+    if (notifier.hasMore && !notifier.isLoadingMore) {
+      notifier.loadMore();
+    }
   }
 
   void _onToggleExpand(String eventId) {
@@ -48,211 +67,233 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
   @override
   Widget build(BuildContext context) {
     final siteId = ref.watch(currentSiteIdProvider);
-    final eventsAsync =
-        siteId == null ? null : ref.watch(eventListNotifierProvider(siteId));
+    final eventsAsync = siteId == null
+        ? null
+        : ref.watch(eventListNotifierProvider(siteId));
 
     return Scaffold(
       backgroundColor: Colors.transparent,
-      body: NotificationListener<ScrollNotification>(
-        onNotification: siteId == null
-            ? (_) => false
-            : (n) => _onScrollNotification(n, siteId),
-        child: CustomScrollView(
-            physics: const BouncingScrollPhysics(),
-            slivers: [
+      body: CustomScrollView(
+        controller: _scrollController,
+        physics: const BouncingScrollPhysics(),
+        slivers: [
+          // ── Search & Filter ──────────────────────────────────────────────
+          SliverToBoxAdapter(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
+              child: AppPanel(
+                backgroundColor: AppTheme.surfaceContainerLow,
+                padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
+                child: Column(
+                  children: [
+                    TextField(
+                      onChanged: (v) => setState(() => _searchQuery = v),
+                      style: GoogleFonts.inter(
+                        color: AppTheme.onSurface,
+                        fontSize: 14,
+                      ),
+                      decoration: InputDecoration(
+                        hintText: 'Search by event, user, or zone...',
+                        hintStyle: GoogleFonts.inter(
+                          color: AppTheme.onSurfaceVariant.withValues(
+                            alpha: 0.5,
+                          ),
+                          fontSize: 14,
+                        ),
+                        prefixIcon: const Padding(
+                          padding: EdgeInsets.only(left: 20, right: 12),
+                          child: Icon(
+                            Icons.search_rounded,
+                            size: 20,
+                            color: AppTheme.onSurfaceVariant,
+                          ),
+                        ),
+                        prefixIconConstraints: const BoxConstraints(
+                          minWidth: 0,
+                        ),
+                        fillColor: AppTheme.surfaceContainerHighest,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _FilterPill(
+                            label: 'All',
+                            isSelected: _typeFilter == 'all',
+                            onTap: () => setState(() => _typeFilter = 'all'),
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterPill(
+                            label: 'Alarms',
+                            isSelected: _typeFilter == 'alarm',
+                            onTap: () => setState(() => _typeFilter = 'alarm'),
+                            activeColor: AppTheme.error,
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterPill(
+                            label: 'Operations',
+                            isSelected: _typeFilter == 'operation',
+                            onTap: () =>
+                                setState(() => _typeFilter = 'operation'),
+                            activeColor: AppTheme.onTertiaryContainer,
+                          ),
+                          const SizedBox(width: 8),
+                          _FilterPill(
+                            label: 'System',
+                            isSelected: _typeFilter == 'system',
+                            onTap: () => setState(() => _typeFilter = 'system'),
+                            activeColor: AppTheme.secondary,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
 
-              // ── Search & Filter ──────────────────────────────────────────────
-              SliverToBoxAdapter(
+          // ── Events list (per site) ────────────────────────────────────────
+          if (siteId != null && eventsAsync != null)
+            eventsAsync.when(
+              skipLoadingOnReload: true,
+              loading: () => SliverPadding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (context, index) => const EventCardShimmer(),
+                    childCount: 10,
+                  ),
+                ),
+              ),
+              error: (err, stack) => SliverFillRemaining(
+                hasScrollBody: false,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-                  child: AppPanel(
-                    backgroundColor: AppTheme.surfaceContainerLow,
-                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 18),
-                    child: Column(
-                      children: [
-                        TextField(
-                          onChanged: (v) => setState(() => _searchQuery = v),
-                          style: GoogleFonts.inter(
-                            color: AppTheme.onSurface,
-                            fontSize: 14,
-                          ),
-                          decoration: InputDecoration(
-                            hintText: 'Search by event, user, or zone...',
-                            hintStyle: GoogleFonts.inter(
-                              color: AppTheme.onSurfaceVariant.withValues(
-                                alpha: 0.5,
-                              ),
-                              fontSize: 14,
-                            ),
-                            prefixIcon: const Padding(
-                              padding: EdgeInsets.only(left: 20, right: 12),
-                              child: Icon(
-                                Icons.search_rounded,
-                                size: 20,
-                                color: AppTheme.onSurfaceVariant,
-                              ),
-                            ),
-                            prefixIconConstraints: const BoxConstraints(
-                              minWidth: 0,
-                            ),
-                            fillColor: AppTheme.surfaceContainerHighest,
-                          ),
-                        ),
-                        const SizedBox(height: 12),
-                        SingleChildScrollView(
-                          scrollDirection: Axis.horizontal,
-                          child: Row(
-                            children: [
-                              _FilterPill(
-                                label: 'All',
-                                isSelected: _typeFilter == 'all',
-                                onTap: () => setState(() => _typeFilter = 'all'),
-                              ),
-                              const SizedBox(width: 8),
-                              _FilterPill(
-                                label: 'Alarms',
-                                isSelected: _typeFilter == 'alarm',
-                                onTap: () =>
-                                    setState(() => _typeFilter = 'alarm'),
-                                activeColor: AppTheme.error,
-                              ),
-                              const SizedBox(width: 8),
-                              _FilterPill(
-                                label: 'Operations',
-                                isSelected: _typeFilter == 'operation',
-                                onTap: () =>
-                                    setState(() => _typeFilter = 'operation'),
-                                activeColor: AppTheme.onTertiaryContainer,
-                              ),
-                              const SizedBox(width: 8),
-                              _FilterPill(
-                                label: 'System',
-                                isSelected: _typeFilter == 'system',
-                                onTap: () =>
-                                    setState(() => _typeFilter = 'system'),
-                                activeColor: AppTheme.secondary,
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: AppErrorState(
+                    title: 'Failed to load activity',
+                    message: err.toString(),
+                    action: FilledButton.icon(
+                      onPressed: () =>
+                          ref.invalidate(eventListNotifierProvider(siteId)),
+                      icon: const Icon(Icons.refresh),
+                      label: const Text('Try Again'),
                     ),
                   ),
                 ),
               ),
-
-              // ── Events list (per site) ────────────────────────────────────────
-              if (siteId != null)
-                eventsAsync!.when(
-                      loading: () => SliverPadding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        sliver: SliverList(
-                          delegate: SliverChildBuilderDelegate(
-                            (context, index) => const EventCardShimmer(),
-                            childCount: 10,
-                          ),
-                        ),
-                      ),
-                      error: (err, stack) => SliverFillRemaining(
-                        hasScrollBody: false,
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          child: AppErrorState(
-                            title: 'Failed to load activity',
-                            message: err.toString(),
-                            action: FilledButton.icon(
-                              onPressed: () => ref.invalidate(
-                                eventListNotifierProvider(siteId),
-                              ),
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Try Again'),
-                            ),
-                          ),
-                        ),
-                      ),
-                      data: (events) {
-                        final filtered = ref.watch(
-                          filteredEventsProvider(
-                            siteId,
-                            query: _searchQuery,
-                            filter: _typeFilter,
-                          ),
-                        );
-
-                        if (filtered.isEmpty) {
-                          return SliverFillRemaining(
-                            hasScrollBody: false,
-                            child: _EmptyTrail(
-                              hasQuery:
-                                  _searchQuery.isNotEmpty || _typeFilter != 'all',
-                            ),
-                          );
-                        }
-
-                        return SliverPadding(
-                          padding: const EdgeInsets.symmetric(horizontal: 20),
-                          sliver: SliverList(
-                            delegate: SliverChildBuilderDelegate(
-                              (context, i) {
-                                if (i >= filtered.length) {
-                                  return const Padding(
-                                    padding: EdgeInsets.symmetric(vertical: 20),
-                                    child: Center(
-                                      child: SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation(
-                                              AppTheme.primary),
-                                        ),
-                                      ),
-                                    ),
-                                  );
-                                }
-                                return _EventCard(
-                                  event: filtered[i],
-                                  siteId: siteId,
-                                  isExpanded:
-                                      _expandedEventId == filtered[i].id,
-                                  onToggle: () =>
-                                      _onToggleExpand(filtered[i].id),
-                                );
-                              },
-                              childCount: filtered.length +
-                                  (ref
-                                              .watch(eventListNotifierProvider(
-                                                      siteId))
-                                              .isLoading &&
-                                      ref
-                                          .read(eventListNotifierProvider(
-                                                  siteId)
-                                              .notifier)
-                                          .hasMore &&
-                                      _searchQuery.isEmpty &&
-                                      _typeFilter == 'all'
-                                      ? 1
-                                      : 0),
-                            ),
-                          ),
-                        );
-                      },
-                    )
-              else
-                const SliverFillRemaining(
-                  hasScrollBody: false,
-                  child: Padding(
-                    padding: EdgeInsets.symmetric(horizontal: 20),
-                    child: AppEmptyState(
-                      icon: Icons.history_toggle_off_rounded,
-                      title: 'No Active Site',
-                    ),
+              data: (events) {
+                final filtered = ref.watch(
+                  filteredEventsProvider(
+                    siteId,
+                    query: _searchQuery,
+                    filter: _typeFilter,
                   ),
+                );
+
+                if (filtered.isEmpty) {
+                  return SliverFillRemaining(
+                    hasScrollBody: false,
+                    child: _EmptyTrail(
+                      hasQuery: _searchQuery.isNotEmpty || _typeFilter != 'all',
+                    ),
+                  );
+                }
+
+                final isLoadingMore =
+                    ref.watch(eventListNotifierProvider(siteId)).isLoading &&
+                    events.isNotEmpty;
+
+                return SliverPadding(
+                  padding: const EdgeInsets.fromLTRB(20, 0, 20, 120),
+                  sliver: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, i) {
+                      if (i >= filtered.length) {
+                        return const Padding(
+                          padding: EdgeInsets.symmetric(vertical: 20),
+                          child: Center(
+                            child: SizedBox(
+                              width: 24,
+                              height: 24,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                valueColor: AlwaysStoppedAnimation(
+                                  AppTheme.primary,
+                                ),
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+
+                      return _SafeEventCard(
+                        event: filtered[i],
+                        siteId: siteId,
+                        isExpanded: _expandedEventId == filtered[i].id,
+                        onToggle: () => _onToggleExpand(filtered[i].id),
+                      );
+                    }, childCount: filtered.length + (isLoadingMore ? 1 : 0)),
+                  ),
+                );
+              },
+            )
+          else if (siteId == null)
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 20),
+                child: AppEmptyState(
+                  icon: Icons.history_toggle_off_rounded,
+                  title: 'No Active Site',
                 ),
-            ],
-          ),
-        ),
+              ),
+            )
+          else
+            const SliverFillRemaining(
+              hasScrollBody: false,
+              child: Center(child: CircularProgressIndicator()),
+            ),
+        ],
+      ),
     );
+  }
+}
+
+class _SafeEventCard extends StatelessWidget {
+  const _SafeEventCard({
+    required this.event,
+    required this.siteId,
+    required this.isExpanded,
+    required this.onToggle,
+  });
+
+  final AlarmEvent event;
+  final String siteId;
+  final bool isExpanded;
+  final VoidCallback onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    try {
+      return _EventCard(
+        event: event,
+        siteId: siteId,
+        isExpanded: isExpanded,
+        onToggle: onToggle,
+      );
+    } catch (error, stackTrace) {
+      FlutterError.reportError(
+        FlutterErrorDetails(
+          exception: error,
+          stack: stackTrace,
+          library: 'securehub activity log',
+          context: ErrorDescription('while rendering an activity event'),
+        ),
+      );
+      return const SizedBox.shrink();
+    }
   }
 }
 
@@ -288,7 +329,7 @@ class _EventCard extends StatelessWidget {
   final VoidCallback onToggle;
 
   IconData get _icon {
-    final type = event.eventType.toLowerCase();
+    final type = event.normalizedEventType.toLowerCase();
     if (event.eventCategory == 'alarm') {
       return Icons.gpp_maybe_rounded;
     }
@@ -311,7 +352,7 @@ class _EventCard extends StatelessWidget {
   }
 
   Color get _color {
-    final type = event.eventType.toLowerCase();
+    final type = event.normalizedEventType.toLowerCase();
 
     // Red strictly for active Alarms and Tampers
     if (event.eventCategory == 'alarm' || type.contains('tamper')) {
@@ -384,7 +425,7 @@ class _EventCard extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        event.displayTitle.toUpperCase(),
+                        event.activityTitle.toUpperCase(),
                         style: GoogleFonts.inter(
                           fontWeight: FontWeight.w900,
                           fontSize: 13,

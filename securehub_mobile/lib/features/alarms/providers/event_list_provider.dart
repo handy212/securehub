@@ -11,7 +11,7 @@ part 'event_list_provider.g.dart';
 
 @riverpod
 class EventListNotifier extends _$EventListNotifier {
-  static const _pageSize = 20;
+  static const _pageSize = 10;
 
   @override
   Future<List<AlarmEvent>> build(String siteId) async {
@@ -40,7 +40,9 @@ class EventListNotifier extends _$EventListNotifier {
             try {
               return AlarmEvent.fromJson(json);
             } catch (e) {
-              debugPrint('Error parsing AlarmEvent: $e\nJSON: $json');
+              if (kDebugMode) {
+                debugPrint('Error parsing AlarmEvent: $e\nJSON: $json');
+              }
               rethrow;
             }
           })
@@ -59,9 +61,9 @@ class EventListNotifier extends _$EventListNotifier {
     if (!_hasMore || _isLoadingMore) return;
     _isLoadingMore = true;
     final current = state.valueOrNull ?? [];
-    
+
     // Set state to loading while keeping existing data to trigger UI spinner
-    state = AsyncLoading<List<AlarmEvent>>().copyWithPrevious(state);
+    state = const AsyncLoading<List<AlarmEvent>>().copyWithPrevious(state);
 
     try {
       final more = await _fetchPage(_currentPage + 1);
@@ -74,7 +76,9 @@ class EventListNotifier extends _$EventListNotifier {
       } else {
         // Option: show a snackbar or just log. Setting state to error
         // will wipe the list in the current UI implementation.
-        debugPrint('Error loading more events: $e');
+        if (kDebugMode) {
+          debugPrint('Error loading more events: $e');
+        }
       }
     } finally {
       _isLoadingMore = false;
@@ -90,30 +94,40 @@ class EventListNotifier extends _$EventListNotifier {
 }
 
 @riverpod
-List<AlarmEvent> filteredEvents(FilteredEventsRef ref, String siteId,
-    {String query = '', String filter = 'all'}) {
+List<AlarmEvent> filteredEvents(
+  FilteredEventsRef ref,
+  String siteId, {
+  String query = '',
+  String filter = 'all',
+}) {
   final events = ref.watch(eventListNotifierProvider(siteId)).valueOrNull ?? [];
 
   return events.where((e) {
-    final titleMatch =
-    e.displayTitle.toLowerCase().contains(query.toLowerCase());
-    final subtitleMatch =
-    e.displaySubtitle.toLowerCase().contains(query.toLowerCase());
+    final titleMatch = e.displayTitle.toLowerCase().contains(
+      query.toLowerCase(),
+    );
+    final subtitleMatch = e.displaySubtitle.toLowerCase().contains(
+      query.toLowerCase(),
+    );
     final performerMatch =
         e.performedBy?.toLowerCase().contains(query.toLowerCase()) ?? false;
-    final locationMatch =
-    e.fullLocation.toLowerCase().contains(query.toLowerCase());
+    final locationMatch = e.fullLocation.toLowerCase().contains(
+      query.toLowerCase(),
+    );
     final searchMatch =
         query.isEmpty ||
-            titleMatch ||
-            subtitleMatch ||
-            performerMatch ||
-            locationMatch;
+        titleMatch ||
+        subtitleMatch ||
+        performerMatch ||
+        locationMatch;
 
-    final typeMatch = filter == 'all' ||
+    final typeMatch =
+        filter == 'all' ||
         (filter == 'alarm' && e.eventCategory == 'alarm') ||
         (filter == 'operation' && e.isOperationEvent) ||
-        (filter == 'system' && e.eventCategory != 'alarm' && !e.isOperationEvent);
+        (filter == 'system' &&
+            e.eventCategory != 'alarm' &&
+            !e.isOperationEvent);
 
     return searchMatch && typeMatch;
   }).toList();
@@ -130,13 +144,79 @@ Map<String, dynamic> _normalizeEventJson(Map<String, dynamic> json) {
   );
 
   final eventName = json['event_name']?.toString().trim();
+  final alarmData = payload['alarmData'] ?? payload['alarm_data'];
+  final cidEvent = alarmData is Map
+      ? alarmData['CIDEvent'] ?? alarmData['cidEvent']
+      : null;
+  final cidMap = _safeStringMap(cidEvent);
   if (eventName != null && eventName.isNotEmpty) {
     payload['event_name'] = eventName;
+  } else {
+    if (alarmData is Map<String, dynamic>) {
+      final cidDescription = cidMap?['description']?.toString().trim();
+      if (cidDescription != null && cidDescription.isNotEmpty) {
+        payload['event_name'] = cidDescription;
+      } else {
+        final fallbackName = alarmData['eventDescription']?.toString().trim();
+        if (fallbackName != null && fallbackName.isNotEmpty) {
+          payload['event_name'] = fallbackName;
+        }
+      }
+    }
+  }
+
+  final zoneName = json['zone_name']?.toString().trim();
+  if ((zoneName == null || zoneName.isEmpty) && cidMap != null) {
+    final cidZoneName = cidMap['zoneName']?.toString().trim();
+    if (cidZoneName != null && cidZoneName.isNotEmpty) {
+      json['zone_name'] = cidZoneName;
+    }
+  }
+
+  final subsystemName = json['subsystem_name']?.toString().trim();
+  if ((subsystemName == null || subsystemName.isEmpty) && cidMap != null) {
+    final cidSystemName = cidMap['systemName']?.toString().trim();
+    if (cidSystemName != null && cidSystemName.isNotEmpty) {
+      json['subsystem_name'] = cidSystemName;
+    }
+  }
+
+  if (json['zone_number'] == null && cidMap != null) {
+    final cidZone = cidMap['zone'];
+    if (cidZone is num) {
+      json['zone_number'] = cidZone.toInt();
+    } else {
+      final parsed = int.tryParse(cidZone?.toString() ?? '');
+      if (parsed != null) {
+        json['zone_number'] = parsed;
+      }
+    }
   }
 
   final normalizedType = json['normalized_event_type']?.toString().trim();
   if (normalizedType != null && normalizedType.isNotEmpty) {
     payload['normalized_event_type'] = normalizedType;
+  } else {
+    final rawType = json['raw_event_type']?.toString().trim();
+    if (rawType != null && rawType.isNotEmpty) {
+      payload['normalized_event_type'] = rawType;
+    }
+  }
+
+  final eventSearchText = [
+    json['event_type'],
+    json['event_name'],
+    payload['event_name'],
+    payload['normalized_event_type'],
+    payload['raw_event_type'],
+  ].whereType<Object>().join(' ').toLowerCase();
+
+  if ((json['event_category'] == null || json['event_category'] == 'info') &&
+      (eventSearchText.contains('alarm') ||
+          eventSearchText.contains('tamper') ||
+          eventSearchText.contains('panic') ||
+          eventSearchText.contains('motion'))) {
+    json['event_category'] = 'alarm';
   }
 
   json['payload'] = payload;
@@ -192,6 +272,13 @@ Map<String, dynamic> _compactPayload(Map<String, dynamic> payload) {
       keep('deviceSerial');
       keep('eventType');
       keep('eventDescription');
+      final cidEvent = map['CIDEvent'] ?? map['cidEvent'];
+      if (cidEvent is Map) {
+        final cidMap = _safeStringMap(cidEvent);
+        if (cidMap != null) {
+          result['CIDEvent'] = cidMap;
+        }
+      }
 
       final pictureList =
           map['pictureList'] ?? map['picture_list'] ?? map['mediaList'];
@@ -224,7 +311,10 @@ Map<String, dynamic> _compactPayload(Map<String, dynamic> payload) {
 
 @riverpod
 Future<List<AlarmPicture>> alarmPictures(
-    Ref ref, String siteId, AlarmEvent event) async {
+  Ref ref,
+  String siteId,
+  AlarmEvent event,
+) async {
   final dio = ref.watch(dioProvider);
   final eventId = event.id;
 
@@ -232,42 +322,69 @@ Future<List<AlarmPicture>> alarmPictures(
   final data = event.payload;
   final alarmData = data['alarmData'] ?? data['alarm_data'] ?? data;
 
+  final topLevelPictures = data['pictures'];
+  if (topLevelPictures is List) {
+    payloadPics = topLevelPictures
+        .map((item) {
+          final map = _safeStringMap(item) ?? {'url': item.toString()};
+          final urlStr = (map['url'] ?? map['filePath'] ?? map['path'] ?? '')
+              .toString()
+              .trim();
+          if (urlStr.isEmpty) return null;
+          return AlarmPicture(
+            url: urlStr,
+            encrypt: map['encrypt'] == true,
+            id: map['id']?.toString(),
+            type: _detectMediaType(urlStr, map['type']?.toString()),
+          );
+        })
+        .nonNulls
+        .toList();
+  }
+
   if (alarmData is Map<String, dynamic>) {
-    final list = alarmData['pictureList'] ?? alarmData['picture_list'] ?? alarmData['mediaList'];
+    final list =
+        alarmData['pictureList'] ??
+        alarmData['picture_list'] ??
+        alarmData['mediaList'];
     if (list is List) {
-      payloadPics = list.map((item) {
-        final map = item is Map<String, dynamic> ? item : {'url': item.toString()};
-        final urlStr = (map['url'] ?? map['filePath'] ?? map['path'] ?? '').toString();
-        final isVideo = urlStr.toLowerCase().contains('.mp4') ||
-            urlStr.contains('isDevVideo=1') ||
-            urlStr.contains('-2-') ||
-            (map['type'] == 'video');
-        return AlarmPicture(
-          url: urlStr,
-          type: isVideo ? 'video' : 'image',
-        );
-      }).where((p) => p.url.isNotEmpty).toList();
+      final alarmDataPictures = list
+          .map((item) {
+            final map = item is Map<String, dynamic>
+                ? item
+                : {'url': item.toString()};
+            final urlStr = (map['url'] ?? map['filePath'] ?? map['path'] ?? '')
+                .toString();
+            final isVideo =
+                urlStr.toLowerCase().contains('.mp4') ||
+                urlStr.contains('isDevVideo=1') ||
+                urlStr.contains('-2-') ||
+                (map['type'] == 'video');
+            return AlarmPicture(url: urlStr, type: isVideo ? 'video' : 'image');
+          })
+          .where((p) => p.url.isNotEmpty)
+          .toList();
+      payloadPics = [...payloadPics, ...alarmDataPictures];
     } else if (alarmData['url'] != null || alarmData['videoUrl'] != null) {
-      payloadPics.add(AlarmPicture(
-        url: alarmData['url'] ?? alarmData['videoUrl'],
-        type: 'video',
-      ));
+      payloadPics.add(
+        AlarmPicture(
+          url: alarmData['url'] ?? alarmData['videoUrl'],
+          type: 'video',
+        ),
+      );
     }
   }
   // Check direct keys if still empty
-  if (payloadPics.isEmpty && (data['url'] != null || data['media_path'] != null)) {
-    payloadPics.add(AlarmPicture(
-      url: data['url'] ?? data['media_path'],
-      type: 'video',
-    ));
+  if (payloadPics.isEmpty &&
+      (data['url'] != null || data['media_path'] != null)) {
+    payloadPics.add(
+      AlarmPicture(url: data['url'] ?? data['media_path'], type: 'video'),
+    );
   }
 
   try {
     final resp = await dio.post(ApiEndpoints.eventPicture(siteId, eventId));
-    final apiPics = (resp.data['pictures'] as List)
-        .cast<Map<String, dynamic>>()
-        .map((json) => AlarmPicture.fromJson(json))
-        .toList();
+    final apiPics = _parseAlarmPictures(resp.data);
 
     // Merge API pics and payload pics, prioritizing API data for the same URL
     final allPics = [...apiPics, ...payloadPics];
@@ -278,11 +395,13 @@ Future<List<AlarmPicture>> alarmPictures(
       if (seenUrls.add(p.url)) {
         // Auto-detect video type based on URL extension or patterns
         final url = p.url.toLowerCase();
-        final isVideoExtension = url.contains('.mp4') ||
+        final isVideoExtension =
+            url.contains('.mp4') ||
             url.contains('.mov') ||
             url.contains('.m4v') ||
             url.contains('.avi');
-        final isS3Video = url.contains('s3.eu-west-1.amazonaws.com') ||
+        final isS3Video =
+            url.contains('s3.eu-west-1.amazonaws.com') ||
             url.contains('amazonaws.com') && url.contains('alarm.eu');
 
         if (p.type == 'image' && (isVideoExtension || isS3Video)) {
@@ -297,5 +416,64 @@ Future<List<AlarmPicture>> alarmPictures(
     // If API fails but we have payload pics, return them
     if (payloadPics.isNotEmpty) return payloadPics;
     throwAppException(e);
+  }
+}
+
+List<AlarmPicture> _parseAlarmPictures(dynamic data) {
+  final rawPictures = switch (data) {
+    {'pictures': final pictures} => pictures,
+    {'results': final results} => results,
+    {'url': _} => [data],
+    List() => data,
+    _ => const [],
+  };
+
+  if (rawPictures is! List) return const [];
+
+  return rawPictures
+      .map((item) {
+        final map =
+            _safeStringMap(item) ?? <String, dynamic>{'url': item.toString()};
+        final url =
+            (map['url'] ?? map['videoUrl'] ?? map['filePath'] ?? map['path'])
+                ?.toString()
+                .trim();
+        if (url == null || url.isEmpty) return null;
+
+        return AlarmPicture(
+          url: url,
+          encrypt: map['encrypt'] == true,
+          id: map['id']?.toString(),
+          type: _detectMediaType(url, map['type']?.toString()),
+        );
+      })
+      .nonNulls
+      .toList();
+}
+
+String _detectMediaType(String url, String? explicitType) {
+  final type = explicitType?.toLowerCase();
+  if (type == 'video' || type == 'image') return type!;
+
+  final lowerUrl = url.toLowerCase();
+  final isVideo =
+      lowerUrl.contains('.mp4') ||
+      lowerUrl.contains('.mov') ||
+      lowerUrl.contains('.m4v') ||
+      lowerUrl.contains('.avi') ||
+      lowerUrl.contains('isdevvideo=1') ||
+      lowerUrl.contains('-2-') ||
+      lowerUrl.contains('amazonaws.com') && lowerUrl.contains('alarm.eu');
+
+  return isVideo ? 'video' : 'image';
+}
+
+Map<String, dynamic>? _safeStringMap(dynamic value) {
+  if (value is Map<String, dynamic>) return value;
+  if (value is! Map) return null;
+  try {
+    return Map<String, dynamic>.from(value);
+  } catch (_) {
+    return null;
   }
 }

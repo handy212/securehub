@@ -162,7 +162,7 @@ class _SiteDetailProviderElement extends AutoDisposeFutureProviderElement<Site>
   String get siteId => (origin as SiteDetailProvider).siteId;
 }
 
-String _$sitePollHash() => r'bc5bc933552de40eba9fe1ebb7f8c64d5abbe9e0';
+String _$sitePollHash() => r'b7975584f998d5584fa04f95bec4549c962cf765';
 
 /// See also [sitePoll].
 @ProviderFor(sitePoll)

@@ -6,7 +6,7 @@ part of 'selected_site_provider.dart';
 // RiverpodGenerator
 // **************************************************************************
 
-String _$currentSiteIdHash() => r'ee62f08f10b11be97c6a966360898e6b4f9d8afe';
+String _$currentSiteIdHash() => r'7a66acdc3ee140e0bc622186d9532ed311dad315';
 
 /// See also [currentSiteId].
 @ProviderFor(currentSiteId)

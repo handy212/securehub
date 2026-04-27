@@ -29,8 +29,8 @@ class MainScaffold extends ConsumerWidget {
             ?.name,
       ),
     );
-    final siteSubtitle = location.startsWith('/home') &&
-            (selectedSiteName?.isNotEmpty ?? false)
+    final siteSubtitle =
+        location.startsWith('/home') && (selectedSiteName?.isNotEmpty ?? false)
         ? selectedSiteName!
         : header.subtitle;
 
@@ -107,7 +107,9 @@ class MainScaffold extends ConsumerWidget {
         decoration: BoxDecoration(
           color: AppTheme.surfaceContainerLowest.withValues(alpha: 0.92),
           borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
-          border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.10)),
+          border: Border.all(
+            color: AppTheme.outlineVariant.withValues(alpha: 0.10),
+          ),
           boxShadow: [
             BoxShadow(
               color: AppTheme.onSurface.withValues(alpha: 0.03),
@@ -242,7 +244,7 @@ class _NotificationBell extends ConsumerWidget {
           child: CircularProgressIndicator(strokeWidth: 2),
         ),
       ),
-      error: (_, __) => IconButton(
+      error: (_, _) => IconButton(
         onPressed: () => context.push('/messages'),
         style: IconButton.styleFrom(
           backgroundColor: AppTheme.surfaceContainerLow,
@@ -267,9 +269,7 @@ class _SiteRefreshButton extends ConsumerWidget {
     return IconButton(
       onPressed: refreshState.isLoading
           ? null
-          : () => ref
-              .read(hardwareRefreshProvider(siteId).notifier)
-              .refresh(),
+          : () => ref.read(hardwareRefreshProvider(siteId).notifier).refresh(),
       style: IconButton.styleFrom(
         backgroundColor: AppTheme.surfaceContainerLow,
         foregroundColor: AppTheme.primary,

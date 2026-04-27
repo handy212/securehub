@@ -7,7 +7,7 @@ part of 'app_router.dart';
 // **************************************************************************
 
 String _$authRefreshListenableHash() =>
-    r'fe3f2ad6531b0f535bda1775a38e73de4cc783e3';
+    r'8f36964f0b4b99f48d8d2c35d670989b30167a4d';
 
 /// See also [authRefreshListenable].
 @ProviderFor(authRefreshListenable)
@@ -24,7 +24,7 @@ final authRefreshListenableProvider = AutoDisposeProvider<Listenable>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthRefreshListenableRef = AutoDisposeProviderRef<Listenable>;
-String _$appRouterHash() => r'69282137a2f64d475ba7c1986e3c54f0c54cf0aa';
+String _$appRouterHash() => r'15e986cadab450f41091cb403564586fffda938b';
 
 /// See also [appRouter].
 @ProviderFor(appRouter)

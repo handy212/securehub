@@ -113,6 +113,16 @@
         background: linear-gradient(135deg, #4338ca, #3730a3);
     }
 
+    .marker-emergency {
+        background: linear-gradient(135deg, #ef4444, #991b1b);
+        animation: emergency-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes emergency-pulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+        50% { transform: scale(1.12); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    }
+
     /* Cluster Styles */
     .marker-cluster-small {
         background-color: rgba(16, 185, 129, 0.4);
@@ -334,7 +344,7 @@
                                 placeholder="Search site, city, address, or Hik ID">
                         </div>
 
-                        <div class="grid grid-cols-2 gap-2">
+                        <div class="grid grid-cols-3 gap-2">
                             <div class="rounded-lg border border-slate-100 bg-slate-50/80 p-2.5">
                                 <p class="text-[8px] font-black uppercase tracking-widest text-slate-400">Clients</p>
                                 <p class="mt-1 text-lg font-black text-slate-900" x-text="stats.total"></p>
@@ -342,6 +352,10 @@
                             <div class="rounded-lg border border-slate-100 bg-slate-50/80 p-2.5">
                                 <p class="text-[8px] font-black uppercase tracking-widest text-slate-400">Online</p>
                                 <p class="mt-1 text-lg font-black text-emerald-600" x-text="stats.online"></p>
+                            </div>
+                            <div class="rounded-lg border border-red-100 bg-red-50/80 p-2.5">
+                                <p class="text-[8px] font-black uppercase tracking-widest text-red-500">Emerg.</p>
+                                <p class="mt-1 text-lg font-black text-red-600" x-text="stats.emergencies"></p>
                             </div>
                         </div>
                     </div>
@@ -449,7 +463,8 @@
     </div>
 </div>
 
-<script id="sites-data" type="application/json">{{ sites_json|safe }}</script>
+{{ sites_data|json_script:"sites-data" }}
+{{ emergencies_data|json_script:"emergencies-data" }}
 {% endblock %}
 
 {% block extra_scripts %}
@@ -463,7 +478,9 @@
         return {
             map: null,
             markerCluster: null,
+            emergencyLayer: null,
             allMarkers: [],
+            emergencyMarkers: [],
             searchQuery: '',
             theme: 'voyager',
             showLegend: false,
@@ -481,15 +498,18 @@
                 operational: 0,
                 blocked: 0,
                 online: 0,
-                offline: 0
+                offline: 0,
+                emergencies: 0
             },
             healthPercentage: 0,
 
             init() {
                 const rawData = JSON.parse(document.getElementById('sites-data').textContent);
+                const emergencyData = JSON.parse(document.getElementById('emergencies-data').textContent);
 
                 // Real-time calculation of 4 metrics
                 this.stats.total = rawData.length;
+                this.stats.emergencies = emergencyData.length;
                 this.stats.operational = rawData.filter(s => s.is_active).length;
                 this.stats.blocked = rawData.filter(s => !s.is_active).length;
                 this.stats.online = rawData.filter(s => s.is_online).length;
@@ -514,6 +534,14 @@
                     maxClusterRadius: 50
                 });
                 this.map.addLayer(this.markerCluster);
+                this.emergencyLayer = L.layerGroup().addTo(this.map);
+
+                const escapeHTML = (value) => String(value || '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
 
                 const sceneMarkerConfig = (scene) => {
                     const sceneKey = (scene || '').toLowerCase();
@@ -691,6 +719,44 @@
                     return marker;
                 });
 
+                this.emergencyMarkers = emergencyData.map(item => {
+                    const icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div class="custom-marker marker-emergency">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+                              </div>`,
+                        iconSize: [34, 34],
+                        iconAnchor: [17, 34],
+                        popupAnchor: [0, -34]
+                    });
+                    const marker = L.marker([item.lat, item.lng], { icon });
+                    const customer = escapeHTML(item.customer);
+                    const site = escapeHTML(item.site);
+                    const status = escapeHTML(item.status);
+                    const dispatchUrl = escapeHTML(item.url);
+                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.lat)},${encodeURIComponent(item.lng)}`;
+                    marker.bindPopup(`
+                        <div class="overflow-hidden bg-white rounded-xl shadow-2xl border border-red-200">
+                            <div class="bg-red-600 px-4 py-4 text-white">
+                                <h4 class="text-[14px] font-black tracking-tight leading-none m-0">Emergency Request</h4>
+                                <p class="mt-2 text-[10px] font-bold uppercase tracking-widest text-red-100">${status}</p>
+                            </div>
+                            <div class="p-4 space-y-3 bg-white">
+                                <div>
+                                    <p class="text-[11px] font-black text-slate-900">${customer}</p>
+                                    <p class="text-[10px] font-bold text-slate-500">${site}</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <a href="${dispatchUrl}" class="flex-1 flex items-center justify-center py-2.5 bg-red-600 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-red-700">Dispatch</a>
+                                    <a href="${mapsUrl}" target="_blank" rel="noopener" class="px-3 py-2.5 bg-white border border-red-200 rounded-lg text-[10px] font-black uppercase tracking-widest text-red-600">Maps</a>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    marker.addTo(this.emergencyLayer);
+                    return marker;
+                });
+
                 this.filterMarkers();
                 this.resetView();
             },
@@ -743,8 +809,19 @@
             },
 
             resetView() {
+                const groups = [];
                 if (this.markerCluster.getLayers().length > 0) {
-                    this.map.fitBounds(this.markerCluster.getBounds().pad(0.2));
+                    groups.push(this.markerCluster.getBounds());
+                }
+                if (this.emergencyMarkers.length > 0) {
+                    groups.push(L.featureGroup(this.emergencyMarkers).getBounds());
+                }
+                if (groups.length > 0) {
+                    let bounds = groups[0];
+                    for (let i = 1; i < groups.length; i++) {
+                        bounds.extend(groups[i]);
+                    }
+                    this.map.fitBounds(bounds.pad(0.2));
                 } else {
                     this.map.setView([0, 0], 2);
                 }

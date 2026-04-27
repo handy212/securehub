@@ -24,12 +24,7 @@ class MessagesScreen extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const AppSectionHeader(
-                    eyebrow: 'Communications',
-                    title: 'Inbox',
-                    subtitle:
-                        'Provider notices, billing updates, and operational alerts in one queue.',
-                  ),
+                  const AppSectionHeader(title: 'Inbox'),
                   const SizedBox(height: 18),
                   Wrap(
                     spacing: 8,
@@ -37,17 +32,21 @@ class MessagesScreen extends ConsumerWidget {
                     children: [
                       AppMetricChip(
                         label: 'Messages',
-                        value: messagesAsync.valueOrNull?.length.toString() ?? '--',
+                        value:
+                            messagesAsync.valueOrNull?.length.toString() ??
+                            '--',
                         tone: AppTheme.primary,
                       ),
                       AppMetricChip(
                         label: 'Billing',
-                        value: '${messagesAsync.valueOrNull?.where((m) => m.messageType == 'billing').length ?? 0}',
+                        value:
+                            '${messagesAsync.valueOrNull?.where((m) => m.messageType == 'billing').length ?? 0}',
                         tone: AppTheme.onTertiaryContainer,
                       ),
                       AppMetricChip(
                         label: 'Alerts',
-                        value: '${messagesAsync.valueOrNull?.where((m) => m.messageType == 'alert').length ?? 0}',
+                        value:
+                            '${messagesAsync.valueOrNull?.where((m) => m.messageType == 'alert').length ?? 0}',
                         tone: AppTheme.error,
                       ),
                     ],
@@ -108,7 +107,7 @@ class MessagesScreen extends ConsumerWidget {
 }
 
 class _MessageCard extends ConsumerWidget {
-  const _MessageCard({required this.message, super.key});
+  const _MessageCard({required this.message});
   final InboxMessage message;
 
   @override
@@ -141,10 +140,7 @@ class _MessageCard extends ConsumerWidget {
                 left: 0,
                 top: 0,
                 bottom: 0,
-                child: Container(
-                  width: 5,
-                  color: config.barColor,
-                ),
+                child: Container(width: 5, color: config.barColor),
               ),
               Padding(
                 padding: const EdgeInsets.fromLTRB(20, 16, 16, 16),
@@ -244,7 +240,11 @@ class _MessageCard extends ConsumerWidget {
     );
   }
 
-  void _showMessageDetails(BuildContext context, _TypeConfig config, WidgetRef ref) {
+  void _showMessageDetails(
+    BuildContext context,
+    _TypeConfig config,
+    WidgetRef ref,
+  ) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(

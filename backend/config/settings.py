@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     "apps.hik_adapter",
     "apps.dashboard.apps.DashboardConfig",
     "apps.communication",
+    "apps.emergency",
 ]
 
 MIDDLEWARE = [
@@ -229,6 +230,9 @@ SECUREHUB_APP_LINKS = {
     "web": os.getenv("SECUREHUB_WEB_APP_URL", ""),
     "support": os.getenv("SECUREHUB_SUPPORT_URL", ""),
 }
+SECUREHUB_EMERGENCY_SMS_RECIPIENTS = os.getenv("SECUREHUB_EMERGENCY_SMS_RECIPIENTS", "")
+SECUREHUB_EMERGENCY_SMS_PROVIDER = os.getenv("SECUREHUB_EMERGENCY_SMS_PROVIDER", "hubtel")
+SECUREHUB_EMERGENCY_SMS_WEBHOOK_URL = os.getenv("SECUREHUB_EMERGENCY_SMS_WEBHOOK_URL", "")
 SECUREHUB_GOOGLE_AUTO_CREATE_USERS = os.getenv(
     "SECUREHUB_GOOGLE_AUTO_CREATE_USERS",
     "False",

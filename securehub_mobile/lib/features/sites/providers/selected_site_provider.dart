@@ -32,6 +32,6 @@ String? currentSiteId(Ref ref) {
   return sitesAsync.when(
     data: (sites) => sites.isNotEmpty ? sites.first.id : null,
     loading: () => null,
-    error: (_, __) => null,
+    error: (_, _) => null,
   );
 }

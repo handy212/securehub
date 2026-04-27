@@ -32,10 +32,10 @@ final GlobalKey<NavigatorState> shellNavigatorKey = GlobalKey<NavigatorState>();
 @riverpod
 Listenable authRefreshListenable(Ref ref) {
   final notifier = ValueNotifier(0);
-  ref.listen(authNotifierProvider, (_, __) => notifier.value++);
-  ref.listen(selectedSiteProvider, (_, __) => notifier.value++);
+  ref.listen(authNotifierProvider, (_, _) => notifier.value++);
+  ref.listen(selectedSiteProvider, (_, _) => notifier.value++);
   // Also listen to site list errors for suspension detection
-  ref.listen(siteListProvider, (_, __) => notifier.value++);
+  ref.listen(siteListProvider, (_, _) => notifier.value++);
   ref.keepAlive();
   return notifier;
 }
@@ -65,7 +65,7 @@ GoRouter appRouter(Ref ref) {
         final sitesAsync = ref.read(siteListProvider);
         final isSuspended = sitesAsync.maybeWhen(
           error: (err, _) =>
-          err is AccountSuspendedException ||
+              err is AccountSuspendedException ||
               err.toString().contains('AccountSuspendedException'),
           orElse: () => false,
         );
@@ -85,10 +85,12 @@ GoRouter appRouter(Ref ref) {
         final selectedSiteId = ref.read(selectedSiteProvider);
         if (selectedSiteId != null) return '/home/$selectedSiteId';
 
-        final firstSiteId = ref.read(siteListProvider).maybeWhen(
-          data: (sites) => sites.isNotEmpty ? sites.first.id : null,
-          orElse: () => null,
-        );
+        final firstSiteId = ref
+            .read(siteListProvider)
+            .maybeWhen(
+              data: (sites) => sites.isNotEmpty ? sites.first.id : null,
+              orElse: () => null,
+            );
         if (firstSiteId != null) return '/home/$firstSiteId';
       }
 
@@ -97,14 +99,10 @@ GoRouter appRouter(Ref ref) {
     routes: [
       GoRoute(
         path: '/loading',
-        builder: (_, __) => const Scaffold(
-          body: Center(child: CircularProgressIndicator()),
-        ),
+        builder: (_, _) =>
+            const Scaffold(body: Center(child: CircularProgressIndicator())),
       ),
-      GoRoute(
-        path: '/login',
-        builder: (_, __) => const LoginScreen(),
-      ),
+      GoRoute(path: '/login', builder: (_, _) => const LoginScreen()),
       GoRoute(
         path: '/alarm-alert/:siteId',
         builder: (context, state) => AlarmAlertScreen(
@@ -114,7 +112,7 @@ GoRouter appRouter(Ref ref) {
       ),
       GoRoute(
         path: '/account-suspended',
-        builder: (_, __) => const AccountSuspendedScreen(),
+        builder: (_, _) => const AccountSuspendedScreen(),
       ),
       GoRoute(
         path: '/camera/:siteId/:channelId/:channelName',
@@ -128,10 +126,7 @@ GoRouter appRouter(Ref ref) {
         navigatorKey: shellNavigatorKey,
         builder: (context, state, child) => MainScaffold(child: child),
         routes: [
-          GoRoute(
-            path: '/messages',
-            builder: (_, __) => const MessagesScreen(),
-          ),
+          GoRoute(path: '/messages', builder: (_, _) => const MessagesScreen()),
           GoRoute(
             path: '/home',
             builder: (context, state) => Consumer(
@@ -147,11 +142,25 @@ GoRouter appRouter(Ref ref) {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            const Icon(Icons.cloud_off_rounded, size: 64, color: Colors.grey),
+                            const Icon(
+                              Icons.cloud_off_rounded,
+                              size: 64,
+                              color: Colors.grey,
+                            ),
                             const SizedBox(height: 16),
-                            const Text('Unable to connect to Secure Hub', style: TextStyle(fontWeight: FontWeight.bold)),
+                            const Text(
+                              'Unable to connect to Secure Hub',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
                             const SizedBox(height: 8),
-                            Text(err.toString(), textAlign: TextAlign.center, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                            Text(
+                              err.toString(),
+                              textAlign: TextAlign.center,
+                              style: const TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
                             const SizedBox(height: 24),
                             FilledButton.icon(
                               onPressed: () => ref.invalidate(siteListProvider),
@@ -166,7 +175,9 @@ GoRouter appRouter(Ref ref) {
                   data: (sites) {
                     if (sites.isEmpty) {
                       return const Scaffold(
-                        body: Center(child: Text('No sites associated with this account.')),
+                        body: Center(
+                          child: Text('No sites associated with this account.'),
+                        ),
                       );
                     }
                     // If data exists, the redirect should have kicked in.
@@ -190,17 +201,20 @@ GoRouter appRouter(Ref ref) {
                   GoRoute(
                     path: 'suspended',
                     builder: (_, state) => SiteSuspendedScreen(
-                        siteId: state.pathParameters['siteId']!),
+                      siteId: state.pathParameters['siteId']!,
+                    ),
                   ),
                   GoRoute(
                     path: 'events',
-                    builder: (_, state) =>
-                        EventListScreen(siteId: state.pathParameters['siteId']!),
+                    builder: (_, state) => EventListScreen(
+                      siteId: state.pathParameters['siteId']!,
+                    ),
                   ),
                   GoRoute(
                     path: 'commands',
                     builder: (_, state) => CommandHistoryScreen(
-                        siteId: state.pathParameters['siteId']!),
+                      siteId: state.pathParameters['siteId']!,
+                    ),
                   ),
                 ],
               ),
@@ -208,28 +222,26 @@ GoRouter appRouter(Ref ref) {
           ),
           GoRoute(
             path: '/devices',
-            builder: (_, __) => const DeviceListScreen(key: ValueKey('devices')),
+            builder: (_, _) => const DeviceListScreen(key: ValueKey('devices')),
           ),
           GoRoute(
             path: '/activities',
-            builder: (_, __) => const ActivitiesScreen(key: ValueKey('activities')),
+            builder: (_, _) =>
+                const ActivitiesScreen(key: ValueKey('activities')),
           ),
           GoRoute(
             path: '/menu',
-            builder: (_, __) => const MenuScreen(key: ValueKey('menu')),
+            builder: (_, _) => const MenuScreen(key: ValueKey('menu')),
             routes: [
               GoRoute(
                 path: 'profile',
-                builder: (_, __) => const ProfileScreen(),
+                builder: (_, _) => const ProfileScreen(),
               ),
               GoRoute(
                 path: 'notifications',
-                builder: (_, __) => const NotificationSettingsScreen(),
+                builder: (_, _) => const NotificationSettingsScreen(),
               ),
-              GoRoute(
-                path: 'help',
-                builder: (_, __) => const HelpScreen(),
-              ),
+              GoRoute(path: 'help', builder: (_, _) => const HelpScreen()),
             ],
           ),
         ],

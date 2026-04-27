@@ -29,6 +29,13 @@ from apps.sites.scenes import SCENE_OPTIONS, normalize_scene_label
 from apps.accounts.models import CustomerGroup, FCMDevice
 from apps.communication.models import BroadcastMessage
 from apps.communication.tasks import send_broadcast_push_notifications
+from apps.emergency.models import (
+    AccountEmergencyService,
+    EmergencyRequest,
+    EmergencyServicePlan,
+    EmergencyServiceStatus,
+    SiteEmergencyService,
+)
 from apps.dashboard.event_presenters import serialize_console_event, should_hide_console_event
 
 
@@ -640,6 +647,11 @@ class SiteMapView(StaffRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         sites = Site.objects.all().prefetch_related("devices")
+        active_emergencies = (
+            EmergencyRequest.objects.filter(status__in=EmergencyRequest.ACTIVE_STATUSES)
+            .select_related("customer", "site")
+            .order_by("-created_at")
+        )
         service = HikPartnerService()
         
         sites_data = []
@@ -683,8 +695,242 @@ class SiteMapView(StaffRequiredMixin, TemplateView):
                     "url": f"/console/sites/{site.id}/"
                 })
         
-        context["sites_json"] = json.dumps(sites_data)
+        context["sites_data"] = sites_data
+        context["emergencies_data"] = [
+            {
+                "id": str(item.id),
+                "customer": item.customer.get_full_name() or item.customer.get_username(),
+                "site": item.site.name if item.site else "Away from site",
+                "status": item.status,
+                "lat": float(item.latitude),
+                "lng": float(item.longitude),
+                "created_at": item.created_at.isoformat(),
+                "url": reverse("dashboard:emergency"),
+            }
+            for item in active_emergencies
+        ]
         return context
+
+
+class EmergencyConsoleView(StaffRequiredMixin, TemplateView):
+    template_name = "dashboard/emergency.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        requests = (
+            EmergencyRequest.objects.select_related("customer", "site")
+            .prefetch_related("location_updates")
+            .order_by("-created_at")[:100]
+        )
+        active_statuses = EmergencyRequest.ACTIVE_STATUSES
+        context["emergency_requests"] = requests
+        context["active_count"] = sum(1 for item in requests if item.status in active_statuses)
+        context["open_count"] = sum(1 for item in requests if item.status == EmergencyRequest.STATUS_OPEN)
+        return context
+
+
+class EmergencyConsoleActionView(StaffRequiredMixin, View):
+    allowed_actions = {
+        "acknowledge": EmergencyRequest.STATUS_ACKNOWLEDGED,
+        "dispatch": EmergencyRequest.STATUS_DISPATCHED,
+        "arrive": EmergencyRequest.STATUS_ARRIVED,
+        "resolve": EmergencyRequest.STATUS_RESOLVED,
+        "cancel": EmergencyRequest.STATUS_CANCELLED,
+    }
+
+    def post(self, request, request_id, action):
+        if action not in self.allowed_actions:
+            messages.error(request, "Unsupported emergency action.")
+            return redirect("dashboard:emergency")
+        emergency = get_object_or_404(EmergencyRequest, pk=request_id)
+        emergency.transition(
+            self.allowed_actions[action],
+            actor=request.user,
+            reason=request.POST.get("reason", "").strip(),
+        )
+        messages.success(request, f"Emergency request marked {self.allowed_actions[action]}.")
+        return redirect("dashboard:emergency")
+
+
+class EmergencyServiceManagementView(StaffRequiredMixin, TemplateView):
+    template_name = "dashboard/emergency_services.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        active_statuses = [EmergencyServiceStatus.ACTIVE, EmergencyServiceStatus.OVERDUE]
+        site_services = SiteEmergencyService.objects.select_related("site", "plan").order_by("site__name")
+        account_services = AccountEmergencyService.objects.select_related("user", "plan").order_by("user__username")
+        context["plans"] = EmergencyServicePlan.objects.all()
+        context["active_plans"] = EmergencyServicePlan.objects.filter(is_active=True).order_by("monthly_rate")
+        context["site_services"] = site_services
+        context["account_services"] = account_services
+        context["available_sites"] = Site.objects.filter(emergency_service__isnull=True).order_by("name")
+        context["available_customers"] = User.objects.filter(
+            is_staff=False,
+            emergency_service__isnull=True,
+        ).order_by("username")
+        context["statuses"] = EmergencyServiceStatus.choices
+        context["site_mrr"] = (
+            SiteEmergencyService.objects.filter(status__in=active_statuses)
+            .aggregate(total=Sum("monthly_rate"))["total"]
+            or Decimal("0.00")
+        )
+        context["account_mrr"] = (
+            AccountEmergencyService.objects.filter(status__in=active_statuses)
+            .aggregate(total=Sum("monthly_rate"))["total"]
+            or Decimal("0.00")
+        )
+        context["total_emergency_mrr"] = context["site_mrr"] + context["account_mrr"]
+        context["active_site_count"] = SiteEmergencyService.objects.filter(status__in=active_statuses).count()
+        context["active_account_count"] = AccountEmergencyService.objects.filter(status__in=active_statuses).count()
+        return context
+
+
+class CreateEmergencyPlanView(StaffRequiredMixin, View):
+    def post(self, request):
+        name = request.POST.get("name", "").strip()
+        rate = request.POST.get("monthly_rate", "").strip()
+        if not name or not rate:
+            messages.error(request, "Plan name and monthly rate are required.")
+            return redirect("dashboard:emergency-services")
+        try:
+            parsed_rate = _parse_decimal_field(rate, label="Monthly rate", min_value=Decimal("0.00"))
+            EmergencyServicePlan.objects.create(
+                name=name,
+                monthly_rate=parsed_rate,
+                description=request.POST.get("description", "").strip(),
+                is_active=request.POST.get("is_active", "1") == "1",
+            )
+            messages.success(request, f"Emergency plan '{name}' created.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:emergency-services")
+
+
+class UpdateEmergencyPlanView(StaffRequiredMixin, View):
+    def post(self, request, plan_id):
+        plan = get_object_or_404(EmergencyServicePlan, pk=plan_id)
+        name = request.POST.get("name", "").strip()
+        rate = request.POST.get("monthly_rate", "").strip()
+        if not name or not rate:
+            messages.error(request, "Plan name and monthly rate are required.")
+            return redirect("dashboard:emergency-services")
+        try:
+            plan.name = name
+            plan.monthly_rate = _parse_decimal_field(rate, label="Monthly rate", min_value=Decimal("0.00"))
+            plan.description = request.POST.get("description", "").strip()
+            plan.is_active = request.POST.get("is_active") == "1"
+            plan.save(update_fields=["name", "monthly_rate", "description", "is_active"])
+            messages.success(request, f"Emergency plan '{plan.name}' updated.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:emergency-services")
+
+
+class DeleteEmergencyPlanView(StaffRequiredMixin, View):
+    def post(self, request, plan_id):
+        plan = get_object_or_404(EmergencyServicePlan, pk=plan_id)
+        if plan.site_services.exists() or plan.account_services.exists():
+            messages.error(request, f"Cannot delete '{plan.name}' while it is linked to emergency services.")
+            return redirect("dashboard:emergency-services")
+        name = plan.name
+        plan.delete()
+        messages.success(request, f"Emergency plan '{name}' deleted.")
+        return redirect("dashboard:emergency-services")
+
+
+def _parse_emergency_service_payload(request):
+    plan_id = request.POST.get("plan_id", "").strip()
+    plan = EmergencyServicePlan.objects.filter(pk=plan_id).first() if plan_id else None
+    monthly_rate = request.POST.get("monthly_rate", "").strip()
+    if not monthly_rate and plan:
+        monthly_rate = str(plan.monthly_rate)
+    if not monthly_rate:
+        raise ValueError("Monthly rate is required.")
+    status = request.POST.get("status", EmergencyServiceStatus.ACTIVE).strip()
+    valid_statuses = {choice[0] for choice in EmergencyServiceStatus.choices}
+    if status not in valid_statuses:
+        raise ValueError("Please choose a valid emergency service status.")
+    next_due_date = request.POST.get("next_due_date", "").strip()
+    return {
+        "plan": plan,
+        "monthly_rate": _parse_decimal_field(monthly_rate, label="Monthly rate", min_value=Decimal("0.00")),
+        "status": status,
+        "next_due_date": _parse_date_field(next_due_date, label="Next due date") if next_due_date else None,
+        "notes": request.POST.get("notes", "").strip(),
+    }
+
+
+class CreateSiteEmergencyServiceView(StaffRequiredMixin, View):
+    def post(self, request):
+        site = get_object_or_404(Site, pk=request.POST.get("site_id"))
+        if SiteEmergencyService.objects.filter(site=site).exists():
+            messages.error(request, f"'{site.name}' already has emergency service configured.")
+            return redirect("dashboard:emergency-services")
+        try:
+            SiteEmergencyService.objects.create(site=site, **_parse_emergency_service_payload(request))
+            messages.success(request, f"Emergency service enabled for '{site.name}'.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:emergency-services")
+
+
+class CreateAccountEmergencyServiceView(StaffRequiredMixin, View):
+    def post(self, request):
+        user = get_object_or_404(User, pk=request.POST.get("user_id"), is_staff=False)
+        if AccountEmergencyService.objects.filter(user=user).exists():
+            messages.error(request, f"'{user.username}' already has account emergency service configured.")
+            return redirect("dashboard:emergency-services")
+        try:
+            AccountEmergencyService.objects.create(user=user, **_parse_emergency_service_payload(request))
+            messages.success(request, f"Emergency service enabled for '{user.username}'.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:emergency-services")
+
+
+class UpdateSiteEmergencyServiceView(StaffRequiredMixin, View):
+    def post(self, request, service_id):
+        service = get_object_or_404(SiteEmergencyService, pk=service_id)
+        try:
+            for field, value in _parse_emergency_service_payload(request).items():
+                setattr(service, field, value)
+            service.save(update_fields=["plan", "monthly_rate", "status", "next_due_date", "notes", "updated_at"])
+            messages.success(request, f"Updated emergency service for '{service.site.name}'.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:emergency-services")
+
+
+class DeleteSiteEmergencyServiceView(StaffRequiredMixin, View):
+    def post(self, request, service_id):
+        service = get_object_or_404(SiteEmergencyService.objects.select_related("site"), pk=service_id)
+        site_name = service.site.name
+        service.delete()
+        messages.success(request, f"Emergency service removed from '{site_name}'.")
+        return redirect("dashboard:emergency-services")
+
+
+class UpdateAccountEmergencyServiceView(StaffRequiredMixin, View):
+    def post(self, request, service_id):
+        service = get_object_or_404(AccountEmergencyService, pk=service_id)
+        try:
+            for field, value in _parse_emergency_service_payload(request).items():
+                setattr(service, field, value)
+            service.save(update_fields=["plan", "monthly_rate", "status", "next_due_date", "notes", "updated_at"])
+            messages.success(request, f"Updated emergency service for '{service.user.username}'.")
+        except ValueError as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:emergency-services")
+
+
+class DeleteAccountEmergencyServiceView(StaffRequiredMixin, View):
+    def post(self, request, service_id):
+        service = get_object_or_404(AccountEmergencyService.objects.select_related("user"), pk=service_id)
+        username = service.user.username
+        service.delete()
+        messages.success(request, f"Emergency service removed from '{username}'.")
+        return redirect("dashboard:emergency-services")
 
 class SiteConsoleView(StaffRequiredMixin, TemplateView):
     template_name = "dashboard/site_console.html"
@@ -1524,6 +1770,19 @@ class SubscriptionListView(StaffRequiredMixin, ListView):
             .aggregate(total=Sum("monthly_rate"))["total"]
             or Decimal("0.00")
         )
+        emergency_active_statuses = [EmergencyServiceStatus.ACTIVE, EmergencyServiceStatus.OVERDUE]
+        context["emergency_site_mrr"] = (
+            SiteEmergencyService.objects.filter(status__in=emergency_active_statuses)
+            .aggregate(total=Sum("monthly_rate"))["total"]
+            or Decimal("0.00")
+        )
+        context["emergency_account_mrr"] = (
+            AccountEmergencyService.objects.filter(status__in=emergency_active_statuses)
+            .aggregate(total=Sum("monthly_rate"))["total"]
+            or Decimal("0.00")
+        )
+        context["emergency_total_mrr"] = context["emergency_site_mrr"] + context["emergency_account_mrr"]
+        context["combined_mrr"] = context["total_mrr"] + context["emergency_total_mrr"]
         recent_payments = list(
             SubscriptionPayment.objects.select_related("subscription__site", "recorded_by")
             .order_by("-paid_at")[:20]
@@ -1539,13 +1798,72 @@ class SubscriptionListView(StaffRequiredMixin, ListView):
             setattr(sub, "grace_pct", pct)
             setattr(sub, "grace_bar_color", "bg-red-500" if pct >= 80 else "bg-amber-400")
             setattr(sub, "days_until_due", abs(days_delta))
+            try:
+                emergency_service = sub.site.emergency_service
+            except SiteEmergencyService.DoesNotExist:
+                emergency_service = None
+            setattr(sub, "emergency_service", emergency_service)
         pkgs = SubscriptionPackage.objects.filter(is_active=True).order_by("monthly_rate")
         context["packages"] = pkgs
         context["packages_json"] = json.dumps([
-            {"id": str(p.id), "rate": str(p.monthly_rate), "grace": p.grace_period_days}
+            {
+                "id": str(p.id),
+                "rate": str(p.monthly_rate),
+                "grace": p.grace_period_days,
+                "emergency": p.includes_emergency_service,
+                "emergencyRate": str(p.emergency_monthly_rate),
+            }
             for p in pkgs
         ])
+        context["emergency_statuses"] = EmergencyServiceStatus.choices
+        context["active_emergency_plans"] = EmergencyServicePlan.objects.filter(is_active=True).order_by("monthly_rate")
         return context
+
+
+def _sync_site_emergency_addon_from_subscription_request(request, *, site, subscription_status):
+    enabled = request.POST.get("emergency_enabled") == "1"
+    existing = SiteEmergencyService.objects.filter(site=site).first()
+    if not enabled:
+        if existing:
+            existing.status = EmergencyServiceStatus.CANCELLED
+            existing.save(update_fields=["status", "updated_at"])
+        return existing
+
+    emergency_rate = request.POST.get("emergency_monthly_rate", "").strip()
+    if not emergency_rate:
+        raise ValueError("Emergency add-on rate is required when patrol support is enabled.")
+    status = request.POST.get("emergency_status", "").strip() or subscription_status
+    valid_statuses = {choice[0] for choice in EmergencyServiceStatus.choices}
+    if status not in valid_statuses:
+        raise ValueError("Please choose a valid emergency add-on status.")
+    parsed_rate = _parse_decimal_field(
+        emergency_rate,
+        label="Emergency add-on rate",
+        min_value=Decimal("0.00"),
+    )
+    defaults = {
+        "monthly_rate": parsed_rate,
+        "status": status,
+        "next_due_date": _parse_date_field(request.POST.get("next_due_date", ""), label="Next due date"),
+        "notes": request.POST.get("emergency_notes", "").strip(),
+    }
+    service, _ = SiteEmergencyService.objects.update_or_create(site=site, defaults=defaults)
+    return service
+
+
+def _sync_site_emergency_addon_lifecycle(subscription, *, next_due_date=None, status=None):
+    service = SiteEmergencyService.objects.filter(site=subscription.site).first()
+    if service is None:
+        return None
+    update_fields = ["updated_at"]
+    if next_due_date is not None:
+        service.next_due_date = next_due_date
+        update_fields.append("next_due_date")
+    if status is not None:
+        service.status = status
+        update_fields.append("status")
+    service.save(update_fields=update_fields)
+    return service
 
 
 class CreateSubscriptionView(StaffRequiredMixin, View):
@@ -1595,7 +1913,7 @@ class CreateSubscriptionView(StaffRequiredMixin, View):
                 next_due_date=parsed_due_date,
                 grace_period_days=parsed_grace_days,
             )
-            Subscription.objects.create(
+            subscription = Subscription.objects.create(
                 site=site,
                 monthly_rate=parsed_rate,
                 billing_day=parsed_billing_day,
@@ -1605,6 +1923,11 @@ class CreateSubscriptionView(StaffRequiredMixin, View):
                 status=status,
                 package=package,
                 suspended_at=timezone.now() if status == Subscription.STATUS_SUSPENDED else None,
+            )
+            _sync_site_emergency_addon_from_subscription_request(
+                request,
+                site=site,
+                subscription_status=subscription.status,
             )
             messages.success(request, f"Subscription created for '{site.name}'.")
         except ValueError as exc:
@@ -1645,6 +1968,11 @@ class UpdateSubscriptionView(StaffRequiredMixin, View):
             sub.package = SubscriptionPackage.objects.filter(pk=package_id).first() if package_id else None
             sub.apply_due_date_status()
             sub.save()
+            _sync_site_emergency_addon_from_subscription_request(
+                request,
+                site=sub.site,
+                subscription_status=sub.status,
+            )
             messages.success(request, f"Subscription for '{sub.site.name}' updated.")
         except ValueError as exc:
             messages.error(request, str(exc))
@@ -1768,6 +2096,11 @@ class RecordPaymentView(StaffRequiredMixin, View):
             sub.next_due_date = new_due
             sub.apply_due_date_status()
             sub.save(update_fields=["next_due_date", "status", "suspended_at", "updated_at"])
+            _sync_site_emergency_addon_lifecycle(
+                sub,
+                next_due_date=new_due,
+                status=EmergencyServiceStatus.ACTIVE if sub.status == Subscription.STATUS_ACTIVE else sub.status,
+            )
             messages.success(request, f"Payment recorded for '{sub.site.name}'. Next due: {new_due}.")
         except ValueError as exc:
             messages.error(request, str(exc))
@@ -1785,6 +2118,7 @@ class SuspendSubscriptionView(StaffRequiredMixin, View):
             return redirect("dashboard:site-console", pk=sub.site.pk)
         else:
             sub.suspend()
+            _sync_site_emergency_addon_lifecycle(sub, status=EmergencyServiceStatus.SUSPENDED)
             send_suspension_notice.delay(str(sub.id))
             # Log the lockdown as a system event
             Event.objects.create(
@@ -1813,6 +2147,7 @@ class CancelSubscriptionView(StaffRequiredMixin, View):
         sub.status = Subscription.STATUS_CANCELLED
         sub.suspended_at = timezone.now()
         sub.save(update_fields=["status", "suspended_at", "updated_at"])
+        _sync_site_emergency_addon_lifecycle(sub, status=EmergencyServiceStatus.CANCELLED)
         send_subscription_lockout_notice.delay(str(sub.id), notice_type="cancelled")
         Event.objects.create(
             site=sub.site,
@@ -1846,6 +2181,11 @@ class ReactivateSubscriptionView(StaffRequiredMixin, View):
         if sub.status != Subscription.STATUS_ACTIVE:
             messages.error(request, "Reactivation did not restore access. Please choose a current or future due date.")
             return redirect("dashboard:site-console", pk=sub.site.pk)
+        _sync_site_emergency_addon_lifecycle(
+            sub,
+            next_due_date=sub.next_due_date,
+            status=EmergencyServiceStatus.ACTIVE,
+        )
         send_reactivation_notice.delay(str(sub.id))
         # Log the reactivation as a system event
         Event.objects.create(
@@ -1873,13 +2213,24 @@ class SubscriptionPackageListView(StaffRequiredMixin, View):
 
     def get(self, request):
         packages = SubscriptionPackage.objects.all()
-        return render(request, self.template_name, {"packages": packages})
+        emergency_mrr = (
+            SiteEmergencyService.objects.filter(status__in=[EmergencyServiceStatus.ACTIVE, EmergencyServiceStatus.OVERDUE])
+            .aggregate(total=Sum("monthly_rate"))["total"]
+            or Decimal("0.00")
+        )
+        return render(
+            request,
+            self.template_name,
+            {"packages": packages, "emergency_mrr": emergency_mrr},
+        )
 
     def post(self, request):
         name = request.POST.get("name", "").strip()
         monthly_rate = request.POST.get("monthly_rate", "").strip()
         grace_period_days = request.POST.get("grace_period_days", "7").strip()
         description = request.POST.get("description", "").strip()
+        includes_emergency = request.POST.get("includes_emergency_service") == "on"
+        emergency_rate = request.POST.get("emergency_monthly_rate", "0").strip() or "0"
 
         if not name or not monthly_rate:
             messages.error(request, "Name and monthly rate are required.")
@@ -1888,9 +2239,12 @@ class SubscriptionPackageListView(StaffRequiredMixin, View):
         try:
             parsed_rate = _parse_decimal_field(monthly_rate, label="Monthly rate", min_value=Decimal("0.00"))
             parsed_grace = _parse_int_field(grace_period_days, label="Grace period", min_value=0, max_value=90)
+            parsed_emergency_rate = _parse_decimal_field(emergency_rate, label="Emergency add-on rate", min_value=Decimal("0.00"))
             SubscriptionPackage.objects.create(
                 name=name,
                 monthly_rate=parsed_rate,
+                includes_emergency_service=includes_emergency,
+                emergency_monthly_rate=parsed_emergency_rate,
                 grace_period_days=parsed_grace,
                 description=description,
             )
@@ -1909,6 +2263,8 @@ class UpdateSubscriptionPackageView(StaffRequiredMixin, View):
         grace_period_days = request.POST.get("grace_period_days", "").strip()
         description = request.POST.get("description", "").strip()
         is_active = request.POST.get("is_active") == "on"
+        includes_emergency = request.POST.get("includes_emergency_service") == "on"
+        emergency_rate = request.POST.get("emergency_monthly_rate", "0").strip() or "0"
 
         if not name or not monthly_rate:
             messages.error(request, "Name and monthly rate are required.")
@@ -1918,6 +2274,8 @@ class UpdateSubscriptionPackageView(StaffRequiredMixin, View):
             pkg.name = name
             pkg.monthly_rate = _parse_decimal_field(monthly_rate, label="Monthly rate", min_value=Decimal("0.00"))
             pkg.grace_period_days = _parse_int_field(grace_period_days, label="Grace period", min_value=0, max_value=90)
+            pkg.includes_emergency_service = includes_emergency
+            pkg.emergency_monthly_rate = _parse_decimal_field(emergency_rate, label="Emergency add-on rate", min_value=Decimal("0.00"))
             pkg.description = description
             pkg.is_active = is_active
             pkg.save()

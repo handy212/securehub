@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:securehub_mobile/core/notifications/notification_service.dart';
+import 'package:securehub_mobile/core/utils/event_name_utils.dart';
 
 void main() {
   test('Push disabled suppresses all foreground notifications', () {
@@ -28,10 +29,10 @@ void main() {
       isTrue,
     );
     expect(
-      shouldShowForegroundNotification(
-        {...baseSettings, 'alarm': false},
-        type: 'alarm',
-      ),
+      shouldShowForegroundNotification({
+        ...baseSettings,
+        'alarm': false,
+      }, type: 'alarm'),
       isFalse,
     );
   });
@@ -44,19 +45,16 @@ void main() {
       'messages': true,
     };
 
-    expect(
-      shouldShowForegroundNotification(settings, type: 'system'),
-      isFalse,
-    );
+    expect(shouldShowForegroundNotification(settings, type: 'system'), isFalse);
     expect(
       shouldShowForegroundNotification(settings, type: 'status_update'),
       isFalse,
     );
     expect(
-      shouldShowForegroundNotification(
-        {...settings, 'system': true},
-        type: 'status_update',
-      ),
+      shouldShowForegroundNotification({
+        ...settings,
+        'system': true,
+      }, type: 'status_update'),
       isTrue,
     );
   });
@@ -76,10 +74,10 @@ void main() {
         reason: '$type should show when messages are enabled',
       );
       expect(
-        shouldShowForegroundNotification(
-          {...settings, 'messages': false},
-          type: type,
-        ),
+        shouldShowForegroundNotification({
+          ...settings,
+          'messages': false,
+        }, type: type),
         isFalse,
         reason: '$type should be suppressed when messages are disabled',
       );
@@ -94,15 +92,12 @@ void main() {
       'messages': true,
     };
 
+    expect(shouldShowForegroundNotification(settings, type: 'alert'), isTrue);
     expect(
-      shouldShowForegroundNotification(settings, type: 'alert'),
-      isTrue,
-    );
-    expect(
-      shouldShowForegroundNotification(
-        {...settings, 'messages': false},
-        type: 'alert',
-      ),
+      shouldShowForegroundNotification({
+        ...settings,
+        'messages': false,
+      }, type: 'alert'),
       isFalse,
     );
   });
@@ -120,11 +115,64 @@ void main() {
       isTrue,
     );
     expect(
-      shouldShowForegroundNotification(
-        {...settings, 'push': false},
-        type: 'custom_type',
-      ),
+      shouldShowForegroundNotification({
+        ...settings,
+        'push': false,
+      }, type: 'custom_type'),
       isFalse,
     );
+  });
+
+  test('Only critical alarm payloads trigger the alarm alert route', () {
+    expect(
+      isCriticalAlarmPayload({'type': 'alarm', 'severity': 'critical'}),
+      isTrue,
+    );
+    expect(
+      isCriticalAlarmPayload({'type': 'alarm', 'is_critical': 'true'}),
+      isTrue,
+    );
+    expect(
+      isCriticalAlarmPayload({'type': 'alarm', 'severity': 'high'}),
+      isFalse,
+    );
+    expect(
+      isCriticalAlarmPayload({'type': 'system', 'severity': 'critical'}),
+      isFalse,
+    );
+    expect(isCriticalAlarmPayload({'type': 'alarm'}), isTrue);
+    expect(
+      isCriticalAlarmPayload({'type': 'alarm', 'event_type': 'ALARMTRG'}),
+      isTrue,
+    );
+    expect(
+      isCriticalAlarmPayload({'type': 'alarm', 'event_type': 'ALARMREST'}),
+      isFalse,
+    );
+    expect(
+      isCriticalAlarmPayload({'type': 'alarm', 'event_type': 'DISARM'}),
+      isFalse,
+    );
+    expect(
+      isCriticalAlarmPayload({
+        'event_name': 'Magnetic Zone Instant Alarm',
+        'raw_event_type': 'cidEvent',
+        'normalized_event_type': 'unknown',
+        'alarmData': {
+          'CIDEvent': {'description': 'MagneticZoneInstantAlarm'},
+        },
+      }),
+      isTrue,
+    );
+  });
+
+  test('Friendly event names normalize Hikvision alarm labels', () {
+    expect(
+      friendlyEventName('Magnetic Zone Instant Alarm'),
+      'Door/Window Alarm',
+    );
+    expect(friendlyEventName('MobileZoneInstantAlarm'), 'Zone Alarm');
+    expect(friendlyEventName('Instant Zone Alarm'), 'Zone Alarm');
+    expect(friendlyEventName('Snapshot'), 'Snapshot Captured');
   });
 }

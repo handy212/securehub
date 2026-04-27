@@ -11,10 +11,12 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../features/alarms/providers/event_list_provider.dart';
+import '../../features/sites/providers/selected_site_provider.dart';
 import '../../features/sites/providers/sites_provider.dart';
 import '../../features/sites/providers/site_runtime_provider.dart';
 import '../api/api_client.dart';
 import '../api/api_endpoints.dart';
+import '../utils/event_name_utils.dart';
 import 'notification_settings_notifier.dart';
 
 part 'notification_service.g.dart';
@@ -54,14 +56,77 @@ class CriticalAlarmNav extends _$CriticalAlarmNav {
   Map<String, String>? build() => null;
 
   void trigger(String siteId, {String? eventId}) {
-    state = {'site_id': siteId, if (eventId != null) 'event_id': eventId};
+    final navData = {'site_id': siteId};
+    if (eventId != null) {
+      navData['event_id'] = eventId;
+    }
+    state = navData;
   }
 
   void clear() => state = null;
 }
 
-final siteNotificationNavProvider =
-    StateProvider<String?>((ref) => null);
+String? _payloadString(Map<String, dynamic> data, List<String> keys) {
+  return eventPayloadString(data, keys);
+}
+
+bool _payloadBool(Map<String, dynamic> data, List<String> keys) {
+  for (final key in keys) {
+    final value = data[key];
+    if (value is bool) return value;
+    final text = value?.toString().trim().toLowerCase();
+    if (text == 'true' || text == '1' || text == 'yes') return true;
+  }
+  return false;
+}
+
+bool isCriticalAlarmPayload(Map<String, dynamic> data) {
+  final type = _payloadString(data, const ['type']);
+  final eventText = eventPayloadSearchText(data);
+  final looksLikeAlarmPayload =
+      type == 'alarm' ||
+      eventText.contains('alarm') ||
+      eventText.contains('tamper') ||
+      eventText.contains('panic') ||
+      eventText.contains('vmd') ||
+      eventText.contains('motion');
+  if (!looksLikeAlarmPayload) return false;
+  if (_payloadBool(data, const ['is_critical', 'isCritical', 'critical'])) {
+    return true;
+  }
+
+  final severity = _payloadString(data, const ['severity'])?.toLowerCase();
+  if (severity == 'critical') return true;
+
+  if (eventText.contains('restor') ||
+      eventText.contains('secure') ||
+      eventText.contains('disarm') ||
+      eventText.contains('armaway') ||
+      eventText.contains('stayarm') ||
+      eventText.contains('away armed') ||
+      eventText.contains('stay armed') ||
+      eventText.contains('silence')) {
+    return false;
+  }
+
+  if (eventText.contains('alarmtrg') ||
+      eventText.contains('alarm_report') ||
+      eventText.contains('alarm triggered') ||
+      eventText.contains('instant alarm') ||
+      eventText.contains('instantalarm') ||
+      eventText.contains('magneticzoneinstantalarm') ||
+      eventText.contains('panic') ||
+      eventText.contains('tamper') ||
+      eventText.contains('vmd') ||
+      eventText.contains('motion')) {
+    return true;
+  }
+
+  // Some FCM payloads only send type=alarm for critical triggers.
+  return type == 'alarm' && severity == null && eventText.trim() == 'alarm';
+}
+
+final siteNotificationNavProvider = StateProvider<String?>((ref) => null);
 
 @riverpod
 class BillingLockoutNav extends _$BillingLockoutNav {
@@ -148,11 +213,12 @@ class NotificationService {
       sound: true,
     );
 
-    await FirebaseMessaging.instance.setForegroundNotificationPresentationOptions(
-      alert: false,
-      badge: false,
-      sound: false,
-    );
+    await FirebaseMessaging.instance
+        .setForegroundNotificationPresentationOptions(
+          alert: false,
+          badge: false,
+          sound: false,
+        );
 
     const alarmChannel = AndroidNotificationChannel(
       _alarmChannelId,
@@ -181,8 +247,10 @@ class NotificationService {
       playSound: false,
     );
 
-    final androidPlugin = _local.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>();
+    final androidPlugin = _local
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >();
     await androidPlugin?.createNotificationChannel(alarmChannel);
     await androidPlugin?.createNotificationChannel(activityChannel);
     await androidPlugin?.createNotificationChannel(messageChannel);
@@ -195,7 +263,10 @@ class NotificationService {
             DarwinNotificationCategory(
               _categoryAlarm,
               actions: <DarwinNotificationAction>[
-                DarwinNotificationAction.plain(_actionOpenEvents, 'View Events'),
+                DarwinNotificationAction.plain(
+                  _actionOpenEvents,
+                  'View Events',
+                ),
                 DarwinNotificationAction.plain(_actionOpenSite, 'Open Site'),
               ],
             ),
@@ -279,10 +350,7 @@ class NotificationService {
       final dio = _ref.read(dioProvider);
       final response = await dio.post(
         ApiEndpoints.registerDevice,
-        data: {
-          'token': token,
-          'platform': Platform.isIOS ? 'ios' : 'android',
-        },
+        data: {'token': token, 'platform': Platform.isIOS ? 'ios' : 'android'},
       );
       _log('Token registration success: ${response.statusCode}');
     } catch (e) {
@@ -307,10 +375,11 @@ class NotificationService {
       'type': type,
       'site_id': 'demo-site',
       if (type == 'alarm') 'event_id': 'test-event-123',
+      if (type == 'alarm') 'severity': 'critical',
     };
 
     final title = type == 'alarm' ? 'SECURE HUB ALARM' : 'SECURE HUB Test';
-    final body = type == 'alarm' 
+    final body = type == 'alarm'
         ? 'CRITICAL: Motion detected in LIVING ROOM'
         : 'This is a test notification confirming your system is connected.';
 
@@ -348,7 +417,7 @@ class NotificationService {
             summaryText: 'Security Alert',
           ),
         ),
-        iOS: DarwinNotificationDetails(
+        iOS: const DarwinNotificationDetails(
           presentAlert: true,
           presentBadge: true,
           presentSound: true,
@@ -408,7 +477,7 @@ class NotificationService {
 
   void _handleNotificationTap(Map<String, dynamic> data) {
     _log('Handling notification tap with data: $data');
-    final type = data['type'] as String?;
+    final type = _payloadString(data, const ['type']);
 
     if (type == 'billing_lockout') {
       _ref.read(billingLockoutNavProvider.notifier).trigger();
@@ -420,52 +489,93 @@ class NotificationService {
       return;
     }
 
-    final siteId = data['site_id'] as String?;
-    if (siteId == null || siteId.isEmpty) return;
+    final siteId = _payloadString(data, const ['site_id', 'siteId']);
+    final effectiveSiteId = siteId ?? _ref.read(currentSiteIdProvider);
+    if (effectiveSiteId == null || effectiveSiteId.isEmpty) return;
 
-    if (type == 'alarm') {
-      _ref.read(criticalAlarmNavProvider.notifier).trigger(
-            siteId,
-            eventId: data['event_id'] as String?,
+    if (isCriticalAlarmPayload(data)) {
+      _ref
+          .read(criticalAlarmNavProvider.notifier)
+          .trigger(
+            effectiveSiteId,
+            eventId: _payloadString(data, const ['event_id', 'eventId']),
           );
       return;
     }
 
+    if (type == 'alarm') {
+      _ref.read(notificationNavProvider.notifier).setSiteId(effectiveSiteId);
+      return;
+    }
+
     if (type == 'system' || type == 'status_update') {
-      _ref.read(siteNotificationNavProvider.notifier).state = siteId;
+      _ref.read(siteNotificationNavProvider.notifier).state = effectiveSiteId;
     } else {
-      _ref.read(notificationNavProvider.notifier).setSiteId(siteId);
+      _ref.read(notificationNavProvider.notifier).setSiteId(effectiveSiteId);
     }
   }
 
   void _showLocal(RemoteMessage message) {
     final notification = message.notification;
     final data = message.data;
-    final type = data['type'] as String?;
-    final siteId = data['site_id'] as String?;
+    final inferredAlarm = isCriticalAlarmPayload(data);
+    final type =
+        _payloadString(data, const ['type']) ??
+        (inferredAlarm ? 'alarm' : null);
+    final siteId = _payloadString(data, const ['site_id', 'siteId']);
+    final effectiveSiteId = siteId ?? _ref.read(currentSiteIdProvider);
+    final eventId = _payloadString(data, const ['event_id', 'eventId']);
     final siteName = data['site_name'] as String?;
     final zoneName = data['zone_name'] as String?;
-    final eventLabel =
-        data['event_title'] as String? ?? data['event_type'] as String?;
+    final eventLabel = friendlyEventName(
+      _payloadString(data, const ['event_name', 'event_title', 'event_type']) ??
+          _payloadString(data, const [
+            'raw_event_type',
+            'normalized_event_type',
+          ]) ??
+          eventPayloadString(
+            Map<String, dynamic>.from(
+              (data['alarmData'] ?? data['alarm_data']) is Map
+                  ? Map<String, dynamic>.from(
+                      data['alarmData'] ?? data['alarm_data'],
+                    )
+                  : const {},
+            ),
+            const ['eventDescription', 'eventType'],
+          ) ??
+          (() {
+            final alarmData = data['alarmData'] ?? data['alarm_data'];
+            if (alarmData is Map) {
+              final cidEvent = alarmData['CIDEvent'] ?? alarmData['cidEvent'];
+              if (cidEvent is Map) {
+                return cidEvent['description']?.toString();
+              }
+            }
+            return null;
+          })(),
+      fallback: 'Alarm Triggered',
+    );
 
     _log(
       'Processing message: type=$type, siteId=$siteId, hasNotification=${notification != null}',
     );
 
+    if (effectiveSiteId != null && inferredAlarm) {
+      _ref
+          .read(criticalAlarmNavProvider.notifier)
+          .trigger(effectiveSiteId, eventId: eventId);
+    }
+
     if (notification == null) {
-      if (siteId != null) {
-        _triggerSync(siteId, type);
+      if (effectiveSiteId != null) {
+        _triggerSync(effectiveSiteId, type);
       }
       return;
     }
 
-    final settings = _ref.read(notificationSettingsProvider).value ??
-        const {
-          'push': true,
-          'alarm': true,
-          'system': true,
-          'messages': true,
-        };
+    final settings =
+        _ref.read(notificationSettingsProvider).value ??
+        const {'push': true, 'alarm': true, 'system': true, 'messages': true};
 
     if (!shouldShowForegroundNotification(settings, type: type)) {
       return;
@@ -479,10 +589,18 @@ class NotificationService {
       notification: notification,
     );
 
-    final payload = jsonEncode({
-      'type': type ?? '',
-      'site_id': siteId,
-    });
+    final payloadData = {'type': type ?? '', 'site_id': effectiveSiteId};
+    if (eventId != null) {
+      payloadData['event_id'] = eventId;
+    }
+    final severity = _payloadString(data, const ['severity']);
+    if (severity != null) {
+      payloadData['severity'] = severity;
+    }
+    if (_payloadBool(data, const ['is_critical', 'isCritical', 'critical'])) {
+      payloadData['is_critical'] = 'true';
+    }
+    final payload = jsonEncode(payloadData);
 
     _local.show(
       id: message.hashCode,
@@ -502,7 +620,7 @@ class NotificationService {
           largeIcon: const DrawableResourceAndroidBitmap(_largeIcon),
           color: profile.color,
           groupKey: profile.groupKey,
-          tag: siteId != null ? '$type-$siteId' : type,
+          tag: effectiveSiteId != null ? '$type-$effectiveSiteId' : type,
           ticker: profile.title,
           subText: siteName,
           channelShowBadge: true,
@@ -527,9 +645,9 @@ class NotificationService {
       payload: payload,
     );
 
-    if (siteId != null &&
+    if (effectiveSiteId != null &&
         (type == 'alarm' || type == 'system' || type == 'status_update')) {
-      _triggerSync(siteId, type);
+      _triggerSync(effectiveSiteId, type);
     }
   }
 
@@ -547,7 +665,9 @@ class NotificationService {
   }
 
   void _log(String message) {
-    debugPrint('[NotificationService] $message');
+    if (kDebugMode) {
+      debugPrint('[NotificationService] $message');
+    }
   }
 
   AndroidNotificationCategory? _androidCategoryFor(String? type) {
@@ -633,8 +753,9 @@ class NotificationService {
           summaryText: siteName == null
               ? 'Immediate attention required'
               : 'Immediate attention required at $siteName',
-          iosSubtitle:
-              zoneName == null ? 'Critical alarm' : 'Critical alarm in $zoneName',
+          iosSubtitle: zoneName == null
+              ? 'Critical alarm'
+              : 'Critical alarm in $zoneName',
           darwinCategory: _categoryAlarm,
           actions: const <AndroidNotificationAction>[
             AndroidNotificationAction(

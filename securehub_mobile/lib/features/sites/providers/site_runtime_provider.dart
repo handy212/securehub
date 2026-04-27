@@ -11,17 +11,22 @@ final siteRuntimeSnapshotProvider =
   ref,
   siteId,
 ) async* {
+  var isDisposed = false;
+  try {
+    ref.onDispose(() {
+      isDisposed = true;
+    });
+  } catch (_) {
+    // Already disposed, nothing to do
+    return;
+  }
+
   final authState = ref.watch(authNotifierProvider);
   if (authState is! AuthAuthenticated) {
     return;
   }
 
   final dio = ref.watch(dioProvider);
-  var isDisposed = false;
-
-  ref.onDispose(() {
-    isDisposed = true;
-  });
 
   Future<SiteRuntimeSnapshot> fetch() async {
     final resp = await dio.get(ApiEndpoints.sitePoll(siteId));

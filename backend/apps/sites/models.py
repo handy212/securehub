@@ -35,6 +35,8 @@ class SubscriptionPackage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)
     monthly_rate = models.DecimalField(max_digits=10, decimal_places=2)
+    includes_emergency_service = models.BooleanField(default=False)
+    emergency_monthly_rate = models.DecimalField(max_digits=10, decimal_places=2, default=Decimal("0.00"))
     grace_period_days = models.PositiveSmallIntegerField(default=7)
     description = models.CharField(max_length=255, blank=True)
     is_active = models.BooleanField(default=True)

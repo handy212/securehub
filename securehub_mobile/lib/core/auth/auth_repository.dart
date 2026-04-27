@@ -13,14 +13,14 @@ part 'auth_repository.g.dart';
 
 @riverpod
 AuthRepository authRepository(Ref ref) => AuthRepository(
-      dio: ref.watch(dioProvider),
-      tokenStorage: ref.watch(tokenStorageProvider),
-    );
+  dio: ref.watch(dioProvider),
+  tokenStorage: ref.watch(tokenStorageProvider),
+);
 
 class AuthRepository {
   AuthRepository({required Dio dio, required TokenStorage tokenStorage})
-      : _dio = dio,
-        _tokens = tokenStorage;
+    : _dio = dio,
+      _tokens = tokenStorage;
 
   final Dio _dio;
   final TokenStorage _tokens;
@@ -35,15 +35,21 @@ class AuthRepository {
       );
       final data = resp.data;
       if (data is! Map) {
-        debugPrint('LOGIN DATA TYPE ERROR: expected Map, got ${data.runtimeType} -> $data');
+        if (kDebugMode) {
+          debugPrint(
+            'LOGIN DATA TYPE ERROR: expected Map, got ${data.runtimeType}',
+          );
+        }
         throw Exception('Server returned an invalid login response format.');
       }
 
       final access = data['access'] as String?;
       final refresh = data['refresh'] as String?;
-      
+
       if (access == null || refresh == null) {
-        debugPrint('LOGIN MISSING TOKENS: access=$access, refresh=$refresh');
+        if (kDebugMode) {
+          debugPrint('LOGIN MISSING TOKENS');
+        }
         throw Exception('Login successful but no tokens were provided.');
       }
 
@@ -52,17 +58,20 @@ class AuthRepository {
       final profileResp = await _dio.get(ApiEndpoints.profile);
       final profileData = profileResp.data;
       if (profileData is! Map || profileData.isEmpty) {
-        debugPrint('PROFILE INVALID: ${profileData.runtimeType} -> $profileData');
+        if (kDebugMode) {
+          debugPrint('PROFILE INVALID: ${profileData.runtimeType}');
+        }
         throw Exception('Server returned an invalid profile response.');
       }
 
-      return CustomerProfile.fromJson(
-          Map<String, dynamic>.from(profileData));
+      return CustomerProfile.fromJson(Map<String, dynamic>.from(profileData));
     } on DioException catch (e) {
       throwAppException(e);
     } catch (e, stack) {
-      debugPrint('LOGIN UNEXPECTED ERROR: $e');
-      debugPrint('STACK: $stack');
+      if (kDebugMode) {
+        debugPrint('LOGIN UNEXPECTED ERROR: $e');
+        debugPrint('STACK: $stack');
+      }
       rethrow;
     }
   }
@@ -70,7 +79,9 @@ class AuthRepository {
   Future<CustomerProfile> signInWithGoogle() async {
     try {
       final googleSignIn = GoogleSignIn(
-        serverClientId: googleServerClientId.isEmpty ? null : googleServerClientId,
+        serverClientId: googleServerClientId.isEmpty
+            ? null
+            : googleServerClientId,
       );
       final googleUser = await googleSignIn.signIn();
       if (googleUser == null) {
@@ -104,7 +115,9 @@ class AuthRepository {
     } on DioException catch (e) {
       throwAppException(e);
     } catch (e) {
-      debugPrint('GOOGLE LOGIN ERROR: $e');
+      if (kDebugMode) {
+        debugPrint('GOOGLE LOGIN ERROR: $e');
+      }
       rethrow;
     }
   }
@@ -123,10 +136,7 @@ class AuthRepository {
 
     try {
       if (refreshToken != null && refreshToken.isNotEmpty) {
-        await _dio.post(
-          ApiEndpoints.logout,
-          data: {'refresh': refreshToken},
-        );
+        await _dio.post(ApiEndpoints.logout, data: {'refresh': refreshToken});
       }
     } on DioException {
       // Best-effort remote logout. Local sign-out still needs to complete.

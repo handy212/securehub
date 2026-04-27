@@ -347,7 +347,7 @@ class _HardwareTab extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                mainAxisExtent: 130,
+                mainAxisExtent: 150,
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, i) => _PeripheralTile(peripheral: peripherals[i]),

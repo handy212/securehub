@@ -90,15 +90,20 @@ class HardwareRefresh extends _$HardwareRefresh {
 
 @riverpod
 Stream<SitePoll> sitePoll(Ref ref, String siteId) async* {
+  bool isDisposed = false;
+  try {
+    ref.onDispose(() {
+      isDisposed = true;
+    });
+  } catch (_) {
+    // Provider was disposed before we could register
+    return;
+  }
+
   final authState = ref.watch(authNotifierProvider);
   if (authState is! AuthAuthenticated) return;
 
   final dio = ref.watch(dioProvider);
-  bool isDisposed = false;
-
-  ref.onDispose(() {
-    isDisposed = true;
-  });
 
   Future<SitePoll> fetch() async {
     try {
@@ -132,12 +137,19 @@ Stream<SitePoll> sitePoll(Ref ref, String siteId) async* {
       if (isDisposed) break;
       // Transient error — log and retry on the next tick rather than
       // crashing the stream and leaving the UI stuck on stale data.
-      debugPrint('sitePoll[$siteId] fetch error (will retry): $e');
+      if (kDebugMode) {
+        debugPrint('sitePoll[$siteId] fetch error (will retry): $e');
+      }
     }
   }
 }
+
 @riverpod
-Future<String> cameraLiveUrl(CameraLiveUrlRef ref, String siteId, String channelId) async {
+Future<String> cameraLiveUrl(
+  CameraLiveUrlRef ref,
+  String siteId,
+  String channelId,
+) async {
   final dio = ref.watch(dioProvider);
   try {
     final resp = await dio.get(ApiEndpoints.cameraLive(siteId, channelId));

@@ -35,8 +35,9 @@ String _getBaseUrl() {
 
 final _baseUrl = _getBaseUrl();
 
-const String googleServerClientId =
-    String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+const String googleServerClientId = String.fromEnvironment(
+  'GOOGLE_SERVER_CLIENT_ID',
+);
 
 // ---------------------------------------------------------------------------
 // Provider
@@ -75,14 +76,21 @@ Future<String?> accessToken(Ref ref) {
 }
 
 /// Transforms local URLs (localhost/127.0.0.1) to 10.0.2.2 on Android emulators
-/// to ensure that media assets can be reached from the host machine.
+/// and ensures relative paths are prepended with the base URL.
 String transformUrl(String url) {
   if (url.isEmpty) return '';
-  if (defaultTargetPlatform != TargetPlatform.android) return url;
-  if (!kDebugMode) return url; // Only transform in debug mode
 
-  // Handle case where URL is relative or missing scheme
   String transformed = url;
+
+  // Prepend base URL if it's a relative path
+  if (!transformed.startsWith('http')) {
+    transformed =
+        _baseUrl + (transformed.startsWith('/') ? '' : '/') + transformed;
+  }
+
+  if (defaultTargetPlatform != TargetPlatform.android || !kDebugMode) {
+    return transformed;
+  }
 
   // Only transform if the URL contains localhost or 127.0.0.1
   // to avoid breaking absolute external URLs (S3, etc.)
@@ -93,6 +101,21 @@ String transformUrl(String url) {
   }
 
   return transformed;
+}
+
+/// Returns true when [url] is a relative URL or points back to this app's API.
+/// External signed media URLs should not receive our bearer token headers.
+bool shouldAttachApiAuthHeader(String url) {
+  if (url.isEmpty) return false;
+  if (!url.startsWith('http')) return true;
+
+  final mediaUri = Uri.tryParse(transformUrl(url));
+  final apiUri = Uri.tryParse(transformUrl(_baseUrl));
+  if (mediaUri == null || apiUri == null) return false;
+
+  return mediaUri.scheme == apiUri.scheme &&
+      mediaUri.host == apiUri.host &&
+      mediaUri.port == apiUri.port;
 }
 
 // ---------------------------------------------------------------------------

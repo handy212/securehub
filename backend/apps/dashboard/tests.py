@@ -526,9 +526,9 @@ class DashboardFlowTests(TestCase):
 
         response = self.client.get(reverse("dashboard:site-map"))
 
-        payload = response.context["sites_json"]
-        self.assertIn('"name": "HQ"', payload)
-        self.assertIn('"lat": 5.6037', payload)
+        payload = response.context["sites_data"]
+        self.assertEqual(payload[0]["name"], "HQ")
+        self.assertEqual(payload[0]["lat"], 5.6037)
 
     def test_onboarding_can_link_existing_user_and_create_subscription(self):
         existing_user = User.objects.create_user(

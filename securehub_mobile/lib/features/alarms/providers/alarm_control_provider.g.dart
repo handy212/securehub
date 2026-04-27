@@ -7,7 +7,7 @@ part of 'alarm_control_provider.dart';
 // **************************************************************************
 
 String _$alarmControlNotifierHash() =>
-    r'580cfe7ecec38885648ddcb836bcc6f7285f0edc';
+    r'8f6488406605c0e1391286db0e32f443c995b85a';
 
 /// See also [AlarmControlNotifier].
 @ProviderFor(AlarmControlNotifier)

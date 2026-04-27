@@ -19,6 +19,7 @@
             <div class="flex items-center gap-3">
                 <h1 class="text-lg font-black text-slate-900 tracking-tight leading-none">Packages</h1>
                 <span class="px-2 py-0.5 rounded bg-brand/10 text-brand text-[9px] font-black uppercase tracking-wider">{{ packages|length }} total</span>
+                <span class="px-2 py-0.5 rounded bg-red-50 text-red-600 text-[9px] font-black uppercase tracking-wider">Emergency MRR GH₵{{ emergency_mrr|floatformat:2 }}</span>
             </div>
             <button @click="createModal = true"
                     class="inline-flex items-center gap-2 rounded bg-brand px-3 py-2 text-[9px] font-black uppercase tracking-widest text-white hover:bg-slate-800 transition-all">
@@ -50,6 +51,7 @@
                     <tr class="bg-slate-50 border-b border-slate-200">
                         <th class="px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">Package</th>
                         <th class="px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">Monthly Rate</th>
+                        <th class="px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">Emergency Add-on</th>
                         <th class="px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">Grace Days</th>
                         <th class="px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">Linked Subs</th>
                         <th class="px-4 py-2.5 text-[9px] font-black uppercase tracking-[0.15em] text-slate-500">Status</th>
@@ -66,6 +68,14 @@
                         <td class="px-4 py-3">
                             <span class="text-[11px] font-black text-slate-900">GH₵{{ pkg.monthly_rate }}</span>
                             <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest">/ month</p>
+                        </td>
+                        <td class="px-4 py-3">
+                            {% if pkg.includes_emergency_service %}
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-red-50 text-red-600 text-[8px] font-black uppercase border border-red-100">Default</span>
+                            <p class="text-[8px] text-slate-400 font-bold uppercase tracking-widest mt-0.5">GH₵{{ pkg.emergency_monthly_rate }}/mo</p>
+                            {% else %}
+                            <span class="text-[9px] font-bold uppercase tracking-widest text-slate-300">Manual</span>
+                            {% endif %}
                         </td>
                         <td class="px-4 py-3 text-[11px] font-bold text-slate-700">{{ pkg.grace_period_days }}d</td>
                         <td class="px-4 py-3">
@@ -97,7 +107,7 @@
                     </tr>
                     {% empty %}
                     <tr>
-                        <td colspan="6" class="px-4 py-16 text-center text-slate-400 text-xs">
+                        <td colspan="7" class="px-4 py-16 text-center text-slate-400 text-xs">
                             No packages yet. Create one to use as billing presets.
                         </td>
                     </tr>
@@ -137,6 +147,16 @@
                     <div class="form-group">
                         <label>Description</label>
                         <input type="text" name="description" placeholder="Optional" value="{{ pkg.description }}" class="w-full">
+                    </div>
+                    <div class="rounded border border-red-100 bg-red-50/50 p-3 space-y-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="includes_emergency_service" {% if pkg.includes_emergency_service %}checked{% endif %} class="h-3 w-3 rounded border-slate-200 text-red-600 focus:ring-red-600">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-red-600">Preselect emergency patrol add-on</span>
+                        </label>
+                        <div class="form-group">
+                            <label>Emergency Add-on Rate (GHS)</label>
+                            <input type="number" name="emergency_monthly_rate" step="0.01" min="0" value="{{ pkg.emergency_monthly_rate }}" class="w-full">
+                        </div>
                     </div>
                     <label class="flex items-center gap-2 cursor-pointer">
                         <input type="checkbox" name="is_active" {% if pkg.is_active %}checked{% endif %} class="h-3 w-3 rounded border-slate-200 text-brand focus:ring-brand">
@@ -207,6 +227,16 @@
                     <div class="form-group">
                         <label>Description</label>
                         <input type="text" name="description" placeholder="Optional" class="w-full">
+                    </div>
+                    <div class="rounded border border-red-100 bg-red-50/50 p-3 space-y-3">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" name="includes_emergency_service" class="h-3 w-3 rounded border-slate-200 text-red-600 focus:ring-red-600">
+                            <span class="text-[9px] font-black uppercase tracking-widest text-red-600">Preselect emergency patrol add-on</span>
+                        </label>
+                        <div class="form-group">
+                            <label>Emergency Add-on Rate (GHS)</label>
+                            <input type="number" name="emergency_monthly_rate" step="0.01" min="0" value="0.00" class="w-full">
+                        </div>
                     </div>
                     <button type="submit" class="w-full py-3 bg-slate-900 text-white rounded text-[10px] font-black uppercase tracking-widest hover:bg-brand transition-all shadow active:scale-95">
                         Create Package

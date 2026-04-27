@@ -36,6 +36,8 @@ class AppTheme {
   static const Color errorContainer = Color(0xFFFFDAD6);
   static const Color onError = Color(0xFFFFFFFF);
   static const Color onErrorContainer = Color(0xFF93000A);
+  static const Color alarmRed = Color(0xFFD42121);
+  static const Color alarmOverlayBg = Color(0xFFFFE8E8);
 
   // ── Tertiary — "Bypassed / Warning" ───────────────────────────────────────
   static const Color tertiaryContainer = Color(0xFF411100);

@@ -79,6 +79,7 @@ urlpatterns = [
     path("api/v1/hik/arc/<str:action>/", ARCServiceView.as_view(), name="hik-arc-service"),
     path("api/v1/alarms/", include("apps.alarms.urls")),
     path("api/v1/communication/", include("apps.communication.urls")),
+    path("api/v1/emergency/", include("apps.emergency.urls")),
     path("console/", include("apps.dashboard.urls")),
 ]
 
