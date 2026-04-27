@@ -42,6 +42,61 @@ class HikAdapterTests(TestCase):
         # Verify database
         self.assertTrue(AlarmPanelDevice.objects.filter(site=self.site, hik_device_id="demo-panel-001").exists())
 
+    @patch("apps.hik_adapter.client.HikPartnerClient.subscribe_events")
+    @patch("apps.hik_adapter.services.HikPartnerService.sync_site_metadata")
+    @patch("apps.hik_adapter.client.HikPartnerClient.list_devices")
+    def test_sync_site_devices_fetches_all_device_pages(
+        self,
+        mock_list_devices,
+        mock_sync_metadata,
+        mock_subscribe_events,
+    ):
+        mock_list_devices.side_effect = [
+            {
+                "data": {
+                    "rows": [
+                        {
+                            "id": "dev-page-1",
+                            "deviceSerial": "SN-PAGE-1",
+                            "deviceName": "Panel Page 1",
+                            "deviceModel": "AX",
+                            "deviceCategory": 3,
+                            "deviceSubCategory": 3,
+                            "deviceOnlineStatus": 1,
+                        }
+                    ],
+                    "total": 2,
+                }
+            },
+            {
+                "data": {
+                    "rows": [
+                        {
+                            "id": "dev-page-2",
+                            "deviceSerial": "SN-PAGE-2",
+                            "deviceName": "Panel Page 2",
+                            "deviceModel": "AX",
+                            "deviceCategory": 3,
+                            "deviceSubCategory": 4,
+                            "deviceOnlineStatus": 0,
+                        }
+                    ],
+                    "total": 2,
+                }
+            },
+        ]
+
+        service = HikPartnerService()
+        service.client.dry_run = False
+
+        result = service.sync_site_devices(self.site)
+
+        self.assertEqual(result["devices_seen"], 2)
+        self.assertTrue(AlarmPanelDevice.objects.filter(serial_number="SN-PAGE-1").exists())
+        self.assertTrue(AlarmPanelDevice.objects.filter(serial_number="SN-PAGE-2").exists())
+        self.assertEqual(mock_list_devices.call_count, 2)
+        mock_subscribe_events.assert_called_once_with(["SN-PAGE-1", "SN-PAGE-2"])
+
     @patch("apps.hik_adapter.client.requests.post")
     def test_get_access_token_success(self, mock_post):
         # Per API guide §3.1: token request uses plain appKey + secretKey
@@ -390,6 +445,51 @@ class HikAdapterTests(TestCase):
         self.assertEqual(self.site.primary_industry, "House")
         self.assertEqual(self.site.latitude, Decimal("5.603700000"))
         self.assertEqual(self.site.longitude, Decimal("-0.187000000"))
+
+    @patch("apps.hik_adapter.services.requests.get")
+    @patch("apps.hik_adapter.client.HikPartnerClient.search_sites")
+    def test_sync_site_metadata_uses_device_site_name_fallback(self, mock_search_sites, mock_get):
+        mock_search_sites.side_effect = [
+            {"data": {"rows": [], "total": 0}},
+            {
+                "data": {
+                    "rows": [
+                        {
+                            "id": "site-1",
+                            "siteName": "site74",
+                            "siteState": "",
+                            "siteCity": "Accra",
+                            "siteStreet": "oseble street",
+                            "location": "",
+                            "timeZone": "48",
+                        }
+                    ],
+                    "total": 1,
+                }
+            },
+        ]
+        mock_response = MagicMock()
+        mock_response.json.return_value = []
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        service = HikPartnerService()
+        service.client.dry_run = False
+
+        service.sync_site_metadata(
+            self.site,
+            device_list=[
+                {
+                    "siteID": "site-1",
+                    "siteName": "site74",
+                }
+            ],
+        )
+
+        self.site.refresh_from_db()
+        self.assertEqual(self.site.name, "site74")
+        self.assertEqual(self.site.city, "Accra")
+        self.assertEqual(self.site.address, "oseble street")
 
     def test_sync_alarm_status_persists_extended_zone_metadata_and_outputs(self):
         self.device.is_online = True

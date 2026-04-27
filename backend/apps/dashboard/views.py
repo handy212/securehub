@@ -22,7 +22,15 @@ from django.views.generic import ListView, TemplateView, View
 from apps.alarms.event_labels import humanize_event_label
 from apps.alarms.media import collect_related_event_media, resolve_picture_media_type
 from apps.alarms.models import AlarmEvent as Event
-from apps.alarms.tasks import send_reactivation_notice, send_subscription_lockout_notice, send_suspension_notice
+from apps.alarms.tasks import (
+    initial_site_discovery,
+    refresh_hik_site_health,
+    send_reactivation_notice,
+    send_subscription_lockout_notice,
+    send_suspension_notice,
+    sync_hik_alarm_status,
+    sync_hik_site_devices,
+)
 from apps.hik_adapter.services import HikPartnerService
 from apps.sites.models import AlarmOutput, AlarmPanelDevice, AlarmPeripheral, CustomerSiteAccess, Site, Subsystem, Subscription, SubscriptionPackage, SubscriptionPayment, Zone
 from apps.sites.scenes import SCENE_OPTIONS, normalize_scene_label
@@ -697,6 +705,8 @@ class SiteConsoleView(StaffRequiredMixin, TemplateView):
         devices = AlarmPanelDevice.objects.filter(site=site).prefetch_related("subsystems__zones", "peripherals", "outputs")
         context["devices"] = devices
         context["devices_count"] = devices.count()
+        context["hik_devices"] = site.hik_devices.all()
+        context["hik_devices_count"] = site.hik_devices.count()
         online_control_area_count = sum(
             device.subsystems.count() or 1
             for device in devices
@@ -767,7 +777,7 @@ class SiteConsoleView(StaffRequiredMixin, TemplateView):
         context["has_owner_access"] = bool(owner_access)
         context["primary_owner_access"] = owner_access[0] if owner_access else None
         context["readiness"] = {
-            "has_devices": context["devices_count"] > 0,
+            "has_devices": context["devices_count"] > 0 or context["hik_devices_count"] > 0,
             "has_access": context["access_count"] > 0,
             "has_owner": context["has_owner_access"],
             "has_subscription": bool(context["subscription"]),
@@ -1242,47 +1252,23 @@ class SiteActionView(StaffRequiredMixin, View):
                 messages.warning(request, "No areas found to control.")
         
         elif action == "sync-devices":
-            try:
-                service.sync_site_devices(site)
-                messages.success(request, f"Synchronized devices for {site.name}")
-            except Exception as e:
-                messages.error(request, f"Sync failed: {str(e)}")
+            transaction.on_commit(lambda: sync_hik_site_devices.delay(str(site.pk)))
+            messages.success(
+                request,
+                f"Device sync for {site.name} has started in the background.",
+            )
         elif action == "sync-alarms":
-            try:
-                service.sync_alarm_status(site)
-                # Also run health refresh to pick up keypads, keyfobs, card readers,
-                # and per-zone battery/signal data from the health report API.
-                health_warning = None
-                try:
-                    result = service.refresh_site_health(site)
-                    if result.get("skipped"):
-                        health_warning = result.get("reason") or "health report unavailable"
-                except Exception as exc:
-                    health_warning = str(exc)
-                messages.success(request, f"Refreshed status for {site.name}")
-                if health_warning:
-                    messages.warning(
-                        request,
-                        f"Peripheral refresh could not complete fully: {health_warning}. "
-                        "Control devices may appear only after a health sync or live activity.",
-                    )
-            except Exception as e:
-                messages.error(request, f"Refresh failed: {str(e)}")
+            transaction.on_commit(lambda: sync_hik_alarm_status.delay(str(site.pk)))
+            messages.success(
+                request,
+                f"Alarm and peripheral sync for {site.name} has started in the background.",
+            )
         elif action == "refresh-health":
-            try:
-                result = service.refresh_site_health(site)
-                if result.get("skipped"):
-                    messages.warning(request, f"Health check skipped: {result.get('reason')}")
-                else:
-                    p = result.get("panels_updated", 0)
-                    z = result.get("zones_updated", 0)
-                    suffix = " (via device list + ISAPI)" if result.get("via_fallback") else ""
-                    messages.success(
-                        request,
-                        f"Health refreshed{suffix} — {p} panels, {z} zones updated.",
-                    )
-            except Exception as e:
-                messages.error(request, f"Health refresh failed: {str(e)}")
+            transaction.on_commit(lambda: refresh_hik_site_health.delay(str(site.pk)))
+            messages.success(
+                request,
+                f"Health refresh for {site.name} has started in the background.",
+            )
         elif action == "panic":
             try:
                 panic_type = request.POST.get("panic_type", "audible")
@@ -1414,15 +1400,12 @@ class ProvisionSiteView(StaffRequiredMixin, View):
 
         if created:
             messages.success(request, f"Site '{name}' provisioned successfully.")
-            try:
-                service.sync_site_metadata(site)
-                if site.latitude is None or site.longitude is None:
-                    service.geocode_site_location(site)
-                service.sync_site_devices(site)
-                service.sync_alarm_status(site)
-                messages.info(request, "Initial infrastructure discovery complete.")
-            except Exception as e:
-                messages.warning(request, f"Synchronisation encountered issues: {str(e)}")
+            transaction.on_commit(lambda: initial_site_discovery.delay(str(site.pk)))
+            messages.info(
+                request,
+                "Initial infrastructure discovery has started in the background. "
+                "Devices and live status will appear as the Hik sync completes.",
+            )
             
             # CONSID: If this is a new setup, take them straight to client onboarding
             return redirect(f"{reverse('dashboard:onboard-client', args=[site.pk])}?init=true")

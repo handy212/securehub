@@ -126,11 +126,21 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-if not DEBUG:
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if not DEBUG
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        ),
+    },
+}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -180,27 +190,22 @@ CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 300  # seconds
+CELERY_TASK_DEFAULT_QUEUE = "celery"
+CELERY_TASK_CREATE_MISSING_QUEUES = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = int(os.getenv("CELERY_WORKER_PREFETCH_MULTIPLIER", "1"))
+CELERY_TASK_ROUTES = {
+    "apps.alarms.tasks.process_webhook_messages": {"queue": "webhook"},
+}
 # Set CELERY_TASK_ALWAYS_EAGER=True in .env to run tasks synchronously (no worker needed — dev only).
 CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "False").lower() == "true"
 CELERY_TASK_EAGER_PROPAGATES = CELERY_TASK_ALWAYS_EAGER
 
-# MQ long-poll runs every 25 s: the platform blocks up to 20 s per call,
-# so 25 s gives a small buffer between invocations.
+HIK_DELIVERY_MODE = os.getenv("HIK_PARTNER_DELIVERY_MODE", "mq").lower()
+HIK_MQ_POLL_INTERVAL_SECONDS = float(os.getenv("HIK_MQ_POLL_INTERVAL_SECONDS", "25"))
+HIK_DEVICE_HEALTH_INTERVAL_SECONDS = float(os.getenv("HIK_DEVICE_HEALTH_INTERVAL_SECONDS", "300"))
+HIK_STATUS_SYNC_INTERVAL_SECONDS = float(os.getenv("HIK_STATUS_SYNC_INTERVAL_SECONDS", "300"))
+
 CELERY_BEAT_SCHEDULE = {
-    "poll-mq-events": {
-        "task": "apps.alarms.tasks.poll_mq_events",
-        "schedule": 25.0,
-    },
-    # Poll device/zone health (battery, tamper, online status) every 5 minutes
-    "poll-device-health": {
-        "task": "apps.alarms.tasks.poll_device_health",
-        "schedule": 300.0,
-    },
-    # Sync zone states (open/close/arm) from ISAPI every 15 seconds
-    "sync-alarm-status": {
-        "task": "apps.alarms.tasks.sync_all_alarm_status",
-        "schedule": 10.0,
-    },
     # Run once every 24 hours — mark overdue subscriptions and auto-suspend
     "check-subscription-statuses": {
         "task": "apps.alarms.tasks.check_subscription_statuses",
@@ -212,6 +217,27 @@ CELERY_BEAT_SCHEDULE = {
         "schedule": 86400.0,
     },
 }
+
+if HIK_DELIVERY_MODE == "mq" and HIK_MQ_POLL_INTERVAL_SECONDS > 0:
+    # MQ long-poll blocks up to 20 s when no events are pending.
+    CELERY_BEAT_SCHEDULE["poll-mq-events"] = {
+        "task": "apps.alarms.tasks.poll_mq_events",
+        "schedule": HIK_MQ_POLL_INTERVAL_SECONDS,
+    }
+
+if HIK_DEVICE_HEALTH_INTERVAL_SECONDS > 0:
+    # Poll device/zone health (battery, tamper, online status).
+    CELERY_BEAT_SCHEDULE["poll-device-health"] = {
+        "task": "apps.alarms.tasks.poll_device_health",
+        "schedule": HIK_DEVICE_HEALTH_INTERVAL_SECONDS,
+    }
+
+if HIK_STATUS_SYNC_INTERVAL_SECONDS > 0:
+    # Sync zone states (open/close/arm) from ISAPI as a safety net for webhook delivery.
+    CELERY_BEAT_SCHEDULE["sync-alarm-status"] = {
+        "task": "apps.alarms.tasks.sync_all_alarm_status",
+        "schedule": HIK_STATUS_SYNC_INTERVAL_SECONDS,
+    }
 
 # Email
 EMAIL_BACKEND = os.getenv(
@@ -241,6 +267,7 @@ HIK_PARTNER = {
     "WEBHOOK_SIGN_SECRET": os.getenv("HIK_PARTNER_WEBHOOK_SIGN_SECRET", ""),
     "DELIVERY_MODE": os.getenv("HIK_PARTNER_DELIVERY_MODE", "mq").lower(),
     "DRY_RUN": os.getenv("HIK_PARTNER_DRY_RUN", "True").lower() == "true",
+    "STATUS_TIMEOUT": int(os.getenv("HIK_PARTNER_STATUS_TIMEOUT", "20")),
 }
 
 SITE_GEOCODING = {

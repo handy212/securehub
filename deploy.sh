@@ -4,7 +4,7 @@
 # Usage: ./deploy.sh [--full]   (--full rebuilds images from scratch)
 set -euo pipefail
 
-COMPOSE="docker compose -f docker-compose.prod.yml"
+COMPOSE="docker compose --env-file backend/.env.production -f docker-compose.prod.yml"
 
 echo "▶  Pulling latest code..."
 git pull --ff-only

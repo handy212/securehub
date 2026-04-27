@@ -17,7 +17,7 @@ from apps.alarms.media import resolve_picture_media_type
 from apps.alarms.models import AlarmEvent
 
 logger = logging.getLogger(__name__)
-from apps.sites.models import AlarmOutput, AlarmPanelDevice, AlarmPeripheral, Site, Subsystem, Zone
+from apps.sites.models import AlarmOutput, AlarmPanelDevice, AlarmPeripheral, HikSiteDevice, Site, Subsystem, Zone
 from apps.sites.scenes import normalize_scene_label
 
 from .client import HikPartnerClient
@@ -287,6 +287,9 @@ class HikPartnerService:
         "wired_network_fault_restored": "RESTORE",
     }
 
+    def _status_timeout(self) -> int:
+        return int(getattr(settings, "HIK_PARTNER", {}).get("STATUS_TIMEOUT", 20))
+
     COMMAND_EVENT_META = {
         "arm": {"category": AlarmEvent.CATEGORY_ARM, "severity": AlarmEvent.SEVERITY_LOW},
         "disarm": {"category": AlarmEvent.CATEGORY_ARM, "severity": AlarmEvent.SEVERITY_LOW},
@@ -495,7 +498,7 @@ class HikPartnerService:
                     method="GET",
                     isapi_uri="/ISAPI/SecurityCP/status/hostHealth?format=json",
                     headers=headers or {"X-Userlevel": "1"},
-                    timeout=30,
+                    timeout=min(self._status_timeout(), 20),
                 )
                 power_raw = (health_resp or {}).get("HostHealth", {}).get("powerStatus")
                 normalized = AlarmPanelDevice.normalize_battery_status_value(power_raw)
@@ -519,7 +522,7 @@ class HikPartnerService:
                 isapi_uri="/ISAPI/SecurityCP/status/outputStatus?format=json",
                 body={"OutputCond": {"searchID": f"securehub-{panel.serial_number}", "searchResultPosition": 0, "maxResults": 200}},
                 headers={"X-Userlevel": "1"},
-                timeout=60,
+                timeout=self._status_timeout(),
             )
         except Exception as exc:
             logger.warning("_sync_outputs_via_isapi: failed for %s: %s", panel.serial_number, exc)
@@ -629,10 +632,21 @@ class HikPartnerService:
         logger.info("geocode_site_location: no coordinates found for site %s", site.name)
         return False
 
-    def _find_site_search_row(self, site: Site) -> dict | None:
+    def _find_site_search_row(
+        self,
+        site: Site,
+        *,
+        device_list: list[dict] | None = None,
+    ) -> dict | None:
         search_terms = []
         if self._clean_text(site.name):
             search_terms.append(self._clean_text(site.name))
+        for device in device_list or []:
+            if device.get("siteID") != site.hik_site_id:
+                continue
+            site_name = self._clean_text(device.get("siteName"))
+            if site_name and site_name not in search_terms:
+                search_terms.append(site_name)
         search_terms.append("")
 
         for term in search_terms:
@@ -653,6 +667,30 @@ class HikPartnerService:
                     break
                 page += 1
         return None
+
+    def _apply_site_hints_from_devices(self, site: Site, device_list: list[dict] | None) -> bool:
+        for device in device_list or []:
+            if device.get("siteID") != site.hik_site_id:
+                continue
+
+            update_fields = []
+            site_name = self._clean_text(device.get("siteName"))
+            if site_name and site.name != site_name:
+                site.name = site_name
+                update_fields.append("name")
+
+            time_zone = self._clean_text(device.get("timeZone"))
+            if time_zone and site.timezone != time_zone:
+                site.timezone = time_zone
+                update_fields.append("timezone")
+
+            if update_fields:
+                update_fields.append("updated_at")
+                site.save(update_fields=update_fields)
+                logger.info("sync_site_metadata: applied device-list metadata for site %s", site.hik_site_id)
+                return True
+
+        return False
 
     def sync_alarm_status(self, site: Site) -> None:
         """
@@ -702,7 +740,7 @@ class HikPartnerService:
                     method="GET",
                     isapi_uri="/ISAPI/SecurityCP/status/subSystems?format=json",
                     headers=ax_pro_headers,
-                    timeout=60,
+                    timeout=self._status_timeout(),
                 )
                 enabled_partition_ids = []
                 for entry in resp.get("SubSysList", []):
@@ -789,7 +827,7 @@ class HikPartnerService:
                     method="GET",
                     isapi_uri="/ISAPI/SecurityCP/status/zones?format=json",
                     headers=ax_pro_headers,
-                    timeout=60,
+                    timeout=self._status_timeout(),
                 )
                 touched_zone_ids = []
                 for entry in resp.get("ZoneList", []):
@@ -891,7 +929,7 @@ class HikPartnerService:
                 method="GET",
                 isapi_uri="/ISAPI/System/deviceInfo?format=json",
                 headers={"X-Userlevel": "1"},
-                timeout=30,
+                timeout=min(self._status_timeout(), 20),
             )
             
             info = {}
@@ -950,7 +988,7 @@ class HikPartnerService:
             "subsystems": subsystems,
         }
 
-    def sync_site_metadata(self, site: Site) -> None:
+    def sync_site_metadata(self, site: Site, *, device_list: list[dict] | None = None) -> None:
         """
         Fetch granular site metadata (State, City, Address, Industry) from Hik-Partner Pro
         and update the local Site record.
@@ -960,9 +998,10 @@ class HikPartnerService:
             return
 
         try:
-            site_info = self._find_site_search_row(site)
+            site_info = self._find_site_search_row(site, device_list=device_list)
             if not site_info:
                 logger.warning("sync_site_metadata: Site %s not found in search results", site.hik_site_id)
+                self._apply_site_hints_from_devices(site, device_list)
                 return
 
             site.name = site_info.get("siteName") or site.name
@@ -988,6 +1027,7 @@ class HikPartnerService:
             
         except Exception as exc:
             logger.warning("sync_site_metadata: Failed for site %s: %s", site.name, exc)
+            self._apply_site_hints_from_devices(site, device_list)
 
     def sync_site_devices(self, site: Site):
         """
@@ -1026,17 +1066,16 @@ class HikPartnerService:
             )
             return {"synced_panels": 1}
 
-        # Real API — Per guide §3.21: POST /api/hpcgw/v1/device/list
-        devices_data = self.client.request(
-            "POST", "/api/hpcgw/v1/device/list", json={"siteId": site.hik_site_id}
-        )
+        # Real API — Per guide §3.21: POST /api/hpcgw/v1/device/list.
+        # Production sites can exceed the API default page size, so collect all
+        # pages before registering local panels/subscriptions.
+        device_list = self._fetch_site_device_list(site.hik_site_id)
         
         # Also sync site metadata (State, Scene, etc.)
-        self.sync_site_metadata(site)
-
-        device_list = devices_data.get("data", {}).get("rows", [])
+        self.sync_site_metadata(site, device_list=device_list)
 
         synced_panels = 0
+        touched_hik_device_ids = []
 
         for dev_info in device_list:
             dev_id = dev_info["id"]
@@ -1047,6 +1086,23 @@ class HikPartnerService:
             dev_sub_category = dev_info.get("deviceSubCategory")
             # deviceOnlineStatus: 0=offline, 1=online, 2=unknown
             is_online = dev_info.get("deviceOnlineStatus") == 1
+            touched_hik_device_ids.append(dev_id)
+
+            HikSiteDevice.objects.update_or_create(
+                hik_device_id=dev_id,
+                defaults={
+                    "site": site,
+                    "name": dev_name,
+                    "serial_number": dev_serial,
+                    "device_category": dev_category,
+                    "device_sub_category": dev_sub_category,
+                    "device_type": dev_info.get("deviceType", "") or dev_info.get("deviceModel", ""),
+                    "device_version": dev_info.get("deviceVersion", ""),
+                    "is_online": is_online,
+                    "is_subscribed": bool(dev_info.get("isSubscribed")),
+                    "raw_payload": dev_info,
+                },
+            )
 
             # Determine if this device should be treated as an alarm panel:
             # - explicit alarm panel category (AlarmHost = 3 per spec §3.21), OR
@@ -1078,6 +1134,11 @@ class HikPartnerService:
                     dev_name, dev_serial, dev_category, dev_sub_category, site.name,
                 )
 
+        if touched_hik_device_ids:
+            HikSiteDevice.objects.filter(site=site).exclude(
+                hik_device_id__in=touched_hik_device_ids
+            ).delete()
+
         # Subscribe to MQ events for all devices (panels)
         all_serials = [d.get("deviceSerial") for d in device_list if d.get("deviceSerial")]
         if all_serials:
@@ -1088,7 +1149,32 @@ class HikPartnerService:
 
         return {
             "synced_panels": synced_panels,
+            "devices_seen": len(device_list),
         }
+
+    def _fetch_site_device_list(self, hik_site_id: str, *, page_size: int = 100) -> list[dict]:
+        rows: list[dict] = []
+        page = 1
+
+        while True:
+            devices_data = self.client.list_devices(
+                site_id=hik_site_id,
+                page=page,
+                page_size=page_size,
+            )
+            data = devices_data.get("data", {}) or {}
+            page_rows = data.get("rows", []) or []
+            rows.extend(page_rows)
+
+            total = int(data.get("total") or 0)
+            if total:
+                if len(rows) >= total or not page_rows:
+                    break
+            elif len(page_rows) < page_size:
+                break
+            page += 1
+
+        return rows
 
     def resubscribe_all_sites(self) -> dict:
         """
@@ -1894,12 +1980,22 @@ class HikPartnerService:
                         match.save(update_fields=["payload"])
                     return match
 
+        occurred_at = self._extract_event_occurred_at(alarm_data, msg)
+
         logger.info("MQ event: %s (device=%s)", stored_event_type, device_serial)
 
-        # Sync model state from the event description (the source of truth)
+        # Sync model state from the event description (the source of truth).
+        # The timestamp guard prevents delayed/backlogged deliveries from rolling
+        # a partition or zone back to an older state.
         subsystem = zone = None
         if event_desc and alarm_device:
-            subsystem, zone = self._sync_state_from_event(alarm_device, cid_event, event_desc, alarm_data)
+            subsystem, zone = self._sync_state_from_event(
+                alarm_device,
+                cid_event,
+                event_desc,
+                alarm_data,
+                occurred_at=occurred_at,
+            )
 
         if alarm_device:
             panel_fields_to_update = set()
@@ -1975,9 +2071,6 @@ class HikPartnerService:
                     
                     # Successfully handled as a merge. Return parent instead of creating new Linkage row.
                     return parent
-
-        # Creation — only reached if no deduplication match found
-        occurred_at = self._extract_event_occurred_at(alarm_data, msg)
 
         event = AlarmEvent.objects.create(
             site=site,
@@ -2192,7 +2285,12 @@ class HikPartnerService:
         return None
 
     def _sync_state_from_event(
-        self, panel: "AlarmPanelDevice", cid_event: dict, event_desc: str, alarm_data: dict = None
+        self,
+        panel: "AlarmPanelDevice",
+        cid_event: dict,
+        event_desc: str,
+        alarm_data: dict = None,
+        occurred_at: datetime | None = None,
     ) -> tuple["Subsystem | None", "Zone | None"]:
         """
         Update Subsystem and Zone models from an eventDescription string using
@@ -2221,8 +2319,30 @@ class HikPartnerService:
 
         event_type = self._classify_event(event_desc)
 
+        state_event_types = {"ARM", "STAY", "DISARM", "ALARM"}
+        stale_for_subsystem = False
+        if subsystem and occurred_at and event_type in state_event_types:
+            stale_for_subsystem = AlarmEvent.objects.filter(
+                site=site,
+                subsystem=subsystem,
+                occurred_at__gt=occurred_at,
+                event_category__in=[
+                    AlarmEvent.CATEGORY_ARM,
+                    AlarmEvent.CATEGORY_ALARM,
+                    AlarmEvent.CATEGORY_SYSTEM,
+                ],
+            ).exists()
+
+        stale_for_zone = False
+        if zone and occurred_at:
+            stale_for_zone = AlarmEvent.objects.filter(
+                site=site,
+                zone=zone,
+                occurred_at__gt=occurred_at,
+            ).exclude(event_category=AlarmEvent.CATEGORY_INFO).exists()
+
         # ── Subsystem state ───────────────────────────────────────────────
-        if subsystem:
+        if subsystem and not stale_for_subsystem:
             if event_type == "ARM":
                 subsystem.status = Subsystem.STATUS_ARMED
 
@@ -2239,9 +2359,17 @@ class HikPartnerService:
                 subsystem.status = Subsystem.STATUS_ALARM
 
             subsystem.save(update_fields=["status", "updated_at"])
+        elif subsystem and stale_for_subsystem:
+            logger.info(
+                "_sync_state_from_event: skipped stale %s for subsystem %s "
+                "(event time %s)",
+                event_type,
+                subsystem.id,
+                occurred_at,
+            )
 
         # ── Zone state ────────────────────────────────────────────────────
-        if zone:
+        if zone and not stale_for_zone:
             is_disarmed = subsystem and subsystem.status == Subsystem.STATUS_DISARMED
             zone_modified = False
 
@@ -2283,6 +2411,14 @@ class HikPartnerService:
 
             if zone_modified:
                 zone.save()
+        elif zone and stale_for_zone:
+            logger.info(
+                "_sync_state_from_event: skipped stale %s for zone %s "
+                "(event time %s)",
+                event_type,
+                zone.id,
+                occurred_at,
+            )
 
         # ── Panel connectivity ────────────────────────────────────────────
         if event_type == "ONLINE":
@@ -2581,10 +2717,7 @@ class HikPartnerService:
 
         # Step 1: update online status from device list
         try:
-            devices_data = self.client.request(
-                "POST", "/api/hpcgw/v1/device/list", json={"siteId": site.hik_site_id}
-            )
-            for dev_info in devices_data.get("data", {}).get("rows", []):
+            for dev_info in self._fetch_site_device_list(site.hik_site_id):
                 serial = dev_info.get("deviceSerial", "")
                 online = dev_info.get("deviceOnlineStatus") == 1
                 updated = AlarmPanelDevice.objects.filter(
@@ -2612,7 +2745,7 @@ class HikPartnerService:
                         device_serial=panel.serial_number,
                         method="GET",
                         isapi_uri=isapi_uri,
-                        timeout=60,
+                        timeout=self._status_timeout(),
                     )
                     zone_entries = resp.get("ZoneList", [])
                     if zone_entries:
