@@ -388,7 +388,7 @@
                 <div>
                     <p class="text-[9px] font-black uppercase tracking-widest {% if readiness.has_devices %}text-emerald-600{% else %}text-amber-600{% endif %}">Step 1 — Infrastructure</p>
                     <p class="text-[10px] font-bold text-slate-600 mt-0.5">
-                        {% if readiness.has_devices %}{{ devices_count }} device{{ devices_count|pluralize }} discovered{% else %}No devices synced yet{% endif %}
+                        {% if readiness.has_devices %}{{ hik_devices_count|default:devices_count }} Hik device{{ hik_devices_count|default:devices_count|pluralize }} discovered{% else %}No devices synced yet{% endif %}
                     </p>
                 </div>
                 <div class="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 {% if readiness.has_devices %}bg-emerald-100 text-emerald-600{% else %}bg-amber-100 text-amber-600{% endif %}">

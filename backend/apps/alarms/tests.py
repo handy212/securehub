@@ -119,13 +119,11 @@ class BackendApiTests(APITestCase):
         self.assertIn("access", response.data)
         self.assertIn("refresh", response.data)
 
-    def test_root_path_returns_api_landing_payload(self):
-        response = self.client.get(reverse("service-root"))
+    def test_root_path_redirects_to_console(self):
+        response = self.client.get(reverse("service-root"), HTTP_X_FORWARDED_PROTO="https")
 
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data["service"], "Alarm Hub Backend")
-        self.assertEqual(response.data["status"], "ok")
-        self.assertIn("sites", response.data["endpoints"])
+        self.assertEqual(response.status_code, status.HTTP_302_FOUND)
+        self.assertEqual(response["Location"], "/console/")
 
     def test_health_check_returns_ok_without_authentication(self):
         response = self.client.get(reverse("health-check"))

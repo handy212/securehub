@@ -31,6 +31,29 @@ class Site(models.Model):
         return self.name
 
 
+class HikSiteDevice(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    site = models.ForeignKey(Site, on_delete=models.CASCADE, related_name="hik_devices")
+    hik_device_id = models.CharField(max_length=128, unique=True)
+    name = models.CharField(max_length=255)
+    serial_number = models.CharField(max_length=128, unique=True)
+    device_category = models.IntegerField(null=True, blank=True)
+    device_sub_category = models.IntegerField(null=True, blank=True)
+    device_type = models.CharField(max_length=128, blank=True, default="")
+    device_version = models.CharField(max_length=128, blank=True, default="")
+    is_online = models.BooleanField(default=False)
+    is_subscribed = models.BooleanField(default=False)
+    raw_payload = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["device_category", "name"]
+
+    def __str__(self) -> str:
+        return f"{self.name} ({self.serial_number})"
+
+
 class SubscriptionPackage(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
     name = models.CharField(max_length=100)

@@ -8,19 +8,9 @@
     <script>
         (function(){var t=localStorage.getItem('theme');if(t==='dark'||(!t&&window.matchMedia('(prefers-color-scheme: dark)').matches)){document.documentElement.classList.add('dark');}})();
     </script>
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="{% static 'dashboard/css/console.css' %}">
+    <link rel="icon" href="{% static 'dashboard/logo.png' %}">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <script>
-        tailwind.config = {
-            darkMode: 'class',
-            theme: {
-                extend: {
-                    fontFamily: { sans: ['Inter', 'sans-serif'] },
-                    colors: { brand: '#0f172a' }
-                }
-            }
-        }
-    </script>
     <style>
         body { font-size: 14px; -webkit-font-smoothing: antialiased; }
         .input-focus:focus { border-color: #0f172a; box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.05); }
@@ -67,7 +57,7 @@
                     </div>
 
                     <button type="submit"
-                            class="w-full mt-4 py-3 rounded bg-brand dark:bg-brand text-white text-[10px] font-black uppercase tracking-[0.15em] hover:bg-slate-800 dark:hover:bg-slate-700 transition-all shadow-lg shadow-slate-900/10 active:scale-95">
+                            class="w-full mt-4 py-3 rounded bg-slate-900 dark:bg-slate-800 text-white text-[10px] font-black uppercase tracking-[0.15em] hover:bg-slate-800 dark:hover:bg-slate-700 transition-all shadow-lg shadow-slate-900/10 active:scale-95">
                         Authorize Access
                     </button>
                 </form>

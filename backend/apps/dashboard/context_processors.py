@@ -41,6 +41,10 @@ def global_dashboard_stats(request):
 
     return {
         'global_sites': sites_data,
+        'global_config': {
+            'tickerCount': recent_events.count(),
+            'health': health_percentage,
+        },
         'global_recent_events': recent_events,
         'global_health_percentage': health_percentage,
         'global_counts': {

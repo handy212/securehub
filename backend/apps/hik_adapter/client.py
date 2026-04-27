@@ -453,6 +453,21 @@ class HikPartnerClient:
             json={"siteId": site_id, "deviceList": device_list},
         )
 
+    def list_devices(self, site_id: str, page: int = 1, page_size: int = 100) -> dict:
+        """
+        List devices under a Hik site.
+        Per §3.21: device/list is paginated. Passing page/pageSize avoids only
+        receiving the platform default first page on larger production sites.
+        """
+        if self.dry_run:
+            return {"data": {"rows": [], "total": 0, "page": page, "pageSize": page_size}}
+        return self.request(
+            "POST",
+            "/api/hpcgw/v1/device/list",
+            json={"siteId": site_id, "page": page, "pageSize": page_size},
+        )
+
+
     def delete_device(self, device_id: str) -> dict:
         """
         Remove a device from the Hik-Partner Pro platform.

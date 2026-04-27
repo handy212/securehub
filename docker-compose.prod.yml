@@ -47,8 +47,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    expose:
-      - "8000"
+    ports:
+      - "172.16.20.245:8000:8000"
 
   celery-worker:
     build:
@@ -61,6 +61,26 @@ services:
       DJANGO_DB_HOST: db
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+    volumes:
+      - firebase_creds:/run/secrets:ro
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+  celery-webhook:
+    build:
+      context: backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: celery-webhook
+    env_file: backend/.env.production
+    environment:
+      DJANGO_DB_HOST: db
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+      CELERY_WEBHOOK_CONCURRENCY: 2
     volumes:
       - firebase_creds:/run/secrets:ro
     depends_on:

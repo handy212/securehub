@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from .models import AlarmOutput, AlarmPanelDevice, AlarmPeripheral, Site, Subsystem, Zone
+from .models import AlarmOutput, AlarmPanelDevice, AlarmPeripheral, HikSiteDevice, Site, Subsystem, Zone
 from .permissions import user_can_access_all_sites
 
 
@@ -182,8 +182,35 @@ class AlarmPanelDeviceSerializer(serializers.ModelSerializer):
         )
 
 
+class HikSiteDeviceSerializer(serializers.ModelSerializer):
+    hikDeviceId = serializers.CharField(source="hik_device_id", read_only=True)
+    serialNumber = serializers.CharField(source="serial_number", read_only=True)
+    deviceCategory = serializers.IntegerField(source="device_category", read_only=True, allow_null=True)
+    deviceSubCategory = serializers.IntegerField(source="device_sub_category", read_only=True, allow_null=True)
+    deviceType = serializers.CharField(source="device_type", read_only=True)
+    deviceVersion = serializers.CharField(source="device_version", read_only=True)
+    isOnline = serializers.BooleanField(source="is_online", read_only=True)
+    isSubscribed = serializers.BooleanField(source="is_subscribed", read_only=True)
+
+    class Meta:
+        model = HikSiteDevice
+        fields = (
+            "id",
+            "name",
+            "hikDeviceId",
+            "serialNumber",
+            "deviceCategory",
+            "deviceSubCategory",
+            "deviceType",
+            "deviceVersion",
+            "isOnline",
+            "isSubscribed",
+        )
+
+
 class SiteSerializer(serializers.ModelSerializer):
     devices = AlarmPanelDeviceSerializer(many=True, read_only=True)
+    hikDevices = HikSiteDeviceSerializer(source="hik_devices", many=True, read_only=True)
     hikSiteId = serializers.CharField(source='hik_site_id', read_only=True)
     isActive = serializers.BooleanField(source='is_active', read_only=True)
     can_control_alarm = serializers.SerializerMethodField()
@@ -208,6 +235,7 @@ class SiteSerializer(serializers.ModelSerializer):
             "can_control_alarm",
             "canControlAlarm",
             "devices",
+            "hikDevices",
         )
 
     def get_can_control_alarm(self, obj):
