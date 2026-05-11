@@ -122,6 +122,17 @@ class AuthRepository {
     }
   }
 
+  Future<void> requestPasswordReset(String identifier) async {
+    try {
+      await _dio.post(
+        ApiEndpoints.passwordReset,
+        data: {'identifier': identifier},
+      );
+    } on DioException catch (e) {
+      throwAppException(e);
+    }
+  }
+
   Future<CustomerProfile> fetchProfile() async {
     try {
       final resp = await _dio.get(ApiEndpoints.profile);

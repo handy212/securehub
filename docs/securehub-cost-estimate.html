@@ -1,0 +1,236 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>SecureHub Project Cost Estimate</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 20mm;
+    }
+
+    body {
+      color: #172033;
+      font-family: Arial, Helvetica, sans-serif;
+      font-size: 12px;
+      line-height: 1.45;
+      margin: 0;
+    }
+
+    h1 {
+      color: #0f3b57;
+      font-size: 25px;
+      margin: 0 0 6px;
+    }
+
+    h2 {
+      border-bottom: 1px solid #d9e2ea;
+      color: #0f3b57;
+      font-size: 15px;
+      margin: 24px 0 10px;
+      padding-bottom: 5px;
+    }
+
+    p {
+      margin: 0 0 10px;
+    }
+
+    table {
+      border-collapse: collapse;
+      margin: 10px 0 14px;
+      width: 100%;
+    }
+
+    th {
+      background: #eef5f8;
+      color: #0f3b57;
+      font-weight: 700;
+      text-align: left;
+    }
+
+    th,
+    td {
+      border: 1px solid #ccd8e0;
+      padding: 8px;
+      vertical-align: top;
+    }
+
+    td:last-child,
+    th:last-child {
+      text-align: right;
+      white-space: nowrap;
+    }
+
+    .meta {
+      color: #5f6c7b;
+      font-size: 11px;
+      margin-bottom: 22px;
+    }
+
+    .summary {
+      background: #f4f8fb;
+      border: 1px solid #ccd8e0;
+      margin: 16px 0;
+      padding: 12px 14px;
+    }
+
+    .summary strong {
+      color: #0f3b57;
+      font-size: 16px;
+    }
+
+    .total-row td {
+      background: #f4f8fb;
+      color: #0f3b57;
+      font-weight: 700;
+    }
+
+    ul {
+      margin: 8px 0 0 18px;
+      padding: 0;
+    }
+
+    li {
+      margin-bottom: 5px;
+    }
+
+    .footer {
+      border-top: 1px solid #d9e2ea;
+      color: #5f6c7b;
+      font-size: 10px;
+      margin-top: 28px;
+      padding-top: 8px;
+    }
+  </style>
+</head>
+<body>
+  <h1>SecureHub Project Cost Estimate</h1>
+  <div class="meta">Prepared for project planning and budgeting | Currency: Ghana Cedis (GH₵)</div>
+
+  <p>
+    This estimate covers completion, deployment, and initial stabilization of the SecureHub alarm
+    management platform, including the backend API, Flutter mobile app, admin dashboard, Hikvision
+    integration, notifications, testing, deployment, and project handover.
+  </p>
+
+  <div class="summary">
+    <strong>Total One-Time Project Cost: GH₵30,000</strong>
+  </div>
+
+  <h2>Detailed Cost Breakdown</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Description</th>
+        <th>Cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Backend API completion</td>
+        <td>Finalize Django/DRF APIs for authentication, sites, customers, alarms, events, commands, subscriptions, and related data flows.</td>
+        <td>GH₵5,500</td>
+      </tr>
+      <tr>
+        <td>Hikvision integration</td>
+        <td>Complete and test Hik-Partner/Hikvision connection, device synchronization, alarm commands, event handling, and live device validation.</td>
+        <td>GH₵6,000</td>
+      </tr>
+      <tr>
+        <td>Mobile app completion</td>
+        <td>Finalize Flutter app screens, login, site views, alarm controls, event history, notifications, account status, and API integration.</td>
+        <td>GH₵6,000</td>
+      </tr>
+      <tr>
+        <td>Admin dashboard polish</td>
+        <td>Improve the web dashboard for sites, customers, alarms, emergency services, subscriptions, logs, and basic management workflows.</td>
+        <td>GH₵3,500</td>
+      </tr>
+      <tr>
+        <td>Notifications and emergency flow</td>
+        <td>Configure push notifications, emergency request flow, alert handling, and customer notification settings.</td>
+        <td>GH₵3,000</td>
+      </tr>
+      <tr>
+        <td>Testing and bug fixing</td>
+        <td>Functional testing, API testing, mobile testing, live-flow checks, issue fixing, and basic regression checks before handover.</td>
+        <td>GH₵3,000</td>
+      </tr>
+      <tr>
+        <td>Deployment setup</td>
+        <td>Deploy backend to VPS, configure Gunicorn/nginx, Celery, Redis, PostgreSQL, SSL, environment variables, and basic backup setup.</td>
+        <td>GH₵2,500</td>
+      </tr>
+      <tr>
+        <td>Documentation and handover</td>
+        <td>Provide basic setup notes, admin usage guidance, deployment notes, and final project handover support.</td>
+        <td>GH₵500</td>
+      </tr>
+      <tr class="total-row">
+        <td colspan="2">Total One-Time Project Cost</td>
+        <td>GH₵30,000</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Monthly Hosting Cost</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Item</th>
+        <th>Description</th>
+        <th>Monthly Cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>DigitalOcean 4GB VPS</td>
+        <td>Recommended VPS size for initial production use with Django, Celery, Redis, and PostgreSQL.</td>
+        <td>GH₵271/month</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Suggested Payment Plan</h2>
+  <table>
+    <thead>
+      <tr>
+        <th>Milestone</th>
+        <th>Description</th>
+        <th>Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Project kickoff</td>
+        <td>Initial payment to begin completion work and confirm final implementation priorities.</td>
+        <td>GH₵10,000</td>
+      </tr>
+      <tr>
+        <td>Backend and mobile integration checkpoint</td>
+        <td>Payment after core backend, mobile, and Hikvision integration work reaches review stage.</td>
+        <td>GH₵10,000</td>
+      </tr>
+      <tr>
+        <td>Deployment, testing, and handover</td>
+        <td>Final payment after deployment, testing, bug fixing, and handover are completed.</td>
+        <td>GH₵10,000</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>Assumptions and Exclusions</h2>
+  <ul>
+    <li>Hikvision API credentials and test devices will be provided for integration testing.</li>
+    <li>DigitalOcean hosting is billed monthly and is separate from the one-time project cost.</li>
+    <li>Domain registration, SMS, WhatsApp, email provider charges, and app store fees are separate if required.</li>
+    <li>The estimate covers an initial production-ready launch, not unlimited future feature additions.</li>
+    <li>Major new features requested after approval may require a separate estimate.</li>
+  </ul>
+
+  <div class="footer">
+    SecureHub cost estimate | Total project budget: GH₵30,000 | Monthly VPS estimate: GH₵271/month
+  </div>
+</body>
+</html>

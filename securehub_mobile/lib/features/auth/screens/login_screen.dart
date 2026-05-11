@@ -5,6 +5,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/biometric/biometric_lock_service.dart';
+import '../../../core/auth/auth_repository.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_backdrop.dart';
 import '../../../shared/widgets/app_surfaces.dart';
@@ -215,91 +216,175 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     );
   }
 
-  void _showForgotPassword() {
-    showModalBottomSheet(
+  Future<void> _showForgotPassword() async {
+    final recoveryCtrl = TextEditingController(text: _usernameCtrl.text.trim());
+    var submitting = false;
+    await showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (ctx) => Container(
-        decoration: const BoxDecoration(
-          color: AppTheme.surfaceContainerLowest,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-        ),
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
-        child: SafeArea(
-          top: false,
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Center(
-                child: Container(
-                  width: 40,
-                  height: 4,
-                  decoration: BoxDecoration(
-                    color: AppTheme.outlineVariant.withValues(alpha: 0.4),
-                    borderRadius: BorderRadius.circular(100),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'Password Help',
-                style: GoogleFonts.inter(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w800,
-                  color: AppTheme.primary,
-                ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'For security, password resets are handled by your provider or administrator. If you still have access on this device, you may also be able to use biometric sign-in.',
-                style: GoogleFonts.inter(
-                  fontSize: 14,
-                  color: AppTheme.onSurfaceVariant,
-                  height: 1.5,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppTheme.surfaceContainerLow,
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(
-                      Icons.support_agent_rounded,
-                      color: AppTheme.primary,
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Have your site name and username ready before contacting support.',
-                        style: GoogleFonts.inter(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: AppTheme.onSurface,
-                        ),
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSheetState) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: AppTheme.surfaceContainerLowest,
+              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
+            ),
+            padding: EdgeInsets.fromLTRB(
+              24,
+              12,
+              24,
+              32 + MediaQuery.of(ctx).viewInsets.bottom,
+            ),
+            child: SafeArea(
+              top: false,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Center(
+                    child: Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: AppTheme.outlineVariant.withValues(alpha: 0.4),
+                        borderRadius: BorderRadius.circular(100),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Recover Password',
+                    style: GoogleFonts.inter(
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
+                      color: AppTheme.primary,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Enter your username or email address and we will send reset instructions if the account is eligible.',
+                    style: GoogleFonts.inter(
+                      fontSize: 14,
+                      color: AppTheme.onSurfaceVariant,
+                      height: 1.5,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  TextField(
+                    controller: recoveryCtrl,
+                    keyboardType: TextInputType.emailAddress,
+                    textInputAction: TextInputAction.done,
+                    decoration: const InputDecoration(
+                      labelText: 'Username or email',
+                      prefixIcon: Icon(Icons.alternate_email_rounded),
+                    ),
+                    onSubmitted: (_) async {
+                      if (submitting) return;
+                      final identifier = recoveryCtrl.text.trim();
+                      if (identifier.isEmpty) return;
+                      setSheetState(() => submitting = true);
+                      try {
+                        await ref
+                            .read(authRepositoryProvider)
+                            .requestPasswordReset(identifier);
+                        if (!ctx.mounted) return;
+                        Navigator.pop(ctx);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'If the account is eligible, reset instructions will be sent.',
+                            ),
+                          ),
+                        );
+                      } catch (_) {
+                        if (!ctx.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Could not request a reset. Please try again.',
+                            ),
+                          ),
+                        );
+                      } finally {
+                        if (ctx.mounted) {
+                          setSheetState(() => submitting = false);
+                        }
+                      }
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    child: FilledButton(
+                      onPressed: submitting
+                          ? null
+                          : () async {
+                              final identifier = recoveryCtrl.text.trim();
+                              if (identifier.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Enter your username or email address.',
+                                    ),
+                                  ),
+                                );
+                                return;
+                              }
+                              setSheetState(() => submitting = true);
+                              try {
+                                await ref
+                                    .read(authRepositoryProvider)
+                                    .requestPasswordReset(identifier);
+                                if (!ctx.mounted) return;
+                                Navigator.pop(ctx);
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'If the account is eligible, reset instructions will be sent.',
+                                    ),
+                                  ),
+                                );
+                              } catch (_) {
+                                if (!ctx.mounted) return;
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text(
+                                      'Could not request a reset. Please try again.',
+                                    ),
+                                  ),
+                                );
+                              } finally {
+                                if (ctx.mounted) {
+                                  setSheetState(() => submitting = false);
+                                }
+                              }
+                            },
+                      child: submitting
+                          ? const SizedBox(
+                              height: 18,
+                              width: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : const Text('Send reset link'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: TextButton(
+                      onPressed: submitting ? null : () => Navigator.pop(ctx),
+                      child: const Text('Cancel'),
+                    ),
+                  ),
+                ],
               ),
-              const SizedBox(height: 24),
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton(
-                  onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Understood'),
-                ),
-              ),
-            ],
-          ),
-        ),
+            ),
+          );
+        },
       ),
     );
+    recoveryCtrl.dispose();
   }
 
   Future<void> _showUrgentHelp() async {

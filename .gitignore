@@ -13,6 +13,9 @@ nginx/certs/
 backend/.venv/
 backend/__pycache__/
 backend/db.sqlite3
+backend/*.sqlite3-shm
+backend/*.sqlite3-wal
+backend/*.sqlite3-journal
 backend/firebase/*.json
 
 

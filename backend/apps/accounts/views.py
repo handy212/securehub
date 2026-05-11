@@ -7,14 +7,18 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.exceptions import TokenError
+from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import CustomerProfile, FCMDevice
 from .serializers import (
     CustomerProfileSerializer,
     FCMDeviceSerializer,
+    CustomerTokenObtainPairSerializer,
     GoogleLoginSerializer,
     LogoutSerializer,
+    PasswordResetConfirmSerializer,
+    PasswordResetRequestSerializer,
 )
 
 
@@ -23,6 +27,7 @@ class LoginRateThrottle(AnonRateThrottle):
 
 
 class ThrottledTokenObtainPairView(TokenObtainPairView):
+    serializer_class = CustomerTokenObtainPairSerializer
     throttle_classes = [LoginRateThrottle]
 
 
@@ -127,6 +132,11 @@ class GoogleLoginView(APIView):
                 {"error": "Staff accounts must use the operator console sign-in flow."},
                 status=status.HTTP_403_FORBIDDEN,
             )
+        if user and not user.is_active:
+            return Response(
+                {"error": "This account is inactive. Please contact support."},
+                status=status.HTTP_403_FORBIDDEN,
+            )
 
         if not user:
             if not getattr(settings, "SECUREHUB_GOOGLE_AUTO_CREATE_USERS", False):
@@ -203,7 +213,14 @@ class LogoutView(APIView):
         serializer.is_valid(raise_exception=True)
 
         try:
-            RefreshToken(serializer.validated_data["refresh"]).blacklist()
+            refresh = RefreshToken(serializer.validated_data["refresh"])
+            token_user_id = str(refresh.payload.get(api_settings.USER_ID_CLAIM, ""))
+            if token_user_id != str(request.user.id):
+                return Response(
+                    {"error": "Refresh token does not belong to the authenticated user."},
+                    status=status.HTTP_403_FORBIDDEN,
+                )
+            refresh.blacklist()
         except TokenError as exc:
             return Response(
                 {"error": f"Invalid refresh token: {exc}"},
@@ -211,3 +228,36 @@ class LogoutView(APIView):
             )
 
         return Response(status=status.HTTP_205_RESET_CONTENT)
+
+
+class PasswordResetRequestView(APIView):
+    permission_classes = []
+    throttle_classes = [LoginRateThrottle]
+
+    def post(self, request):
+        serializer = PasswordResetRequestSerializer(
+            data=request.data,
+            context={"request": request},
+        )
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response(
+            {
+                "detail": (
+                    "If an active account matches those details, password reset "
+                    "instructions will be sent."
+                )
+            },
+            status=status.HTTP_200_OK,
+        )
+
+
+class PasswordResetConfirmAPIView(APIView):
+    permission_classes = []
+    throttle_classes = [LoginRateThrottle]
+
+    def post(self, request):
+        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return Response({"detail": "Password has been reset."}, status=status.HTTP_200_OK)

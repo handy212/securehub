@@ -156,6 +156,15 @@ class EmergencyRequest(models.Model):
     contact_phone = models.CharField(max_length=32, blank=True)
     note = models.TextField(blank=True)
     metadata = models.JSONField(default=dict, blank=True)
+    assigned_to = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="assigned_emergency_requests",
+    )
+    assigned_at = models.DateTimeField(null=True, blank=True)
+    assignment_note = models.CharField(max_length=255, blank=True)
     acknowledged_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.SET_NULL,
@@ -197,6 +206,18 @@ class EmergencyRequest(models.Model):
     @property
     def is_active(self) -> bool:
         return self.status in self.ACTIVE_STATUSES
+
+    def assign(self, user, *, actor=None, note: str = "") -> None:
+        self.assigned_to = user
+        self.assigned_at = timezone.now()
+        self.assignment_note = note
+        update_fields = ["assigned_to", "assigned_at", "assignment_note", "updated_at"]
+        if self.status == self.STATUS_OPEN:
+            self.status = self.STATUS_ACKNOWLEDGED
+            self.acknowledged_by = actor
+            self.acknowledged_at = self.assigned_at
+            update_fields += ["status", "acknowledged_by", "acknowledged_at"]
+        self.save(update_fields=update_fields)
 
     def transition(self, status: str, *, actor=None, reason: str = "") -> None:
         now = timezone.now()

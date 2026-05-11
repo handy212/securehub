@@ -45,6 +45,7 @@ INSTALLED_APPS = [
     "apps.dashboard.apps.DashboardConfig",
     "apps.communication",
     "apps.emergency",
+    "apps.guarding.apps.GuardingConfig",
 ]
 
 MIDDLEWARE = [

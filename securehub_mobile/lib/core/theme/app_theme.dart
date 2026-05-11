@@ -5,10 +5,10 @@ import 'package:google_fonts/google_fonts.dart';
 /// "The Digital Concierge" — warm, editorial, tonal-layered light theme.
 class AppTheme {
   // ── Core Brand Tokens ──────────────────────────────────────────────────────
-  static const Color primary = Color(0xFF000000);
-  static const Color primaryContainer = Color(0xFF1F2127);
+  static const Color primary = Color(0xFFDC2626);
+  static const Color primaryContainer = Color(0xFF991B1B);
   static const Color onPrimary = Color(0xFFFFFFFF);
-  static const Color onPrimaryContainer = Color(0xFF878890);
+  static const Color onPrimaryContainer = Color(0xFFFFE4E6);
 
   // ── Surface Hierarchy (lowest → highest elevation) ─────────────────────────
   static const Color surface = Color(0xFFF2EFE8);
@@ -46,7 +46,7 @@ class AppTheme {
 
   // ── Legacy compatibility aliases ───────────────────────────────────────────
   // ignore: non_constant_identifier_names
-  static const Color brandRed = error;
+  static const Color brandRed = primary;
   // ignore: non_constant_identifier_names
   static const Color surfaceSlate = surfaceContainer;
   // ignore: non_constant_identifier_names
@@ -99,8 +99,8 @@ class AppTheme {
         shadow: onSurface,
         inverseSurface: Color(0xFF2F312F),
         onInverseSurface: Color(0xFFF2F1EE),
-        inversePrimary: Color(0xFFC5C6CE),
-        surfaceTint: Color(0xFF5D5E65),
+        inversePrimary: Color(0xFFFCA5A5),
+        surfaceTint: primary,
       ),
       scaffoldBackgroundColor: surface,
       textTheme: GoogleFonts.interTextTheme(

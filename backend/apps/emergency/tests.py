@@ -180,6 +180,71 @@ class EmergencyApiTests(APITestCase):
         self.assertEqual(emergency.status, EmergencyRequest.STATUS_DISPATCHED)
         self.assertEqual(emergency.dispatched_by, self.staff)
 
+    @patch("apps.emergency.views.dispatch_emergency_notifications.delay")
+    def test_mobile_flow_creates_request_updates_location_and_cancels(self, mock_notify):
+        AccountEmergencyService.objects.create(user=self.customer, plan=self.plan, monthly_rate="50.00")
+        self.authenticate(self.customer)
+
+        create_response = self.client.post(
+            reverse("emergency-requests"),
+            {
+                "trigger_context": EmergencyRequest.CONTEXT_AWAY,
+                "latitude": "5.604000000",
+                "longitude": "-0.187000000",
+                "accuracy_m": "10.25",
+                "metadata": {"source": "mobile_app"},
+            },
+            format="json",
+        )
+
+        self.assertEqual(create_response.status_code, status.HTTP_201_CREATED)
+        request_id = create_response.data["id"]
+        update_response = self.client.post(
+            reverse("emergency-location", kwargs={"request_id": request_id}),
+            {
+                "latitude": "5.605000000",
+                "longitude": "-0.188000000",
+                "accuracy_m": "7.75",
+            },
+            format="json",
+        )
+        cancel_response = self.client.post(
+            reverse("emergency-cancel", kwargs={"request_id": request_id}),
+            format="json",
+        )
+
+        self.assertEqual(update_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(cancel_response.status_code, status.HTTP_200_OK)
+        emergency = EmergencyRequest.objects.get(pk=request_id)
+        self.assertEqual(emergency.status, EmergencyRequest.STATUS_CANCELLED)
+        self.assertEqual(str(emergency.latitude), "5.605000000")
+        self.assertEqual(emergency.location_updates.count(), 2)
+        mock_notify.assert_called_once()
+
+    def test_staff_can_assign_emergency_request_from_console(self):
+        emergency = EmergencyRequest.objects.create(
+            customer=self.customer,
+            site=self.site,
+            latitude="5.604000000",
+            longitude="-0.187000000",
+        )
+        self.client.force_login(self.staff)
+
+        response = self.client.post(
+            reverse("dashboard:emergency-assign", kwargs={"request_id": emergency.id}),
+            {
+                "assigned_to": str(self.staff.pk),
+                "assignment_note": "North patrol",
+            },
+        )
+
+        self.assertRedirects(response, reverse("dashboard:emergency"))
+        emergency.refresh_from_db()
+        self.assertEqual(emergency.assigned_to, self.staff)
+        self.assertEqual(emergency.assignment_note, "North patrol")
+        self.assertEqual(emergency.status, EmergencyRequest.STATUS_ACKNOWLEDGED)
+        self.assertEqual(emergency.acknowledged_by, self.staff)
+
     def test_staff_can_open_emergency_service_management_page(self):
         self.client.force_login(self.staff)
 

@@ -3,6 +3,7 @@ abstract final class ApiEndpoints {
   static const String refresh = '/api/v1/auth/refresh/';
   static const String googleLogin = '/api/v1/auth/google/';
   static const String logout = '/api/v1/auth/logout/';
+  static const String passwordReset = '/api/v1/auth/password-reset/';
   static const String profile = '/api/v1/profile/';
   static const String sites = '/api/v1/sites/';
   static const String alarmDevices = '/api/v1/alarm-devices/';

@@ -82,6 +82,7 @@ urlpatterns = [
     path("api/v1/alarms/", include("apps.alarms.urls")),
     path("api/v1/communication/", include("apps.communication.urls")),
     path("api/v1/emergency/", include("apps.emergency.urls")),
+    path("api/v1/guarding/", include("apps.guarding.urls")),
     path("console/", include("apps.dashboard.urls")),
 ]
 

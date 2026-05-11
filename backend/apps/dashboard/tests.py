@@ -22,8 +22,15 @@ class DashboardFlowTests(TestCase):
         cache.clear()
         self.staff = User.objects.create_user(
             username="staff-operator",
+            email="staff-operator@example.com",
             password="Secret123!",
             is_staff=True,
+        )
+        self.superuser = User.objects.create_user(
+            username="super-operator",
+            password="Secret123!",
+            is_staff=True,
+            is_superuser=True,
         )
         self.regular = User.objects.create_user(
             username="regular-user",
@@ -62,6 +69,31 @@ class DashboardFlowTests(TestCase):
 
         self.assertEqual(locked_response.status_code, 200)
         self.assertContains(locked_response, "Too many sign-in attempts. Please wait a few minutes and try again.")
+
+    def test_console_login_accepts_email(self):
+        response = self.client.post(
+            reverse("dashboard:login"),
+            {
+                "username": "staff-operator@example.com",
+                "password": "Secret123!",
+                "next": reverse("dashboard:home"),
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("dashboard:home"))
+
+    def test_console_password_reset_sends_email(self):
+        response = self.client.post(
+            reverse("dashboard:password-reset"),
+            {"email": "staff-operator@example.com"},
+            HTTP_HOST="console.testserver",
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], "/console/password-reset/done/")
+        self.assertEqual(len(mail.outbox), 1)
+        self.assertIn("console.testserver/console/password-reset/", mail.outbox[0].body)
 
     def test_staff_sees_platform_status_and_global_map_labels(self):
         self.client.force_login(self.staff)
@@ -950,8 +982,25 @@ class DashboardFlowTests(TestCase):
         self.assertEqual(subscription.status, Subscription.STATUS_SUSPENDED)
         mock_notice.assert_called_once_with(str(subscription.id))
 
-    def test_staff_user_can_be_created_and_updated_in_console(self):
+    def test_staff_user_management_requires_superuser(self):
         self.client.force_login(self.staff)
+
+        response = self.client.post(
+            reverse("dashboard:user-update", args=[self.staff.pk]),
+            {
+                "username": self.staff.username,
+                "email": "staff-operator@example.com",
+                "is_active": "on",
+                "is_superuser": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.staff.refresh_from_db()
+        self.assertFalse(self.staff.is_superuser)
+
+    def test_staff_user_can_be_created_and_updated_in_console(self):
+        self.client.force_login(self.superuser)
 
         create_response = self.client.post(
             reverse("dashboard:user-create"),
@@ -983,7 +1032,7 @@ class DashboardFlowTests(TestCase):
         self.assertEqual(staff_user.first_name, "Ops")
 
     def test_staff_user_create_rejects_common_password(self):
-        self.client.force_login(self.staff)
+        self.client.force_login(self.superuser)
 
         response = self.client.post(
             reverse("dashboard:user-create"),
@@ -1147,13 +1196,13 @@ class DashboardFlowTests(TestCase):
             password="Secret123!",
             is_staff=True,
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.superuser)
 
         self_response = self.client.post(
-            reverse("dashboard:user-delete", args=[self.staff.pk]),
+            reverse("dashboard:user-delete", args=[self.superuser.pk]),
         )
         self.assertEqual(self_response.status_code, 302)
-        self.assertTrue(User.objects.filter(pk=self.staff.pk).exists())
+        self.assertTrue(User.objects.filter(pk=self.superuser.pk).exists())
 
         delete_response = self.client.post(
             reverse("dashboard:user-delete", args=[other_staff.pk]),

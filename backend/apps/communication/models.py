@@ -41,7 +41,6 @@ class BroadcastMessage(models.Model):
         null=True,
         blank=True,
         related_name="broadcast_messages",
-        help_text="Leave blank to send to all mobile users.",
     )
     recipient_group = models.ForeignKey(
         "accounts.CustomerGroup",

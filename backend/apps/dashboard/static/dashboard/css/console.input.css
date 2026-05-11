@@ -71,8 +71,8 @@
   }
 
   .dark .input-focus:focus {
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.12);
   }
 
   .dark .form-perfex input,
@@ -191,8 +191,8 @@
   .dark .bg-slate-50\/70 { background-color: rgba(30,41,59,0.7); }
   .dark .hover\:bg-slate-50\/50:hover { background-color: rgba(51,65,85,0.3); }
 
-  .dark .bg-brand\/5 { background-color: rgba(37,99,235,0.15); }
-  .dark .border-brand\/20 { border-color: rgba(37,99,235,0.3); }
+  .dark .bg-brand\/5 { background-color: rgba(220,38,38,0.15); }
+  .dark .border-brand\/20 { border-color: rgba(220,38,38,0.3); }
 
   .dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) { border-color: #1e293b; }
   .dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) { border-color: #334155; }

@@ -45,6 +45,7 @@ from apps.emergency.models import (
     SiteEmergencyService,
 )
 from apps.dashboard.event_presenters import serialize_console_event, should_hide_console_event
+from apps.accounts.serializers import resolve_username_for_login
 
 
 class StaffRequiredMixin(UserPassesTestMixin):
@@ -56,6 +57,17 @@ class StaffRequiredMixin(UserPassesTestMixin):
             login_url = f"{reverse('dashboard:login')}?next={self.request.get_full_path()}"
             return redirect(login_url)
         return HttpResponseForbidden("Staff access required.")
+
+
+class SuperuserRequiredMixin(StaffRequiredMixin):
+    def test_func(self):
+        return bool(self.request.user.is_authenticated and self.request.user.is_superuser)
+
+    def handle_no_permission(self):
+        if not self.request.user.is_authenticated:
+            login_url = f"{reverse('dashboard:login')}?next={self.request.get_full_path()}"
+            return redirect(login_url)
+        return HttpResponseForbidden("Superuser access required.")
 
 
 def _visible_console_events(site: Site, *, limit: int = 15) -> list[Event]:
@@ -484,7 +496,8 @@ class ConsoleLoginView(View):
                 "error": "Too many sign-in attempts. Please wait a few minutes and try again.",
                 "next": next_url,
             })
-        user = authenticate(request, username=username, password=password)
+        auth_username = resolve_username_for_login(username)
+        user = authenticate(request, username=auth_username, password=password)
         if user is not None and user.is_staff:
             _clear_console_login_failures(request, username)
             login(request, user)
@@ -726,15 +739,36 @@ class EmergencyConsoleView(StaffRequiredMixin, TemplateView):
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         requests = (
-            EmergencyRequest.objects.select_related("customer", "site")
+            EmergencyRequest.objects.select_related("customer", "site", "assigned_to")
             .prefetch_related("location_updates")
             .order_by("-created_at")[:100]
         )
         active_statuses = EmergencyRequest.ACTIVE_STATUSES
         context["emergency_requests"] = requests
+        context["assignable_staff"] = User.objects.filter(is_active=True, is_staff=True).order_by("username")
         context["active_count"] = sum(1 for item in requests if item.status in active_statuses)
         context["open_count"] = sum(1 for item in requests if item.status == EmergencyRequest.STATUS_OPEN)
         return context
+
+
+class EmergencyConsoleAssignView(StaffRequiredMixin, View):
+    def post(self, request, request_id):
+        emergency = get_object_or_404(EmergencyRequest, pk=request_id)
+        if not emergency.is_active:
+            messages.error(request, "Closed emergency requests cannot be assigned.")
+            return redirect("dashboard:emergency")
+        assignee_id = request.POST.get("assigned_to", "").strip()
+        assignee = User.objects.filter(pk=assignee_id, is_active=True, is_staff=True).first()
+        if assignee is None:
+            messages.error(request, "Choose an active staff user to assign.")
+            return redirect("dashboard:emergency")
+        emergency.assign(
+            assignee,
+            actor=request.user,
+            note=request.POST.get("assignment_note", "").strip(),
+        )
+        messages.success(request, f"Emergency request assigned to {assignee.username}.")
+        return redirect("dashboard:emergency")
 
 
 class EmergencyConsoleActionView(StaffRequiredMixin, View):
@@ -1071,7 +1105,7 @@ class WebhookLogsView(StaffRequiredMixin, ListView):
         context["count_arm"] = qs.filter(event_category=Event.CATEGORY_ARM).count()
         return context
 
-class UserListView(StaffRequiredMixin, ListView):
+class UserListView(SuperuserRequiredMixin, ListView):
     model = User
     template_name = "dashboard/users.html"
     context_object_name = "users"
@@ -1115,7 +1149,7 @@ class CustomerDirectoryView(StaffRequiredMixin, ListView):
         return context
 
 
-class StaffUserCreateView(StaffRequiredMixin, View):
+class StaffUserCreateView(SuperuserRequiredMixin, View):
     def post(self, request):
         username = request.POST.get("username", "").strip()
         email = request.POST.get("email", "").strip()
@@ -1163,7 +1197,7 @@ class StaffUserCreateView(StaffRequiredMixin, View):
         return redirect("dashboard:user-list")
 
 
-class StaffUserUpdateView(StaffRequiredMixin, View):
+class StaffUserUpdateView(SuperuserRequiredMixin, View):
     def post(self, request, user_id):
         staff_user = get_object_or_404(User, pk=user_id, is_staff=True)
         username = request.POST.get("username", "").strip()
@@ -1215,7 +1249,7 @@ class StaffUserUpdateView(StaffRequiredMixin, View):
         return redirect("dashboard:user-list")
 
 
-class StaffUserDeleteView(StaffRequiredMixin, View):
+class StaffUserDeleteView(SuperuserRequiredMixin, View):
     def post(self, request, user_id):
         staff_user = get_object_or_404(User, pk=user_id, is_staff=True)
         if request.user.pk == staff_user.pk:

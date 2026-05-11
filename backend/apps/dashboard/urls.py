@@ -1,3 +1,4 @@
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.views import LogoutView
 from django.urls import path
 from . import views
@@ -7,10 +8,43 @@ app_name = "dashboard"
 urlpatterns = [
     path("login/", views.ConsoleLoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(next_page="dashboard:login"), name="logout"),
+    path(
+        "password-reset/",
+        auth_views.PasswordResetView.as_view(
+            template_name="dashboard/password_reset_form.html",
+            email_template_name="dashboard/password_reset_email.txt",
+            subject_template_name="dashboard/password_reset_subject.txt",
+            success_url="/console/password-reset/done/",
+        ),
+        name="password-reset",
+    ),
+    path(
+        "password-reset/done/",
+        auth_views.PasswordResetDoneView.as_view(
+            template_name="dashboard/password_reset_done.html",
+        ),
+        name="password-reset-done",
+    ),
+    path(
+        "password-reset/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name="dashboard/password_reset_confirm.html",
+            success_url="/console/password-reset/complete/",
+        ),
+        name="password-reset-confirm",
+    ),
+    path(
+        "password-reset/complete/",
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name="dashboard/password_reset_complete.html",
+        ),
+        name="password-reset-complete",
+    ),
     path("", views.DashboardHomeView.as_view(), name="home"),
     path("sites/", views.SiteDirectoryView.as_view(), name="sites"),
     path("map/", views.SiteMapView.as_view(), name="site-map"),
     path("emergency/", views.EmergencyConsoleView.as_view(), name="emergency"),
+    path("emergency/<uuid:request_id>/assign/", views.EmergencyConsoleAssignView.as_view(), name="emergency-assign"),
     path("emergency/<uuid:request_id>/<str:action>/", views.EmergencyConsoleActionView.as_view(), name="emergency-action"),
     path("emergency/services/", views.EmergencyServiceManagementView.as_view(), name="emergency-services"),
     path("emergency/services/plans/create/", views.CreateEmergencyPlanView.as_view(), name="emergency-plan-create"),

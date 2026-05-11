@@ -11,6 +11,7 @@ class ConsoleAuthMiddleware:
     """
 
     OPEN_PATHS = {"/console/login/", "/console/logout/"}
+    OPEN_PREFIXES = ("/console/password-reset/",)
 
     def __init__(self, get_response):
         self.get_response = get_response
@@ -19,6 +20,7 @@ class ConsoleAuthMiddleware:
         if (
             request.path.startswith("/console/")
             and request.path not in self.OPEN_PATHS
+            and not request.path.startswith(self.OPEN_PREFIXES)
             and not request.user.is_authenticated
         ):
             query = urlencode({"next": request.get_full_path()})
