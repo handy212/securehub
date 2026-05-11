@@ -1,10 +1,10 @@
  
  -------------- celery@HeadOf-IT v5.6.2 (recovery)
 --- ***** ----- 
--- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39 2026-05-11 09:13:10
+-- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39 2026-05-11 21:48:53
 - *** --- * --- 
 - ** ---------- [config]
-- ** ---------- .> app:         securehub:0x78396beed580
+- ** ---------- .> app:         securehub:0x7221d23f1700
 - ** ---------- .> transport:   redis://127.0.0.1:6379/0
 - ** ---------- .> results:     redis://127.0.0.1:6379/0
 - *** --- * --- .> concurrency: 20 (prefork)
@@ -32,719 +32,306 @@
   . apps.alarms.tasks.sync_hik_site_devices
   . apps.communication.tasks.send_broadcast
   . apps.emergency.tasks.dispatch_emergency_notifications
+  . apps.guarding.tasks.mark_overdue_patrol_rounds
+  . apps.guarding.tasks.mark_overdue_welfare_checks
 
-INFO 2026-05-11 09:13:12,022 services 16791 sync_alarm_status: skipping offline device Q15228593
-DEBUG 2026-05-11 09:13:12,973 client 16789 REQ[467fbbe0] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:13:12,974 client 16829 REQ[e8b6fdd3] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-05-11 09:13:12,987 client 16791 REQ[707d33f4] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-05-11 09:13:13,462 client 16789 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:13:13,462 client 16789 REQ[ce66bb32] POST /api/hpcgw/v1/mq/subscribe
-WARNING 2026-05-11 09:13:13,508 services 16829 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-05-11 09:13:13,508 client 16829 REQ[c963f16d] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-05-11 09:13:14,387 services 16829 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-INFO 2026-05-11 09:13:14,435 client 16789 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:13:14,435 client 16789 REQ[3e0dc2ab] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:13:14,666 services 16791 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=707d33f4)
-DEBUG 2026-05-11 09:13:14,666 client 16791 REQ[f91104d0] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-ERROR 2026-05-11 09:13:15,364 client 16789 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=3e0dc2ab)
-DEBUG 2026-05-11 09:13:15,367 tasks 16789 poll_mq_events: MQ heartbeat — no messages (batch=)
-WARNING 2026-05-11 09:13:15,646 services 16791 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=f91104d0)
-DEBUG 2026-05-11 09:13:35,954 client 16829 REQ[5bc32911] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:13:36,918 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:13:36,919 client 16829 REQ[ea719be6] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:13:37,899 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:13:37,899 client 16829 REQ[c39381b0] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:13:38,816 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=c39381b0)
-DEBUG 2026-05-11 09:13:38,818 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:14:01,022 client 16829 REQ[02c71a2f] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:14:01,959 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:14:01,959 client 16829 REQ[f3d41e88] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:14:02,898 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:14:02,899 client 16829 REQ[db5f1648] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:14:03,820 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=db5f1648)
-DEBUG 2026-05-11 09:14:03,822 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:14:26,026 client 16829 REQ[5169d4f0] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:14:26,480 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:14:26,480 client 16829 REQ[e589653a] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:14:26,347 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:14:26,348 client 16829 REQ[5036f558] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:14:27,261 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=5036f558)
-DEBUG 2026-05-11 09:14:27,263 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:14:51,033 client 16829 REQ[f0cb547e] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:14:51,494 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:14:51,494 client 16829 REQ[cdb9bd77] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:14:52,482 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:14:52,482 client 16829 REQ[17c221cb] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:14:53,340 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=17c221cb)
-DEBUG 2026-05-11 09:14:53,341 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:15:16,170 client 16829 REQ[92945dcc] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:15:17,114 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:15:17,114 client 16829 REQ[0fca9450] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:15:18,060 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:15:18,061 client 16829 REQ[64d50603] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:15:18,896 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=64d50603)
-DEBUG 2026-05-11 09:15:18,897 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:15:41,014 client 16829 REQ[2423e7ef] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:15:41,892 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:15:41,893 client 16829 REQ[f59f4151] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:15:42,840 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:15:42,841 client 16829 REQ[bc6dd00e] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:15:43,680 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=bc6dd00e)
-DEBUG 2026-05-11 09:15:43,682 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:16:05,845 client 16829 REQ[9d071c78] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:16:06,450 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:16:06,451 client 16829 REQ[3cf1d7d4] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:16:07,362 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:16:07,362 client 16829 REQ[8b068b94] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:16:08,278 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=8b068b94)
-DEBUG 2026-05-11 09:16:08,279 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:16:31,035 client 16829 REQ[53295c70] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:16:31,498 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:16:31,498 client 16829 REQ[ce0ec3a3] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:16:31,298 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:16:31,298 client 16829 REQ[5bcf792e] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:16:32,127 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=5bcf792e)
-DEBUG 2026-05-11 09:16:32,128 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:16:55,708 client 16829 REQ[97756f3b] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:16:56,692 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:16:56,692 client 16829 REQ[4306c46e] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:16:57,669 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:16:57,669 client 16829 REQ[17b86200] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:16:58,518 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=17b86200)
-DEBUG 2026-05-11 09:16:58,521 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:17:20,891 client 16829 REQ[f0bbf387] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:17:21,741 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:17:21,741 client 16829 REQ[adfb70cd] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:17:22,724 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:17:22,725 client 16829 REQ[c8310ee0] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:17:23,635 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=c8310ee0)
-DEBUG 2026-05-11 09:17:23,637 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:17:45,848 client 16829 REQ[88d15e08] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:17:46,226 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:17:46,226 client 16829 REQ[fe2e9da0] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:17:47,165 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:17:47,166 client 16829 REQ[34c4d8c5] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:17:48,016 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=34c4d8c5)
-DEBUG 2026-05-11 09:17:48,017 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-INFO 2026-05-11 09:18:10,058 services 16830 sync_alarm_status: skipping offline device Q15228593
-DEBUG 2026-05-11 09:18:10,993 client 16830 REQ[f4d2a65e] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-05-11 09:18:11,022 client 16789 REQ[644e3725] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:18:11,109 client 16829 REQ[fab4cfc7] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-05-11 09:18:11,493 services 16829 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-05-11 09:18:11,494 client 16829 REQ[967ef5cf] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-05-11 09:18:11,942 client 16789 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:18:11,942 client 16789 REQ[48643000] POST /api/hpcgw/v1/mq/subscribe
-WARNING 2026-05-11 09:18:12,070 services 16830 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=f4d2a65e)
-DEBUG 2026-05-11 09:18:12,071 client 16830 REQ[288b9f52] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-05-11 09:18:12,415 services 16829 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-INFO 2026-05-11 09:18:12,866 client 16789 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:18:12,867 client 16789 REQ[395f58e6] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:18:13,222 services 16830 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=288b9f52)
-ERROR 2026-05-11 09:18:14,140 client 16789 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=395f58e6)
-DEBUG 2026-05-11 09:18:14,141 tasks 16789 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:18:35,718 client 16829 REQ[c58c934b] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:18:36,752 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:18:36,753 client 16829 REQ[01fed44b] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:18:37,684 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:18:37,685 client 16829 REQ[029f717f] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:18:38,633 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=029f717f)
-DEBUG 2026-05-11 09:18:38,635 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:19:00,847 client 16829 REQ[e55a3a9d] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:19:01,728 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:19:01,728 client 16829 REQ[841169a0] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:19:02,607 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:19:02,607 client 16829 REQ[29d4c310] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:19:23,225 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-05-11 09:19:25,998 client 16829 REQ[c63d7290] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:19:26,372 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:19:26,372 client 16829 REQ[8cc8251c] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:19:27,362 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:19:27,363 client 16829 REQ[b6ff10a4] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:19:28,204 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=b6ff10a4)
-DEBUG 2026-05-11 09:19:28,205 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:19:51,033 client 16829 REQ[2afb7b7c] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:19:51,432 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:19:51,433 client 16829 REQ[06855025] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:19:52,459 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:19:52,460 client 16829 REQ[87eac4de] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:19:53,420 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=87eac4de)
-DEBUG 2026-05-11 09:19:53,421 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:20:16,002 client 16829 REQ[67f6193d] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:20:16,590 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:20:16,590 client 16829 REQ[a31a72bb] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:20:17,581 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:20:17,582 client 16829 REQ[c4e4293d] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:20:18,450 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=c4e4293d)
-DEBUG 2026-05-11 09:20:18,451 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:20:40,883 client 16829 REQ[c34f0aea] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:20:40,546 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:20:40,547 client 16829 REQ[614b0f69] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:20:41,513 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:20:41,513 client 16829 REQ[f2584362] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:20:42,346 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=f2584362)
-DEBUG 2026-05-11 09:20:42,347 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:21:06,021 client 16829 REQ[76d8ce47] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:21:06,829 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:21:06,829 client 16829 REQ[a436a51b] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:21:07,722 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:21:07,723 client 16829 REQ[e00b1dab] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:21:08,633 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=e00b1dab)
-DEBUG 2026-05-11 09:21:08,635 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:21:31,030 client 16829 REQ[a5a6732e] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:21:31,734 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:21:31,735 client 16829 REQ[074c1e1d] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:21:33,232 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:21:33,233 client 16829 REQ[6f2318d4] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:21:34,131 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=6f2318d4)
-DEBUG 2026-05-11 09:21:34,133 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:21:55,916 client 16829 REQ[792af006] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:22:16,536 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-05-11 09:22:20,515 client 16829 REQ[5bc000a5] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:22:21,044 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:22:21,044 client 16829 REQ[04fbd642] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:22:22,013 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:22:22,013 client 16829 REQ[88a44ab3] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:22:22,875 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=88a44ab3)
-DEBUG 2026-05-11 09:22:22,876 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:22:45,921 client 16829 REQ[5d1687f4] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:22:45,312 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:22:45,312 client 16829 REQ[2fb94f03] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:22:46,323 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:22:46,324 client 16829 REQ[2433d3f6] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:22:47,186 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=2433d3f6)
-DEBUG 2026-05-11 09:22:47,189 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-INFO 2026-05-11 09:23:10,058 services 16830 sync_alarm_status: skipping offline device Q15228593
-DEBUG 2026-05-11 09:23:10,731 client 16829 REQ[4b457a84] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-05-11 09:23:10,734 client 16789 REQ[6f0aafc2] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:23:10,907 client 16830 REQ[203a2bdf] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-05-11 09:23:11,199 client 16789 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:23:11,199 client 16789 REQ[4a53d4f8] POST /api/hpcgw/v1/mq/subscribe
-WARNING 2026-05-11 09:23:11,202 services 16829 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-05-11 09:23:11,203 client 16829 REQ[b70bb0f8] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-05-11 09:23:11,732 services 16830 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=203a2bdf)
-DEBUG 2026-05-11 09:23:11,733 client 16830 REQ[f7a82a73] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-05-11 09:23:12,105 services 16829 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-INFO 2026-05-11 09:23:12,169 client 16789 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:23:12,170 client 16789 REQ[436ef379] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:23:12,670 services 16830 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=f7a82a73)
-ERROR 2026-05-11 09:23:13,097 client 16789 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=436ef379)
-DEBUG 2026-05-11 09:23:13,099 tasks 16789 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:23:35,838 client 16829 REQ[319df67a] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:23:36,723 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:23:36,724 client 16829 REQ[5e5c39fd] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:23:37,630 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:23:37,631 client 16829 REQ[68a7f6d5] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:23:38,562 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=68a7f6d5)
-DEBUG 2026-05-11 09:23:38,564 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:24:00,938 client 16829 REQ[d012bb8b] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:24:01,716 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:24:01,716 client 16829 REQ[6abf7f15] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:24:02,714 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:24:02,715 client 16829 REQ[727433db] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:24:03,556 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=727433db)
-DEBUG 2026-05-11 09:24:03,557 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:24:25,753 client 16829 REQ[64853d0a] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:24:26,138 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:24:26,138 client 16829 REQ[f6cab527] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:24:27,119 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:24:27,119 client 16829 REQ[c2cb1524] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:24:27,976 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=c2cb1524)
-DEBUG 2026-05-11 09:24:27,977 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:24:49,724 client 16829 REQ[a1c52fdd] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:24:50,104 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:24:50,105 client 16829 REQ[9bda2f24] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:24:51,077 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:24:51,077 client 16829 REQ[7f3d58e3] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:24:51,989 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=7f3d58e3)
-DEBUG 2026-05-11 09:24:51,990 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:25:16,004 client 16829 REQ[91135496] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:25:17,001 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:25:17,002 client 16829 REQ[9c31fa62] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:25:17,955 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:25:17,955 client 16829 REQ[6372894a] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:25:18,877 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=6372894a)
-DEBUG 2026-05-11 09:25:18,878 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:25:41,158 client 16829 REQ[13852dcf] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:25:41,632 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:25:41,632 client 16829 REQ[600e1d33] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:25:42,604 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:25:42,605 client 16829 REQ[f4276b42] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:25:43,469 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=f4276b42)
-DEBUG 2026-05-11 09:25:43,470 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:26:06,004 client 16829 REQ[f14934f5] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:26:06,389 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:26:06,390 client 16829 REQ[f3873ada] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:26:07,271 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:26:07,271 client 16829 REQ[829150cd] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:26:27,866 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-05-11 09:26:30,834 client 16829 REQ[3c75de8d] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:26:52,417 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-05-11 09:26:54,775 client 16829 REQ[dbb6d3d0] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:26:55,155 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:26:55,155 client 16829 REQ[e0228f9e] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:26:56,096 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:26:56,096 client 16829 REQ[bd39b503] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:26:57,020 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=bd39b503)
-DEBUG 2026-05-11 09:26:57,021 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:27:20,843 client 16829 REQ[4fd0e3ba] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:27:21,708 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:27:21,708 client 16829 REQ[561d381e] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:27:22,667 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:27:22,667 client 16829 REQ[62ef87ba] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:27:23,497 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=62ef87ba)
-DEBUG 2026-05-11 09:27:23,499 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:27:45,889 client 16829 REQ[89848245] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:27:46,761 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:27:46,761 client 16829 REQ[1ebfc4f6] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:27:47,717 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:27:47,718 client 16829 REQ[3891a23c] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:27:48,637 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=3891a23c)
-DEBUG 2026-05-11 09:27:48,639 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-INFO 2026-05-11 09:28:10,057 services 16830 sync_alarm_status: skipping offline device Q15228593
-DEBUG 2026-05-11 09:28:11,149 client 16789 REQ[e17e1e87] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:28:11,164 client 16829 REQ[68c88057] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-05-11 09:28:11,169 client 16830 REQ[d4a8e3aa] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-05-11 09:28:11,525 client 16789 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:28:11,525 client 16789 REQ[76b5436b] POST /api/hpcgw/v1/mq/subscribe
-WARNING 2026-05-11 09:28:11,532 services 16829 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-05-11 09:28:11,533 client 16829 REQ[e901e2d2] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-05-11 09:28:12,076 services 16830 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=d4a8e3aa)
-DEBUG 2026-05-11 09:28:12,077 client 16830 REQ[4ccd0210] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-05-11 09:28:12,450 services 16829 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-INFO 2026-05-11 09:28:12,501 client 16789 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:28:12,501 client 16789 REQ[c79f48d3] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:28:13,058 services 16830 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=4ccd0210)
-ERROR 2026-05-11 09:28:13,339 client 16789 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=c79f48d3)
-DEBUG 2026-05-11 09:28:13,340 tasks 16789 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:28:35,849 client 16829 REQ[83625f41] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:28:36,292 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:28:36,292 client 16829 REQ[81f389b7] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:28:37,192 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:28:37,193 client 16829 REQ[fc1a0d8b] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:28:58,907 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-05-11 09:28:59,892 client 16829 REQ[247ad665] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:29:00,814 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:29:00,814 client 16829 REQ[b9dabde8] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:29:01,835 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:29:01,836 client 16829 REQ[0915c7be] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:29:02,753 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=0915c7be)
-DEBUG 2026-05-11 09:29:02,754 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:29:26,025 client 16829 REQ[7c3d2144] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:29:26,966 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:29:26,966 client 16829 REQ[917c4fd0] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:29:27,985 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:29:27,985 client 16829 REQ[25d5287e] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:29:28,912 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=25d5287e)
-DEBUG 2026-05-11 09:29:28,913 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:29:50,915 client 16829 REQ[73744e8a] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:29:51,373 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:29:51,373 client 16829 REQ[2d1a7aae] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:29:52,374 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:29:52,375 client 16829 REQ[5887e730] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:29:53,298 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=5887e730)
-DEBUG 2026-05-11 09:29:53,300 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:30:20,899 client 16829 REQ[e08c838a] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:30:22,030 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:30:22,031 client 16829 REQ[8537a6d2] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:30:23,130 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:30:23,130 client 16829 REQ[90d80290] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:30:41,008 client 16789 REQ[5d1e2a0d] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:30:41,768 client 16789 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:30:41,768 client 16789 REQ[f8552243] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:30:42,773 client 16789 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:30:42,773 client 16789 REQ[8c97e6ab] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:30:43,713 client 16789 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=8c97e6ab)
-DEBUG 2026-05-11 09:30:43,715 tasks 16789 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:30:43,715 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-05-11 09:31:06,036 client 16829 REQ[16a16641] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:31:06,411 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:31:06,411 client 16829 REQ[8e855a18] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:31:07,373 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:31:07,374 client 16829 REQ[987ffffd] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:31:08,290 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=987ffffd)
-DEBUG 2026-05-11 09:31:08,291 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:31:30,919 client 16829 REQ[6a4af7f8] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:31:31,868 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:31:31,868 client 16829 REQ[1d310d7a] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:31:32,755 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:31:32,756 client 16829 REQ[c9b68195] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:31:33,601 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=c9b68195)
-DEBUG 2026-05-11 09:31:33,602 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:31:55,948 client 16829 REQ[4d5c0018] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:31:56,342 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:31:56,342 client 16829 REQ[334e5900] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:31:57,316 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:31:57,317 client 16829 REQ[2767e670] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:31:58,157 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=2767e670)
-DEBUG 2026-05-11 09:31:58,159 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:32:20,938 client 16829 REQ[709d1d47] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:32:21,337 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:32:21,338 client 16829 REQ[dbfa3eb1] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:32:22,321 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:32:22,321 client 16829 REQ[a7b43765] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:32:23,166 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=a7b43765)
-DEBUG 2026-05-11 09:32:23,167 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:32:46,094 client 16829 REQ[c571cf60] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:32:46,384 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:32:46,384 client 16829 REQ[60dc3a39] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:32:47,236 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:32:47,237 client 16829 REQ[a951626f] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:32:48,012 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=a951626f)
-DEBUG 2026-05-11 09:32:48,015 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-INFO 2026-05-11 09:33:10,060 services 16789 sync_alarm_status: skipping offline device Q15228593
-DEBUG 2026-05-11 09:33:10,902 client 16789 REQ[53a107b8] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-05-11 09:33:10,908 client 16829 REQ[21791cc1] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-05-11 09:33:10,911 client 16830 REQ[7f779071] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:33:11,205 services 16829 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-05-11 09:33:11,205 client 16829 REQ[bea7c41a] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-05-11 09:33:11,691 client 16830 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:33:11,692 client 16830 REQ[db724915] POST /api/hpcgw/v1/mq/subscribe
-WARNING 2026-05-11 09:33:11,800 services 16789 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=53a107b8)
-DEBUG 2026-05-11 09:33:11,802 client 16789 REQ[f03c7513] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-05-11 09:33:12,087 services 16829 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-INFO 2026-05-11 09:33:12,622 client 16830 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:33:12,622 client 16830 REQ[c682fc78] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:33:12,747 services 16789 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=f03c7513)
-ERROR 2026-05-11 09:33:13,390 client 16830 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=c682fc78)
-DEBUG 2026-05-11 09:33:13,393 tasks 16830 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:33:35,755 client 16829 REQ[3d4e5a69] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:33:41,648 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:33:41,648 client 16829 REQ[a1ff5fbd] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:33:42,590 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:33:42,591 client 16829 REQ[b809d5cb] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:33:43,443 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=b809d5cb)
-DEBUG 2026-05-11 09:33:43,446 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:34:00,890 client 16829 REQ[8b128196] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:34:01,264 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:34:01,265 client 16829 REQ[e5b24ad6] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:34:02,187 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:34:02,188 client 16829 REQ[275aa7eb] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:34:02,978 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=275aa7eb)
-DEBUG 2026-05-11 09:34:02,980 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:34:25,964 client 16829 REQ[55465635] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:34:26,854 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:34:26,854 client 16829 REQ[e55af824] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:34:27,705 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:34:27,705 client 16829 REQ[cebf3e2a] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:34:28,547 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=cebf3e2a)
-DEBUG 2026-05-11 09:34:28,549 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:34:50,680 client 16829 REQ[e4e72fdc] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:34:51,056 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:34:51,056 client 16829 REQ[d81ab6f5] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:34:51,892 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:34:51,893 client 16829 REQ[8020d03e] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:34:52,747 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=8020d03e)
-DEBUG 2026-05-11 09:34:52,749 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:35:15,871 client 16829 REQ[a7082bbb] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:35:16,239 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:35:16,240 client 16829 REQ[338600dc] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:35:17,135 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:35:17,135 client 16829 REQ[d5e3006a] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:35:17,966 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=d5e3006a)
-DEBUG 2026-05-11 09:35:17,967 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:35:40,769 client 16829 REQ[3a0badff] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:35:41,174 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:35:41,174 client 16829 REQ[0886526f] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:35:42,072 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:35:42,073 client 16829 REQ[3aa3e12b] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:35:42,925 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=3aa3e12b)
-DEBUG 2026-05-11 09:35:42,927 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:36:06,092 client 16829 REQ[03abc873] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:36:06,958 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:36:06,958 client 16829 REQ[f46de835] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:36:07,796 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:36:07,796 client 16829 REQ[1dc8a8cc] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:36:08,630 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=1dc8a8cc)
-DEBUG 2026-05-11 09:36:08,631 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:36:30,960 client 16829 REQ[413a853f] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:36:31,281 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:36:31,281 client 16829 REQ[60b5606f] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:36:32,126 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:36:32,126 client 16829 REQ[3cd52131] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:36:32,962 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=3cd52131)
-DEBUG 2026-05-11 09:36:32,965 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:36:55,741 client 16829 REQ[c4445910] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:36:56,037 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:36:56,037 client 16829 REQ[ab4fea12] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:36:56,886 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:36:56,887 client 16829 REQ[3ad53e02] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:36:57,743 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=3ad53e02)
-DEBUG 2026-05-11 09:36:57,746 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:37:20,939 client 16829 REQ[bf0bb76e] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:37:21,558 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:37:21,558 client 16829 REQ[22c375f6] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:37:22,606 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:37:22,607 client 16829 REQ[96dc677f] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:37:23,472 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=96dc677f)
-DEBUG 2026-05-11 09:37:23,473 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:37:45,922 client 16829 REQ[e3b48e11] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:37:46,774 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:37:46,774 client 16829 REQ[88f68e17] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:37:47,596 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:37:47,596 client 16829 REQ[48553d0e] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:37:48,456 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=48553d0e)
-DEBUG 2026-05-11 09:37:48,457 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-INFO 2026-05-11 09:38:10,058 services 16789 sync_alarm_status: skipping offline device Q15228593
-DEBUG 2026-05-11 09:38:10,696 client 16829 REQ[19918c0c] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-05-11 09:38:10,851 client 16789 REQ[a4477a05] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-05-11 09:38:10,882 client 16830 REQ[7953e9ae] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:38:11,521 services 16829 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-05-11 09:38:11,522 client 16829 REQ[2f1ff957] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-05-11 09:38:11,840 services 16789 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=a4477a05)
-DEBUG 2026-05-11 09:38:11,840 client 16789 REQ[348e2da0] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-05-11 09:38:12,308 services 16829 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-WARNING 2026-05-11 09:38:12,832 services 16789 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=348e2da0)
-DEBUG 2026-05-11 09:38:30,938 tasks 16830 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-05-11 09:38:36,092 client 16829 REQ[374104ba] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:38:36,482 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:38:36,482 client 16829 REQ[827f7459] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:38:37,304 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:38:37,304 client 16829 REQ[8c7eca02] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:38:38,158 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=8c7eca02)
-DEBUG 2026-05-11 09:38:38,159 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:39:00,926 client 16829 REQ[c18eaea7] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:39:01,806 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:39:01,806 client 16829 REQ[9a40394f] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:39:02,627 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:39:02,627 client 16829 REQ[ca02da3d] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:39:03,475 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=ca02da3d)
-DEBUG 2026-05-11 09:39:03,476 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:39:25,710 client 16829 REQ[ef5e0adb] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:39:26,591 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:39:26,591 client 16829 REQ[67d2b7d0] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:39:27,501 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:39:27,501 client 16829 REQ[b348ae74] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:39:28,287 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=b348ae74)
-DEBUG 2026-05-11 09:39:28,288 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:39:50,943 client 16829 REQ[417be3fd] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:39:51,381 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:39:51,382 client 16829 REQ[83d5b16f] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:39:52,230 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:39:52,231 client 16829 REQ[4e1e8340] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:39:53,112 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=4e1e8340)
-DEBUG 2026-05-11 09:39:53,114 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:40:15,766 client 16829 REQ[7c086194] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:40:16,148 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:40:16,148 client 16829 REQ[00b4d296] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:40:17,067 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:40:17,068 client 16829 REQ[3458a9d3] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:40:37,575 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-05-11 09:40:40,837 client 16829 REQ[125b8533] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:40:41,148 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:40:41,149 client 16829 REQ[e80d5e69] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:40:42,074 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:40:42,074 client 16829 REQ[239a2071] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:40:42,915 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=239a2071)
-DEBUG 2026-05-11 09:40:42,917 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:41:05,942 client 16829 REQ[c337b7c2] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:41:06,321 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:41:06,321 client 16829 REQ[e2600cba] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:41:07,145 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:41:07,145 client 16829 REQ[8c777548] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:41:08,018 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=8c777548)
-DEBUG 2026-05-11 09:41:08,019 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:41:30,663 client 16829 REQ[142eda45] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:41:31,197 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:41:31,197 client 16829 REQ[5f53935b] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:41:32,047 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:41:32,048 client 16829 REQ[706a9930] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:41:32,859 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=706a9930)
-DEBUG 2026-05-11 09:41:32,860 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:41:55,813 client 16829 REQ[7dd8b42b] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:41:56,138 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:41:56,139 client 16829 REQ[d99c5396] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:41:57,006 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:41:57,007 client 16829 REQ[deb9a347] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:41:57,864 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=deb9a347)
-DEBUG 2026-05-11 09:41:57,865 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:42:20,964 client 16829 REQ[45db091f] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:42:21,785 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:42:21,785 client 16829 REQ[c0170c88] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:42:22,655 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:42:22,656 client 16829 REQ[76f0f34f] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:42:43,210 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-05-11 09:42:45,918 client 16829 REQ[bf525320] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:42:46,319 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:42:46,319 client 16829 REQ[8b05ef3c] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:42:47,145 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:42:47,145 client 16829 REQ[fc026880] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:42:48,005 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=fc026880)
-DEBUG 2026-05-11 09:42:48,006 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-INFO 2026-05-11 09:43:10,057 services 16789 sync_alarm_status: skipping offline device Q15228593
-DEBUG 2026-05-11 09:43:10,673 client 16829 REQ[d42bec0f] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-05-11 09:43:10,826 client 16830 REQ[8dd44942] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:43:10,829 client 16789 REQ[492c3578] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-05-11 09:43:11,097 services 16829 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-05-11 09:43:11,098 client 16829 REQ[90bbfb6a] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-05-11 09:43:11,441 client 16830 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:43:11,442 client 16830 REQ[74b40856] POST /api/hpcgw/v1/mq/subscribe
-WARNING 2026-05-11 09:43:11,762 services 16789 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=492c3578)
-DEBUG 2026-05-11 09:43:11,763 client 16789 REQ[988b55c2] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-05-11 09:43:11,870 services 16829 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-INFO 2026-05-11 09:43:12,318 client 16830 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:43:12,319 client 16830 REQ[0142c0ba] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:43:12,596 services 16789 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=988b55c2)
-ERROR 2026-05-11 09:43:13,083 client 16830 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=0142c0ba)
-DEBUG 2026-05-11 09:43:13,084 tasks 16830 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:43:35,787 client 16829 REQ[b2f5aa96] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:43:36,574 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:43:36,574 client 16829 REQ[b0cfe233] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:43:37,479 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:43:37,480 client 16829 REQ[797d1b68] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:43:38,250 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=797d1b68)
-DEBUG 2026-05-11 09:43:38,251 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:44:00,925 client 16829 REQ[4679fb9e] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:44:01,334 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:44:01,334 client 16829 REQ[4afd134d] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:44:02,192 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:44:02,192 client 16829 REQ[a3fc555b] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:44:03,063 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=a3fc555b)
-DEBUG 2026-05-11 09:44:03,064 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:44:25,799 client 16829 REQ[e564eedf] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:44:26,389 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:44:26,389 client 16829 REQ[1809c1aa] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:44:27,301 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:44:27,301 client 16829 REQ[34ec1349] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:44:28,152 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=34ec1349)
-DEBUG 2026-05-11 09:44:28,154 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:44:50,842 client 16829 REQ[53ef8fa5] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:44:51,367 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:44:51,367 client 16829 REQ[07287fd7] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:44:52,226 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:44:52,226 client 16829 REQ[dd3bf499] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:44:53,071 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=dd3bf499)
-DEBUG 2026-05-11 09:44:53,072 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:45:16,089 client 16829 REQ[31ff45f7] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:45:16,870 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:45:16,870 client 16829 REQ[17d5b16e] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:45:17,762 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:45:17,763 client 16829 REQ[0e0d3903] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:45:18,630 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=0e0d3903)
-DEBUG 2026-05-11 09:45:18,631 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:45:40,777 client 16829 REQ[aa9e19de] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:45:41,171 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:45:41,171 client 16829 REQ[1e8281f1] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:45:42,063 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:45:42,063 client 16829 REQ[47e86771] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:45:42,848 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=47e86771)
-DEBUG 2026-05-11 09:45:42,849 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:46:05,932 client 16829 REQ[4c83cc7e] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:46:06,327 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:46:06,327 client 16829 REQ[b76783c0] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:46:07,166 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:46:07,167 client 16829 REQ[d5cf1589] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:46:08,008 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=d5cf1589)
-DEBUG 2026-05-11 09:46:08,009 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:46:31,103 client 16829 REQ[a04bf5d5] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:46:31,542 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:46:31,542 client 16829 REQ[3ef14a0a] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:46:32,454 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:46:32,454 client 16829 REQ[2eafeea3] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:46:33,388 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=2eafeea3)
-DEBUG 2026-05-11 09:46:33,389 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:46:56,036 client 16829 REQ[eab654bd] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:46:56,748 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:46:56,748 client 16829 REQ[444cf969] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:46:57,762 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:46:57,763 client 16829 REQ[6451d5f5] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:46:58,712 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=6451d5f5)
-DEBUG 2026-05-11 09:46:58,713 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:47:20,843 client 16829 REQ[9df93094] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:47:21,535 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:47:21,535 client 16829 REQ[4b4bc713] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:47:22,532 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:47:22,532 client 16829 REQ[35646da0] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:47:23,389 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=35646da0)
-DEBUG 2026-05-11 09:47:23,391 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:47:45,983 client 16829 REQ[622fc6d0] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:47:46,416 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:47:46,416 client 16829 REQ[403078b2] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:47:47,399 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:47:47,399 client 16829 REQ[7bac9702] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:47:48,265 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=7bac9702)
-DEBUG 2026-05-11 09:47:48,268 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-INFO 2026-05-11 09:48:10,057 services 16789 sync_alarm_status: skipping offline device Q15228593
-DEBUG 2026-05-11 09:48:10,861 client 16830 REQ[6593c5a5] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:48:11,012 client 16789 REQ[cc89bc87] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-05-11 09:48:11,019 client 16829 REQ[4b908503] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-05-11 09:48:11,333 client 16830 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:48:11,333 client 16830 REQ[181572bd] POST /api/hpcgw/v1/mq/subscribe
-WARNING 2026-05-11 09:48:11,337 services 16829 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-05-11 09:48:11,338 client 16829 REQ[4006521d] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-05-11 09:48:11,820 services 16789 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=cc89bc87)
-DEBUG 2026-05-11 09:48:11,821 client 16789 REQ[cb0e8254] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-05-11 09:48:12,256 services 16829 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-INFO 2026-05-11 09:48:12,320 client 16830 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:48:12,321 client 16830 REQ[55d1c6f7] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:48:12,920 services 16789 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=cb0e8254)
-ERROR 2026-05-11 09:48:13,152 client 16830 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=55d1c6f7)
-DEBUG 2026-05-11 09:48:13,153 tasks 16830 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:48:35,740 client 16829 REQ[9e28a878] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:48:36,611 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:48:36,612 client 16829 REQ[711cba86] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:48:37,587 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:48:37,589 client 16829 REQ[c17c3da6] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:48:38,520 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=c17c3da6)
-DEBUG 2026-05-11 09:48:38,521 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:49:00,929 client 16829 REQ[f8a4f963] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:49:01,397 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:49:01,397 client 16829 REQ[6cf51317] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:49:02,387 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:49:02,388 client 16829 REQ[b2fcd8a5] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:49:03,472 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=b2fcd8a5)
-DEBUG 2026-05-11 09:49:03,474 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:49:26,015 client 16829 REQ[7dedb7db] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:49:26,518 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:49:26,519 client 16829 REQ[c0d17441] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:49:27,429 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:49:27,429 client 16829 REQ[39608733] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:49:28,368 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=39608733)
-DEBUG 2026-05-11 09:49:28,370 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:49:50,987 client 16829 REQ[48c92b04] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:49:51,457 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:49:51,458 client 16829 REQ[51698715] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:49:52,355 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:49:52,356 client 16829 REQ[3a11e740] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:49:53,182 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=3a11e740)
-DEBUG 2026-05-11 09:49:53,183 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:50:15,975 client 16829 REQ[10b28e3b] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:50:16,796 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:50:16,796 client 16829 REQ[4a050e77] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:50:17,783 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:50:17,784 client 16829 REQ[d8b10949] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:50:17,632 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=d8b10949)
-DEBUG 2026-05-11 09:50:17,635 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:50:41,009 client 16829 REQ[25d6a769] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:50:41,944 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:50:41,944 client 16829 REQ[2aa2b417] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:50:43,019 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:50:43,020 client 16829 REQ[9765fd9d] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:50:44,912 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=9765fd9d)
-DEBUG 2026-05-11 09:50:44,914 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:51:05,824 client 16829 REQ[54b7aee9] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:51:06,291 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:51:06,292 client 16829 REQ[de6b2b92] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:51:07,222 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:51:07,222 client 16829 REQ[8b8dc1e5] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-05-11 09:51:27,911 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-05-11 09:51:31,142 client 16829 REQ[f41ebf3c] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:51:31,527 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:51:31,528 client 16829 REQ[9dca6917] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:51:32,478 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:51:32,479 client 16829 REQ[973102c0] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:51:33,300 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=973102c0)
-DEBUG 2026-05-11 09:51:33,302 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:51:56,031 client 16829 REQ[6f0ef402] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:51:56,480 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:51:56,480 client 16829 REQ[6d33f14c] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:51:57,455 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:51:57,456 client 16829 REQ[f47d1e42] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:51:58,369 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=f47d1e42)
-DEBUG 2026-05-11 09:51:58,371 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
-DEBUG 2026-05-11 09:52:21,037 client 16829 REQ[bf9e201d] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-05-11 09:52:21,473 client 16829 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-05-11 09:52:21,473 client 16829 REQ[6fc71338] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-05-11 09:52:22,351 client 16829 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-05-11 09:52:22,352 client 16829 REQ[7ea3e2c3] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-05-11 09:52:22,249 client 16829 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=7ea3e2c3)
-DEBUG 2026-05-11 09:52:22,250 tasks 16829 poll_mq_events: MQ heartbeat — no messages (batch=)
+INFO 2026-05-11 21:48:55,200 services 3665 sync_alarm_status: skipping offline device Q15228593
+DEBUG 2026-05-11 21:48:55,989 client 3624 REQ[ead61f0c] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-05-11 21:48:56,077 client 3665 REQ[dffec1b0] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-05-11 21:48:56,077 client 3664 REQ[37009ca2] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-05-11 21:48:56,656 services 3664 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-05-11 21:48:56,657 client 3664 REQ[e55c57dd] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-05-11 21:48:56,727 services 3665 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=dffec1b0)
+DEBUG 2026-05-11 21:48:56,727 client 3665 REQ[fbeb9688] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-05-11 21:48:57,428 services 3664 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+WARNING 2026-05-11 21:48:57,501 services 3665 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=fbeb9688)
+DEBUG 2026-05-11 21:49:15,530 tasks 3624 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-05-11 21:49:18,760 client 3664 REQ[3725b4dd] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:49:19,036 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:49:19,037 client 3664 REQ[255bb521] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:49:19,869 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:49:19,869 client 3664 REQ[745b9a0d] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:49:20,630 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=745b9a0d)
+DEBUG 2026-05-11 21:49:20,632 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:49:44,060 client 3664 REQ[70328a27] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:49:44,693 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:49:44,693 client 3664 REQ[f3c7d5c2] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:49:45,507 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:49:45,508 client 3664 REQ[fb920ca3] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:49:46,279 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=fb920ca3)
+DEBUG 2026-05-11 21:49:46,281 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:50:08,742 client 3664 REQ[6e0ce859] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:50:09,012 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:50:09,013 client 3664 REQ[7cd240ea] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:50:09,810 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:50:09,810 client 3664 REQ[3c91ead6] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:50:10,700 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=3c91ead6)
+DEBUG 2026-05-11 21:50:10,701 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:50:34,053 client 3664 REQ[8125bb25] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:50:34,923 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:50:34,923 client 3664 REQ[949fe9ad] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:50:35,691 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:50:35,692 client 3664 REQ[076739ed] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:50:36,455 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=076739ed)
+DEBUG 2026-05-11 21:50:36,457 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:50:58,749 client 3664 REQ[0b3f441d] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:50:59,539 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:50:59,539 client 3664 REQ[8a02707e] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:51:00,445 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:51:00,445 client 3664 REQ[0b8927af] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:51:01,194 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=0b8927af)
+DEBUG 2026-05-11 21:51:01,195 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:51:24,357 client 3664 REQ[514615c5] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:51:24,961 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:51:24,961 client 3664 REQ[7a0d40a8] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:51:25,780 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:51:25,781 client 3664 REQ[b23874ea] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:51:26,572 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=b23874ea)
+DEBUG 2026-05-11 21:51:26,574 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:51:48,912 client 3664 REQ[85129e6b] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:51:49,181 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:51:49,181 client 3664 REQ[c8b12d33] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:51:49,966 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:51:49,967 client 3664 REQ[b8dd22e2] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:51:50,721 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=b8dd22e2)
+DEBUG 2026-05-11 21:51:50,722 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:52:13,739 client 3664 REQ[7f0d2cf2] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:52:14,015 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:52:14,015 client 3664 REQ[867c4ceb] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:52:14,822 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:52:14,822 client 3664 REQ[a6601d76] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:52:15,595 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=a6601d76)
+DEBUG 2026-05-11 21:52:15,596 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:52:38,774 client 3664 REQ[c004764a] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:52:39,559 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:52:39,559 client 3664 REQ[809956e5] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:52:40,361 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:52:40,361 client 3664 REQ[7543f7a3] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:52:41,124 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=7543f7a3)
+DEBUG 2026-05-11 21:52:41,125 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:53:03,937 client 3664 REQ[3dc8a596] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:53:04,754 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:53:04,754 client 3664 REQ[a48ddd39] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:53:05,553 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:53:05,554 client 3664 REQ[bf635b94] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:53:06,269 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=bf635b94)
+DEBUG 2026-05-11 21:53:06,272 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:53:28,783 client 3664 REQ[b018a9aa] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:53:29,568 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:53:29,568 client 3664 REQ[218ab426] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:53:30,351 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:53:30,352 client 3664 REQ[b5b38500] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:53:31,047 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=b5b38500)
+DEBUG 2026-05-11 21:53:31,049 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+INFO 2026-05-11 21:53:53,133 services 3624 sync_alarm_status: skipping offline device Q15228593
+DEBUG 2026-05-11 21:53:53,742 client 3664 REQ[c26d0148] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-05-11 21:53:53,743 client 3665 REQ[05c4c8ab] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-05-11 21:53:53,758 client 3624 REQ[0c77ddde] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-05-11 21:53:54,016 services 3664 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-05-11 21:53:54,018 client 3664 REQ[397304b3] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-05-11 21:53:54,446 services 3624 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=0c77ddde)
+DEBUG 2026-05-11 21:53:54,448 client 3624 REQ[9503f688] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-05-11 21:53:54,779 services 3664 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+WARNING 2026-05-11 21:53:55,261 services 3624 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=9503f688)
+DEBUG 2026-05-11 21:54:13,102 tasks 3665 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-05-11 21:54:18,435 client 3664 REQ[d32644e9] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:54:18,730 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:54:18,730 client 3664 REQ[0ef52323] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:54:19,540 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:54:19,540 client 3664 REQ[4ae4c162] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:54:20,239 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=4ae4c162)
+DEBUG 2026-05-11 21:54:20,240 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:54:43,930 client 3664 REQ[d4cde2ab] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:54:44,184 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:54:44,184 client 3664 REQ[814788aa] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:54:44,943 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:54:44,944 client 3664 REQ[ff0b4a98] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:54:45,657 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=ff0b4a98)
+DEBUG 2026-05-11 21:54:45,658 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:55:08,874 client 3664 REQ[1a09554d] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:55:09,153 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:55:09,153 client 3664 REQ[164e2742] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:55:09,923 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:55:09,923 client 3664 REQ[0fcaa9a0] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:55:10,689 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=0fcaa9a0)
+DEBUG 2026-05-11 21:55:10,690 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:55:33,881 client 3664 REQ[7b862a24] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:55:32,764 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:55:32,764 client 3664 REQ[558a5b14] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:55:33,579 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:55:33,580 client 3664 REQ[e2928474] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:55:34,350 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=e2928474)
+DEBUG 2026-05-11 21:55:34,351 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:55:58,744 client 3664 REQ[61b3ac8a] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:55:59,026 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:55:59,026 client 3664 REQ[b8614eeb] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:55:59,840 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:55:59,841 client 3664 REQ[e17ffe90] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:56:00,615 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=e17ffe90)
+DEBUG 2026-05-11 21:56:00,617 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:56:23,927 client 3664 REQ[1674df94] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:56:24,533 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:56:24,533 client 3664 REQ[6fad9b4f] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:56:25,362 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:56:25,363 client 3664 REQ[b7f3d9f4] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:56:26,145 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=b7f3d9f4)
+DEBUG 2026-05-11 21:56:26,147 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:56:48,942 client 3664 REQ[0c9cb86e] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:56:49,224 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:56:49,225 client 3664 REQ[3f7c2afd] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:56:50,050 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:56:50,051 client 3664 REQ[92463ce6] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:56:50,849 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=92463ce6)
+DEBUG 2026-05-11 21:56:50,851 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:57:13,759 client 3664 REQ[e68bc631] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:57:14,551 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:57:14,551 client 3664 REQ[466cf141] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:57:15,361 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:57:15,362 client 3664 REQ[7b20ce03] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:57:16,133 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=7b20ce03)
+DEBUG 2026-05-11 21:57:16,135 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:57:38,942 client 3664 REQ[7b20a1a9] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:57:39,226 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:57:39,227 client 3664 REQ[8bc65aac] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:57:40,046 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:57:40,047 client 3664 REQ[50be2cd0] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:57:40,822 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=50be2cd0)
+DEBUG 2026-05-11 21:57:40,824 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:58:03,787 client 3664 REQ[583e32c8] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:58:04,406 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:58:04,407 client 3664 REQ[488df392] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:58:05,225 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:58:05,226 client 3664 REQ[fb5d08ac] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:58:04,058 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=fb5d08ac)
+DEBUG 2026-05-11 21:58:04,059 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:58:28,783 client 3664 REQ[ba1eddc7] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:58:29,064 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:58:29,064 client 3664 REQ[19a8c623] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:58:29,890 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:58:29,890 client 3664 REQ[43371c95] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:58:30,667 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=43371c95)
+DEBUG 2026-05-11 21:58:30,670 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+INFO 2026-05-11 21:58:53,133 services 3624 sync_alarm_status: skipping offline device Q15228593
+DEBUG 2026-05-11 21:58:53,767 client 3624 REQ[7b1584fe] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-05-11 21:58:53,926 client 3664 REQ[ddedd139] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-05-11 21:58:53,936 client 3665 REQ[e70663a2] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:58:54,198 client 3665 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:58:54,198 client 3665 REQ[b2116ee2] POST /api/hpcgw/v1/mq/subscribe
+WARNING 2026-05-11 21:58:54,211 services 3664 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-05-11 21:58:54,212 client 3664 REQ[9657575e] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-05-11 21:58:54,964 services 3664 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+INFO 2026-05-11 21:58:54,994 client 3665 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:58:54,995 client 3665 REQ[2c0f6809] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:58:55,711 client 3665 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=2c0f6809)
+DEBUG 2026-05-11 21:58:55,712 tasks 3665 poll_mq_events: MQ heartbeat — no messages (batch=)
+WARNING 2026-05-11 21:59:00,987 services 3624 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=7b1584fe)
+DEBUG 2026-05-11 21:59:00,988 client 3624 REQ[11bd603d] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-05-11 21:59:01,861 services 3624 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=11bd603d)
+DEBUG 2026-05-11 21:59:18,756 client 3664 REQ[88a60da0] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:59:19,542 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:59:19,542 client 3664 REQ[66d9bca3] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:59:20,272 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:59:20,272 client 3664 REQ[c700c3f4] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:59:21,013 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=c700c3f4)
+DEBUG 2026-05-11 21:59:21,014 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 21:59:43,883 client 3664 REQ[9765a860] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 21:59:44,133 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 21:59:44,133 client 3664 REQ[98d6d4c5] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 21:59:44,887 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 21:59:44,887 client 3664 REQ[ca68db4b] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 21:59:45,663 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=ca68db4b)
+DEBUG 2026-05-11 21:59:45,666 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 22:00:08,863 client 3664 REQ[719da3d7] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-05-11 22:00:30,776 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-05-11 22:00:33,913 client 3664 REQ[8069f4fa] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:00:34,193 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:00:34,194 client 3664 REQ[faba48fe] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 22:00:35,014 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:00:35,015 client 3664 REQ[b689af52] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 22:00:35,786 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=b689af52)
+DEBUG 2026-05-11 22:00:35,787 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 22:00:58,756 client 3664 REQ[0ac04eb8] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:00:59,030 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:00:59,031 client 3664 REQ[3d268c30] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 22:00:59,841 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:00:59,841 client 3664 REQ[dbd745ff] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 22:01:00,615 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=dbd745ff)
+DEBUG 2026-05-11 22:01:00,616 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+ERROR 2026-05-11 22:01:12,487 tasks 3664 send_broadcast: message 937fef74-ebb8-44c2-ba85-7c2332d57d25 not found
+ERROR 2026-05-11 22:01:12,491 tasks 3624 send_broadcast: message c1bc1068-1fd2-4c0d-bc28-d20c78c7bc7d not found
+DEBUG 2026-05-11 22:01:23,772 client 3664 REQ[b445421b] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:01:24,069 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:01:24,069 client 3664 REQ[91de3890] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 22:01:26,036 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:01:26,036 client 3664 REQ[e3491452] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 22:01:26,810 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=e3491452)
+DEBUG 2026-05-11 22:01:26,811 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 22:01:48,951 client 3664 REQ[ac1e6142] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:01:49,227 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:01:49,227 client 3664 REQ[b566c8ba] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 22:01:50,038 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:01:50,039 client 3664 REQ[cedfae98] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 22:01:50,804 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=cedfae98)
+DEBUG 2026-05-11 22:01:50,806 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+ERROR 2026-05-11 22:01:52,183 tasks 3664 send_broadcast: message 4210eddf-0418-4fc9-9dbf-8b4b7ea7f369 not found
+ERROR 2026-05-11 22:01:52,188 tasks 3664 send_broadcast: message 41d40015-4989-4185-a551-2ea1c7c20707 not found
+DEBUG 2026-05-11 22:02:13,934 client 3664 REQ[d4326fbe] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:02:14,221 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:02:14,221 client 3664 REQ[45cdb1fd] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 22:02:15,022 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:02:15,022 client 3664 REQ[cc1bc5bd] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 22:02:15,781 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=cc1bc5bd)
+DEBUG 2026-05-11 22:02:15,783 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 22:02:38,966 client 3664 REQ[bc307472] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:02:39,582 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:02:39,582 client 3664 REQ[c7c76e7e] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 22:02:40,379 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:02:40,379 client 3664 REQ[48f78305] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 22:02:41,117 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=48f78305)
+DEBUG 2026-05-11 22:02:41,118 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 22:03:03,955 client 3664 REQ[fd05a32f] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:03:04,243 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:03:04,243 client 3664 REQ[e69e3426] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 22:03:05,061 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:03:05,061 client 3664 REQ[3399182a] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 22:03:05,806 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=3399182a)
+DEBUG 2026-05-11 22:03:05,808 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 22:03:28,799 client 3664 REQ[32ea87ce] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:03:29,598 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:03:29,598 client 3664 REQ[c1587be6] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 22:03:30,390 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:03:30,390 client 3664 REQ[c9d0be30] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 22:03:31,100 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=c9d0be30)
+DEBUG 2026-05-11 22:03:31,102 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+INFO 2026-05-11 22:03:53,132 services 3624 sync_alarm_status: skipping offline device Q15228593
+DEBUG 2026-05-11 22:03:53,786 client 3624 REQ[6020c76a] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-05-11 22:03:53,959 client 3664 REQ[2f02aa73] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-05-11 22:03:54,015 client 3665 REQ[63a02494] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:03:54,240 services 3664 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-05-11 22:03:54,241 client 3664 REQ[6bc67343] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-05-11 22:03:54,288 client 3665 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:03:54,288 client 3665 REQ[4febcbb3] POST /api/hpcgw/v1/mq/subscribe
+WARNING 2026-05-11 22:03:54,661 services 3624 sync_alarm_status: sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=6020c76a)
+DEBUG 2026-05-11 22:03:54,662 client 3624 REQ[3b46d661] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-05-11 22:03:55,018 services 3664 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+INFO 2026-05-11 22:03:55,112 client 3665 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:03:55,112 client 3665 REQ[f5f20f5f] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:03:55,514 services 3624 sync_alarm_status: zone sync failed for Q42388087: Hik-Partner API error LAP020011: device offline or unreachable (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=3b46d661)
+ERROR 2026-05-11 22:03:55,842 client 3665 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=f5f20f5f)
+DEBUG 2026-05-11 22:03:55,843 tasks 3665 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 22:04:18,787 client 3664 REQ[42b9fbb0] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:04:19,064 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:04:19,064 client 3664 REQ[f28fd9a1] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 22:04:19,903 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:04:19,904 client 3664 REQ[f15403e0] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 22:04:20,597 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=f15403e0)
+DEBUG 2026-05-11 22:04:20,598 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)
+DEBUG 2026-05-11 22:04:43,713 client 3664 REQ[ff13501f] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-05-11 22:05:05,937 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-05-11 22:05:08,875 client 3664 REQ[130a5245] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-05-11 22:05:07,092 client 3664 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
+DEBUG 2026-05-11 22:05:07,092 client 3664 REQ[e421a85d] POST /api/hpcgw/v1/mq/subscribe
+INFO 2026-05-11 22:05:07,826 client 3664 poll_messages: re-subscribe successful, retrying poll
+DEBUG 2026-05-11 22:05:07,827 client 3664 REQ[aa5aedb5] POST /api/hpcgw/v1/mq/messages
+ERROR 2026-05-11 22:05:08,540 client 3664 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=aa5aedb5)
+DEBUG 2026-05-11 22:05:08,542 tasks 3664 poll_mq_events: MQ heartbeat — no messages (batch=)

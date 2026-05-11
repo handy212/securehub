@@ -1,0 +1,116 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Applicants | SecureHub{% endblock %}
+{% block header_title %}Guard Recruitment{% endblock %}
+{% block content %}
+{% include "dashboard/guarding_nav.html" %}
+<div class="space-y-4" x-data="{ createModal: false, hireModal: null }">
+    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+            <h1 class="text-lg font-black text-slate-900">Applicants</h1>
+            <p class="text-[10px] font-bold uppercase tracking-widest text-slate-400">Recruitment pipeline</p>
+        </div>
+        <button @click="createModal=true" class="rounded bg-slate-900 px-3 py-2 text-[10px] font-black uppercase tracking-widest text-white">New Applicant</button>
+    </div>
+
+    <form method="get" class="flex gap-2">
+        <input name="q" value="{{ current_query }}" placeholder="Search applicants..." class="h-9 flex-1 rounded border-slate-200 text-xs">
+        <button class="rounded border border-slate-200 bg-white px-3 text-[10px] font-black uppercase tracking-widest">Search</button>
+    </form>
+
+    <div class="overflow-hidden rounded border border-slate-200 bg-white">
+        <table class="w-full min-w-[920px] text-left text-[11px]">
+            <thead class="bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-500">
+                <tr>
+                    <th class="px-4 py-2">Applicant</th>
+                    <th>Status</th>
+                    <th>Source</th>
+                    <th>Created</th>
+                    <th class="pr-4 text-right">Manage</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+                {% for item in applicants %}
+                <tr class="align-top hover:bg-slate-50/70">
+                    <td class="px-4 py-2.5">
+                        <div class="font-black text-slate-900">{{ item.full_name }}</div>
+                        <div class="text-[9px] text-slate-400">{{ item.phone_number|default:item.email|default:"No contact" }}</div>
+                    </td>
+                    <td class="py-2.5"><span class="rounded bg-slate-100 px-2 py-1 text-[8px] font-black uppercase">{{ item.get_status_display }}</span></td>
+                    <td class="py-2.5">{{ item.source|default:"-" }}</td>
+                    <td class="py-2.5">{{ item.created_at|date:"Y-m-d" }}</td>
+                    <td class="py-2.5 pr-4 text-right">
+                        <details class="inline-block text-left">
+                            <summary class="cursor-pointer rounded border border-slate-200 bg-white px-2 py-1 text-[8px] font-black uppercase tracking-widest text-slate-600">Manage</summary>
+                            <div class="mt-2 w-[28rem] max-w-[80vw] rounded border border-slate-200 bg-white p-3 shadow-xl">
+                                <form method="post" class="grid gap-2">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="update_applicant">
+                                    <input type="hidden" name="applicant_id" value="{{ item.id }}">
+                                    <div class="grid gap-2 sm:grid-cols-2">
+                                        <input name="first_name" value="{{ item.first_name }}" required placeholder="First name">
+                                        <input name="last_name" value="{{ item.last_name }}" required placeholder="Last name">
+                                    </div>
+                                    <div class="grid gap-2 sm:grid-cols-2">
+                                        <input name="phone_number" value="{{ item.phone_number }}" placeholder="Phone">
+                                        <input name="email" value="{{ item.email }}" type="email" placeholder="Email">
+                                    </div>
+                                    <div class="grid gap-2 sm:grid-cols-2">
+                                        <input name="source" value="{{ item.source }}" placeholder="Source">
+                                        <select name="status">
+                                            {% for value,label in statuses %}<option value="{{ value }}" {% if item.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+                                        </select>
+                                    </div>
+                                    <div class="flex flex-wrap justify-end gap-2">
+                                        {% if not item.hired_guard and item.status == 'offered' %}
+                                        <button type="button" @click="hireModal='{{ item.id }}'" class="rounded bg-emerald-600 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-white">Hire</button>
+                                        {% endif %}
+                                        <button class="rounded bg-slate-900 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-white">Save</button>
+                                    </div>
+                                </form>
+                                {% if not item.hired_guard %}
+                                <form method="post" class="mt-2 flex justify-end">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="action" value="delete_applicant">
+                                    <input type="hidden" name="applicant_id" value="{{ item.id }}">
+                                    <button class="rounded border border-red-200 px-3 py-1.5 text-[9px] font-black uppercase tracking-widest text-red-600">Delete</button>
+                                </form>
+                                {% else %}
+                                <div class="mt-2 text-right text-[9px] font-black uppercase text-emerald-600">Hired as {{ item.hired_guard.employee_number }}</div>
+                                {% endif %}
+                            </div>
+                        </details>
+                    </td>
+                </tr>
+                <template x-if="hireModal==='{{ item.id }}'">
+                    <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" @click.self="hireModal=null">
+                        <form action="{% url 'dashboard:guarding-applicant-hire' item.id %}" method="post" class="guarding-modal-panel form-perfex w-full max-w-sm rounded border border-slate-200 bg-white p-5 shadow-2xl space-y-3">
+                            {% csrf_token %}
+                            <h2 class="text-xs font-black uppercase tracking-widest text-slate-900">Hire {{ item.full_name }}</h2>
+                            <input name="employee_number" required placeholder="Employee number" class="w-full">
+                            <button class="w-full rounded bg-emerald-600 py-2 text-[10px] font-black uppercase tracking-widest text-white">Confirm Hire</button>
+                        </form>
+                    </div>
+                </template>
+                {% empty %}
+                <tr><td colspan="5" class="px-4 py-10 text-center font-bold text-slate-400">No applicants yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <template x-if="createModal">
+        <div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4" @click.self="createModal=false">
+            <form method="post" class="guarding-modal-panel form-perfex w-full max-w-xl rounded border border-slate-200 bg-white p-5 shadow-2xl space-y-4">
+                {% csrf_token %}
+                <h2 class="text-xs font-black uppercase tracking-widest text-slate-900">Create Applicant</h2>
+                <div class="grid gap-3 sm:grid-cols-2"><input name="first_name" required placeholder="First name"><input name="last_name" required placeholder="Last name"></div>
+                <div class="grid gap-3 sm:grid-cols-2"><input name="phone_number" placeholder="Phone"><input name="email" type="email" placeholder="Email"></div>
+                <div class="grid gap-3 sm:grid-cols-2"><input name="source" placeholder="Source"><select name="status">{% for value,label in statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+                <button class="rounded bg-slate-900 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-white">Create</button>
+            </form>
+        </div>
+    </template>
+</div>
+</div>
+</div>
+{% endblock %}

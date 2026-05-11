@@ -218,6 +218,11 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.alarms.tasks.send_payment_reminders",
         "schedule": 86400.0,
     },
+    # Guard operations: close missed rounds/checks, raise SLA events, and notify guards.
+    "run-guarding-automation": {
+        "task": "apps.guarding.tasks.run_guarding_automation",
+        "schedule": 60.0,
+    },
 }
 
 if HIK_DELIVERY_MODE == "mq" and HIK_MQ_POLL_INTERVAL_SECONDS > 0:

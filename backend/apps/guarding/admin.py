@@ -10,6 +10,7 @@ from .models import (
     GuardApplicant,
     GuardCredential,
     GuardDocument,
+    GuardingEventLog,
     GuardLocationPing,
     GuardPanicAlert,
     GuardPost,
@@ -183,3 +184,10 @@ class DispatchTaskAdmin(admin.ModelAdmin):
     list_filter = ("status", "priority", "site")
     search_fields = ("title", "description", "assigned_guard__first_name", "assigned_guard__last_name", "site__name")
 
+
+@admin.register(GuardingEventLog)
+class GuardingEventLogAdmin(admin.ModelAdmin):
+    list_display = ("created_at", "severity", "event_type", "title", "guard", "site", "source")
+    list_filter = ("severity", "source", "event_type", "site")
+    search_fields = ("title", "message", "object_label", "object_id", "guard__first_name", "guard__last_name", "site__name")
+    readonly_fields = ("created_at",)

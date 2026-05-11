@@ -1,0 +1,449 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Guarding Command Center | SecureHub{% endblock %}
+{% block header_title %}Command Center{% endblock %}
+
+{% block extra_css %}
+<style>
+    .guard-overview {
+        --ops-ring: #10b981;
+        --ops-ring-track: #e2e8f0;
+    }
+    .dark .guard-overview {
+        --ops-ring: #34d399;
+        --ops-ring-track: #1e293b;
+    }
+    .guard-overview .ops-panel {
+        position: relative;
+        transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+    }
+    .guard-overview .ops-panel:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 10px 28px rgba(15, 23, 42, .08);
+    }
+    .dark .guard-overview .ops-panel:hover {
+        box-shadow: 0 14px 34px rgba(0, 0, 0, .24);
+    }
+    .guard-overview .coverage-dial {
+        background: conic-gradient(var(--ops-ring) calc(var(--coverage) * 1%), var(--ops-ring-track) 0);
+    }
+    .guard-overview .signal-grid {
+        background-image:
+            linear-gradient(rgba(148, 163, 184, .12) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(148, 163, 184, .12) 1px, transparent 1px);
+        background-size: 24px 24px;
+    }
+    .dark .guard-overview .signal-grid {
+        background-image:
+            linear-gradient(rgba(148, 163, 184, .08) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(148, 163, 184, .08) 1px, transparent 1px);
+    }
+    @media (min-width: 1280px) {
+        .guard-overview .ops-sticky {
+            position: sticky;
+            top: .75rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include "dashboard/guarding_nav.html" %}
+<div class="guard-overview space-y-4" x-data="{ queue: 'sos', reportsOpen: true }">
+    <div class="ops-panel overflow-hidden rounded border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex flex-col gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800 xl:flex-row xl:items-center xl:justify-between">
+            <div class="flex min-w-0 items-center gap-3">
+                <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded bg-slate-900 text-white shadow-sm dark:bg-slate-100 dark:text-slate-950">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+                </div>
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <h1 class="truncate text-lg font-black tracking-tight text-slate-900 dark:text-slate-100">Command Center</h1>
+                        <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                            Synced {% now "H:i" %}
+                        </span>
+                    </div>
+                    <p class="mt-0.5 truncate text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500">Coverage, dispatch, welfare, patrols, and field reports</p>
+                </div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 sm:flex sm:items-center">
+                <a href="{% url 'dashboard:guarding-dispatch' %}" class="inline-flex h-9 items-center justify-center gap-2 rounded bg-red-600 px-3 text-[10px] font-black uppercase tracking-widest text-white shadow-sm transition hover:bg-red-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+                    Dispatch
+                </a>
+                <a href="{% url 'dashboard:guarding-shifts' %}" class="inline-flex h-9 items-center justify-center gap-2 rounded border border-slate-200 bg-slate-50 px-3 text-[10px] font-black uppercase tracking-widest text-slate-700 transition hover:border-slate-300 hover:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                    Schedule
+                </a>
+            </div>
+        </div>
+
+        <div class="signal-grid grid gap-px bg-slate-100 dark:bg-slate-800 lg:grid-cols-3">
+            <button type="button" @click="queue = 'sos'" class="flex items-center justify-between gap-3 bg-white px-4 py-3 text-left transition hover:bg-red-50 dark:bg-slate-900 dark:hover:bg-red-950/20">
+                <div class="min-w-0">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-red-600 dark:text-red-400">Response Pressure</p>
+                    <p class="mt-1 truncate text-[11px] font-bold text-slate-500 dark:text-slate-400">{{ counts.open_panic }} SOS open · {{ counts.open_dispatch }} tasks moving</p>
+                </div>
+                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded bg-red-600 text-sm font-black tabular-nums text-white">{{ counts.open_panic }}</span>
+            </button>
+            <a href="{% url 'dashboard:guarding-shifts' %}" class="flex items-center justify-between gap-3 bg-white px-4 py-3 transition hover:bg-emerald-50 dark:bg-slate-900 dark:hover:bg-emerald-950/20">
+                <div class="min-w-0">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-emerald-600 dark:text-emerald-300">Coverage Health</p>
+                    <p class="mt-1 truncate text-[11px] font-bold text-slate-500 dark:text-slate-400">{{ today_summary.assigned_guards }} assigned · {{ today_summary.coverage_gap }} uncovered positions</p>
+                </div>
+                <span class="text-sm font-black tabular-nums text-emerald-700 dark:text-emerald-300">{{ today_summary.coverage_percent }}%</span>
+            </a>
+            <button type="button" @click="queue = 'welfare'" class="flex items-center justify-between gap-3 bg-white px-4 py-3 text-left transition hover:bg-sky-50 dark:bg-slate-900 dark:hover:bg-slate-800/60">
+                <div class="min-w-0">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-sky-600">Guard Welfare</p>
+                    <p class="mt-1 truncate text-[11px] font-bold text-slate-500 dark:text-slate-400">{{ counts.welfare_due }} checks need attention today</p>
+                </div>
+                <span class="text-sm font-black tabular-nums text-sky-700">{{ counts.welfare_due }}</span>
+            </button>
+        </div>
+
+        <div class="grid divide-y divide-slate-100 dark:divide-slate-800 sm:grid-cols-3 sm:divide-x sm:divide-y-0 xl:grid-cols-6">
+            <a href="{% url 'dashboard:guarding-guards' %}" class="group px-4 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-slate-400">Guards</p>
+                    <svg class="text-slate-300 transition group-hover:text-brand" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+                </div>
+                <p class="mt-1 text-2xl font-black tabular-nums text-slate-900 dark:text-slate-100">{{ counts.guards }}</p>
+            </a>
+            <a href="{% url 'dashboard:guarding-posts' %}" class="group px-4 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-slate-400">Posts</p>
+                    <svg class="text-slate-300 transition group-hover:text-brand" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+                </div>
+                <p class="mt-1 text-2xl font-black tabular-nums text-slate-900 dark:text-slate-100">{{ counts.posts }}</p>
+            </a>
+            <a href="{% url 'dashboard:guarding-shifts' %}" class="group px-4 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-slate-400">Shifts</p>
+                    <svg class="text-slate-300 transition group-hover:text-brand" xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+                </div>
+                <p class="mt-1 text-2xl font-black tabular-nums text-slate-900 dark:text-slate-100">{{ today_summary.shifts }}</p>
+            </a>
+            <button type="button" @click="queue = 'dispatch'" class="group px-4 py-3 text-left transition hover:bg-amber-50/70 dark:hover:bg-amber-950/20">
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-amber-600">Dispatch</p>
+                    <span class="h-1.5 w-1.5 rounded-full bg-amber-500"></span>
+                </div>
+                <p class="mt-1 text-2xl font-black tabular-nums text-slate-900 dark:text-slate-100">{{ counts.open_dispatch }}</p>
+            </button>
+            <button type="button" @click="queue = 'sos'" class="group px-4 py-3 text-left transition hover:bg-red-50/70 dark:hover:bg-red-950/20">
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-red-600">SOS</p>
+                    <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                </div>
+                <p class="mt-1 text-2xl font-black tabular-nums text-slate-900 dark:text-slate-100">{{ counts.open_panic }}</p>
+            </button>
+            <button type="button" @click="queue = 'welfare'" class="group px-4 py-3 text-left transition hover:bg-sky-50 dark:hover:bg-slate-800/50">
+                <div class="flex items-center justify-between gap-2">
+                    <p class="text-[8px] font-black uppercase tracking-widest text-sky-600">Welfare</p>
+                    <span class="h-1.5 w-1.5 rounded-full bg-sky-500"></span>
+                </div>
+                <p class="mt-1 text-2xl font-black tabular-nums text-slate-900 dark:text-slate-100">{{ counts.welfare_due }}</p>
+            </button>
+        </div>
+    </div>
+
+    <section class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_21rem]">
+        <div class="space-y-4">
+            <div class="grid gap-4 lg:grid-cols-[18rem_minmax(0,1fr)]">
+                <section class="ops-panel rounded border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="flex items-start justify-between gap-3">
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Today Coverage</p>
+                            <h2 class="mt-1 text-sm font-black text-slate-900 dark:text-slate-100">{{ today_summary.assigned_guards }}/{{ today_summary.required_guards }} Required</h2>
+                        </div>
+                        <span class="rounded-full bg-slate-100 px-2.5 py-1 text-[9px] font-black text-slate-700 dark:bg-slate-800 dark:text-slate-200">{% now "H:i" %}</span>
+                    </div>
+                    <div class="coverage-dial mx-auto mt-4 flex h-40 w-40 items-center justify-center rounded-full" style="--coverage: {{ today_summary.coverage_percent }};">
+                        <div class="flex h-[7.6rem] w-[7.6rem] flex-col items-center justify-center rounded-full border border-slate-100 bg-white text-center shadow-inner dark:border-slate-800 dark:bg-slate-900">
+                            <span class="text-3xl font-black tabular-nums text-slate-900 dark:text-slate-100">{{ today_summary.coverage_percent }}%</span>
+                            <span class="mt-0.5 text-[8px] font-black uppercase tracking-widest text-slate-400">Covered</span>
+                        </div>
+                    </div>
+                    <div class="mt-4 grid grid-cols-3 gap-2 text-center">
+                        <div class="rounded border border-slate-100 bg-slate-50 px-2 py-2 dark:border-slate-800 dark:bg-slate-950/40">
+                            <p class="text-base font-black tabular-nums text-slate-900 dark:text-slate-100">{{ today_summary.clocked_in }}</p>
+                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400">In</p>
+                        </div>
+                        <div class="rounded border border-slate-100 bg-slate-50 px-2 py-2 dark:border-slate-800 dark:bg-slate-950/40">
+                            <p class="text-base font-black tabular-nums text-slate-900 dark:text-slate-100">{{ today_summary.patrol_scans }}</p>
+                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400">Scans</p>
+                        </div>
+                        <div class="rounded border border-slate-100 bg-slate-50 px-2 py-2 dark:border-slate-800 dark:bg-slate-950/40">
+                            <p class="text-base font-black tabular-nums text-slate-900 dark:text-slate-100">{{ today_summary.reports }}</p>
+                            <p class="text-[8px] font-black uppercase tracking-widest text-slate-400">Reports</p>
+                        </div>
+                    </div>
+                </section>
+
+                <section class="ops-panel rounded border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Shift Board</p>
+                            <h2 class="mt-0.5 text-sm font-black text-slate-900 dark:text-slate-100">Upcoming Coverage</h2>
+                        </div>
+                        <a href="{% url 'dashboard:guarding-shifts' %}" class="text-[9px] font-black uppercase tracking-widest text-brand hover:text-red-700">Manage</a>
+                    </div>
+                    <div class="grid divide-y divide-slate-100 dark:divide-slate-800 md:grid-cols-2 md:divide-x md:divide-y-0">
+                        {% for shift in upcoming_shifts %}
+                        <a href="{% url 'dashboard:guarding-shifts' %}" class="group flex min-h-[72px] items-start gap-3 px-4 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                            <div class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-500 group-hover:bg-slate-900 group-hover:text-white dark:bg-slate-800 dark:text-slate-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="truncate text-[11px] font-black text-slate-900 dark:text-slate-100">{{ shift.post.name }}</p>
+                                    <span class="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[8px] font-black text-slate-600 dark:bg-slate-800 dark:text-slate-300">{{ shift.assignments.count }}/{{ shift.required_guards }}</span>
+                                </div>
+                                <p class="mt-1 truncate text-[9px] font-bold uppercase tracking-widest text-slate-400">{{ shift.post.site.name }}</p>
+                                <p class="mt-1 text-[10px] font-bold text-slate-500 dark:text-slate-400">{{ shift.starts_at|date:"M j, H:i" }} - {{ shift.ends_at|date:"H:i" }}</p>
+                            </div>
+                        </a>
+                        {% empty %}
+                        <div class="col-span-full px-4 py-10 text-center text-xs font-bold text-slate-400">No upcoming shifts scheduled.</div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+
+            <div class="grid gap-4 lg:grid-cols-2">
+                <section class="ops-panel rounded border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Patrol Proof</p>
+                            <h2 class="mt-0.5 text-sm font-black text-slate-900 dark:text-slate-100">Recent Checkpoints</h2>
+                        </div>
+                        <a href="{% url 'dashboard:guarding-patrols' %}" class="text-[9px] font-black uppercase tracking-widest text-brand hover:text-red-700">Routes</a>
+                    </div>
+                    <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                        {% for scan in recent_scans %}
+                        <div class="flex items-center gap-3 px-4 py-3">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-emerald-50 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6"><path d="M20 6 9 17l-5-5"/></svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-[11px] font-black text-slate-900 dark:text-slate-100">{{ scan.checkpoint.name }}</p>
+                                <p class="mt-0.5 truncate text-[9px] font-bold uppercase tracking-widest text-slate-400">{{ scan.guard.full_name|default:"No guard" }}</p>
+                            </div>
+                            <span class="shrink-0 text-[10px] font-bold tabular-nums text-slate-500 dark:text-slate-400">{{ scan.scanned_at|date:"M j, H:i" }}</span>
+                        </div>
+                        {% empty %}
+                        <div class="px-4 py-10 text-center text-xs font-bold text-slate-400">No checkpoint scans recorded.</div>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section class="ops-panel rounded border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Field Intel</p>
+                            <h2 class="mt-0.5 text-sm font-black text-slate-900 dark:text-slate-100">Latest Reports</h2>
+                        </div>
+                        <button type="button" @click="reportsOpen = !reportsOpen" class="flex h-8 w-8 items-center justify-center rounded text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 dark:hover:bg-slate-800 dark:hover:text-slate-200" title="Toggle reports">
+                            <svg :class="reportsOpen ? 'rotate-180' : ''" class="transition" xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
+                        </button>
+                    </div>
+                    <div x-show="reportsOpen" x-transition.opacity class="divide-y divide-slate-100 dark:divide-slate-800">
+                        {% for report in recent_reports|slice:":5" %}
+                        <a href="{% url 'dashboard:guarding-reports' %}" class="group flex items-center gap-3 px-4 py-3 transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                            <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded bg-slate-100 text-slate-500 group-hover:bg-brand group-hover:text-white dark:bg-slate-800 dark:text-slate-300">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5z"/><path d="M14 2v6h6"/><path d="M8 13h8"/><path d="M8 17h5"/></svg>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <p class="truncate text-[11px] font-black text-slate-900 dark:text-slate-100">{{ report.title }}</p>
+                                <p class="mt-0.5 truncate text-[9px] font-bold uppercase tracking-widest text-slate-400">{{ report.site.name }} · {{ report.guard.full_name|default:"-" }}</p>
+                            </div>
+                            <span class="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[8px] font-black uppercase text-slate-500 dark:bg-slate-800 dark:text-slate-300">{{ report.get_status_display }}</span>
+                        </a>
+                        {% empty %}
+                        <div class="px-4 py-10 text-center text-xs font-bold text-slate-400">No reports submitted yet.</div>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+        </div>
+
+        <aside class="space-y-4">
+            <section class="ops-panel ops-sticky overflow-hidden rounded border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div class="border-b border-slate-100 p-2 dark:border-slate-800">
+                    <div class="grid grid-cols-3 gap-1 rounded bg-slate-100 p-1 dark:bg-slate-950/60">
+                        <button type="button" @click="queue = 'sos'" :class="queue === 'sos' ? 'bg-white text-red-600 shadow-sm dark:bg-slate-800 dark:text-red-400' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'" class="rounded px-2 py-1.5 text-[9px] font-black uppercase tracking-widest transition">SOS</button>
+                        <button type="button" @click="queue = 'dispatch'" :class="queue === 'dispatch' ? 'bg-white text-amber-600 shadow-sm dark:bg-slate-800 dark:text-amber-500' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'" class="rounded px-2 py-1.5 text-[9px] font-black uppercase tracking-widest transition">Tasks</button>
+                        <button type="button" @click="queue = 'welfare'" :class="queue === 'welfare' ? 'bg-white text-sky-600 shadow-sm dark:bg-slate-800' : 'text-slate-500 hover:text-slate-900 dark:hover:text-slate-200'" class="rounded px-2 py-1.5 text-[9px] font-black uppercase tracking-widest transition">Welfare</button>
+                    </div>
+                </div>
+
+                <div x-show="queue === 'sos'" x-transition.opacity>
+                    <div class="flex items-center justify-between border-b border-red-100 bg-red-50 px-4 py-3 dark:border-red-900/40 dark:bg-red-950/30">
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-red-600 dark:text-red-400">Incident Queue</p>
+                            <h2 class="mt-0.5 text-sm font-black text-slate-900 dark:text-slate-100">{{ counts.open_panic }} Open SOS</h2>
+                        </div>
+                        <a href="{% url 'dashboard:guarding-dispatch' %}" class="text-[9px] font-black uppercase tracking-widest text-red-600 hover:text-red-700 dark:text-red-400">Open</a>
+                    </div>
+                    <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                        {% for alert in open_panic_alerts %}
+                        <div class="px-4 py-3">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate text-[11px] font-black text-slate-900 dark:text-slate-100">{{ alert.guard.full_name }}</p>
+                                    <p class="mt-0.5 truncate text-[9px] font-bold uppercase tracking-widest text-slate-400">{{ alert.site.name|default:"No site" }}</p>
+                                </div>
+                                <span class="shrink-0 text-[10px] font-bold tabular-nums text-red-600 dark:text-red-400">{{ alert.created_at|date:"H:i" }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="px-4 py-10 text-center text-xs font-bold text-slate-400">No active SOS alerts.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div x-cloak x-show="queue === 'dispatch'" x-transition.opacity>
+                    <div class="flex items-center justify-between border-b border-amber-100 bg-amber-50 px-4 py-3 dark:border-amber-900/50 dark:bg-amber-950/30">
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-amber-600 dark:text-amber-500">Active Dispatch</p>
+                            <h2 class="mt-0.5 text-sm font-black text-slate-900 dark:text-slate-100">{{ counts.open_dispatch }} Open Tasks</h2>
+                        </div>
+                        <a href="{% url 'dashboard:guarding-dispatch' %}" class="text-[9px] font-black uppercase tracking-widest text-amber-600 hover:text-amber-700">Manage</a>
+                    </div>
+                    <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                        {% for task in active_dispatch_tasks %}
+                        <div class="px-4 py-3">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate text-[11px] font-black text-slate-900 dark:text-slate-100">{{ task.title }}</p>
+                                    <p class="mt-0.5 truncate text-[9px] font-bold uppercase tracking-widest text-slate-400">{{ task.assigned_guard.full_name|default:"Unassigned" }} · {{ task.site.name|default:"No site" }}</p>
+                                </div>
+                                <span class="shrink-0 rounded bg-slate-100 px-2 py-0.5 text-[8px] font-black uppercase text-slate-600 dark:bg-slate-800 dark:text-slate-300">{{ task.get_status_display }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="px-4 py-10 text-center text-xs font-bold text-slate-400">No active dispatch tasks.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <div x-cloak x-show="queue === 'welfare'" x-transition.opacity>
+                    <div class="flex items-center justify-between border-b border-sky-100 bg-sky-50 px-4 py-3 dark:border-slate-800 dark:bg-slate-950/40">
+                        <div>
+                            <p class="text-[9px] font-black uppercase tracking-widest text-sky-600">Welfare Queue</p>
+                            <h2 class="mt-0.5 text-sm font-black text-slate-900 dark:text-slate-100">{{ counts.welfare_due }} Due</h2>
+                        </div>
+                        <a href="{% url 'dashboard:guarding-shifts' %}" class="text-[9px] font-black uppercase tracking-widest text-sky-600 hover:text-sky-700">Review</a>
+                    </div>
+                    <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                        {% for check in welfare_checks %}
+                        <div class="px-4 py-3">
+                            <div class="flex items-start justify-between gap-3">
+                                <div class="min-w-0">
+                                    <p class="truncate text-[11px] font-black text-slate-900 dark:text-slate-100">{{ check.assignment.guard.full_name }}</p>
+                                    <p class="mt-0.5 truncate text-[9px] font-bold uppercase tracking-widest text-slate-400">{{ check.assignment.shift.post.name }}</p>
+                                </div>
+                                <span class="shrink-0 text-[10px] font-bold tabular-nums text-slate-500 dark:text-slate-400">{{ check.due_at|date:"H:i" }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="px-4 py-10 text-center text-xs font-bold text-slate-400">No pending welfare checks.</div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </section>
+
+            <section class="ops-panel overflow-hidden rounded border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+                    <div>
+                        <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Workflow Watch</p>
+                        <h2 class="mt-0.5 text-sm font-black text-slate-900 dark:text-slate-100">Automation Timeline</h2>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="rounded bg-red-50 px-2 py-1 text-[8px] font-black text-red-600 dark:bg-red-950/40 dark:text-red-300">{{ workflow_event_counts.critical }} Critical</span>
+                        <span class="rounded bg-amber-50 px-2 py-1 text-[8px] font-black text-amber-600 dark:bg-amber-950/40 dark:text-amber-300">{{ workflow_event_counts.warning }} Warn</span>
+                    </div>
+                </div>
+                <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for event in workflow_events %}
+                    <div class="px-4 py-3">
+                        <div class="flex items-start gap-3">
+                            <div class="mt-0.5 h-2.5 w-2.5 shrink-0 rounded-full {% if event.severity == 'critical' %}bg-red-500{% elif event.severity == 'warning' %}bg-amber-500{% else %}bg-emerald-500{% endif %}"></div>
+                            <div class="min-w-0 flex-1">
+                                <div class="flex items-start justify-between gap-2">
+                                    <p class="truncate text-[11px] font-black text-slate-900 dark:text-slate-100">{{ event.title }}</p>
+                                    <span class="shrink-0 text-[9px] font-bold tabular-nums text-slate-400">{{ event.created_at|date:"H:i" }}</span>
+                                </div>
+                                <p class="mt-0.5 line-clamp-2 text-[10px] font-bold text-slate-500 dark:text-slate-400">{{ event.message|default:event.get_event_type_display }}</p>
+                                <p class="mt-1 truncate text-[8px] font-black uppercase tracking-widest text-slate-400">{{ event.guard.full_name|default:"System" }} · {{ event.site.name|default:event.get_source_display }}</p>
+                            </div>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="px-4 py-10 text-center text-xs font-bold text-slate-400">No workflow events yet.</div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="ops-panel rounded border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Command Shortcuts</p>
+                <div class="mt-3 grid gap-2">
+                    <a href="{% url 'dashboard:guarding-dispatch' %}" class="group flex items-center justify-between rounded border border-slate-100 bg-slate-50 px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 transition hover:border-red-200 hover:bg-red-50 hover:text-red-600 dark:border-slate-800 dark:bg-slate-950/30">
+                        <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-red-500"></span> Dispatch Desk</span>
+                        <svg class="text-slate-300 group-hover:text-red-500" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                    <a href="{% url 'dashboard:guarding-patrols' %}" class="group flex items-center justify-between rounded border border-slate-100 bg-slate-50 px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-600 dark:border-slate-800 dark:bg-slate-950/30">
+                        <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-emerald-500"></span> Patrol Routes</span>
+                        <svg class="text-slate-300 group-hover:text-emerald-500" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                    <a href="{% url 'dashboard:guarding-reports' %}" class="group flex items-center justify-between rounded border border-slate-100 bg-slate-50 px-3 py-2.5 text-[10px] font-black uppercase tracking-widest text-slate-700 transition hover:border-brand/20 hover:bg-brand/5 hover:text-brand dark:border-slate-800 dark:bg-slate-950/30">
+                        <span class="flex items-center gap-2"><span class="h-2 w-2 rounded-full bg-brand"></span> Report Review</span>
+                        <svg class="text-slate-300 group-hover:text-brand" xmlns="http://www.w3.org/2000/svg" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+                    </a>
+                </div>
+            </section>
+        </aside>
+    </section>
+
+    <section class="ops-panel overflow-hidden rounded border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900">
+        <div class="flex items-center justify-between gap-3 border-b border-slate-100 px-4 py-3 dark:border-slate-800">
+            <div>
+                <p class="text-[9px] font-black uppercase tracking-widest text-slate-400">Recent Reports</p>
+                <h2 class="mt-0.5 text-sm font-black text-slate-900 dark:text-slate-100">Review Pipeline</h2>
+            </div>
+            <a href="{% url 'dashboard:guarding-reports' %}" class="text-[9px] font-black uppercase tracking-widest text-brand hover:text-red-700">Review All</a>
+        </div>
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[780px] text-left text-[11px]">
+                <thead class="bg-slate-50 text-[9px] font-black uppercase tracking-widest text-slate-500 dark:bg-slate-950/40">
+                    <tr>
+                        <th class="px-4 py-2">Report</th>
+                        <th class="px-3 py-2">Site</th>
+                        <th class="px-3 py-2">Guard</th>
+                        <th class="px-3 py-2">Status</th>
+                        <th class="px-3 py-2 text-right">Submitted</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for report in recent_reports %}
+                    <tr class="transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                        <td class="px-4 py-2.5">
+                            <div class="font-black text-slate-900 dark:text-slate-100">{{ report.title }}</div>
+                            <div class="mt-0.5 text-[9px] font-bold uppercase tracking-widest text-slate-400">{{ report.get_report_type_display }}</div>
+                        </td>
+                        <td class="px-3 py-2.5 font-bold text-slate-600 dark:text-slate-300">{{ report.site.name }}</td>
+                        <td class="px-3 py-2.5 text-slate-500 dark:text-slate-400">{{ report.guard.full_name|default:"-" }}</td>
+                        <td class="px-3 py-2.5"><span class="rounded bg-slate-100 px-2 py-1 text-[8px] font-black uppercase text-slate-600 dark:bg-slate-800 dark:text-slate-300">{{ report.get_status_display }}</span></td>
+                        <td class="px-3 py-2.5 text-right font-bold tabular-nums text-slate-500 dark:text-slate-400">{{ report.submitted_at|date:"M j, H:i" }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr><td colspan="5" class="px-4 py-10 text-center font-bold text-slate-400">No reports submitted yet.</td></tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    </div>
+</div>
+</div>
+{% endblock %}

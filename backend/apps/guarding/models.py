@@ -1,10 +1,80 @@
 import uuid
 
 from django.conf import settings
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils import timezone
 
 from apps.sites.models import Site
+
+
+class GuardingEventLog(models.Model):
+    class Severity(models.TextChoices):
+        INFO = "info", "Info"
+        WARNING = "warning", "Warning"
+        CRITICAL = "critical", "Critical"
+
+    class Source(models.TextChoices):
+        SYSTEM = "system", "System"
+        CONSOLE = "console", "Console"
+        MOBILE = "mobile", "Mobile"
+        API = "api", "API"
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    event_type = models.CharField(max_length=80, db_index=True)
+    severity = models.CharField(max_length=16, choices=Severity.choices, default=Severity.INFO, db_index=True)
+    source = models.CharField(max_length=16, choices=Source.choices, default=Source.SYSTEM, db_index=True)
+    title = models.CharField(max_length=180)
+    message = models.TextField(blank=True)
+    object_label = models.CharField(max_length=80, blank=True, db_index=True)
+    object_id = models.CharField(max_length=64, blank=True, db_index=True)
+    unique_key = models.CharField(max_length=160, unique=True, blank=True, null=True)
+    guard = models.ForeignKey(
+        "GuardProfile",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="workflow_events",
+    )
+    site = models.ForeignKey(
+        Site,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="guarding_workflow_events",
+    )
+    actor = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="guarding_workflow_events",
+    )
+    metadata = models.JSONField(default=dict, blank=True)
+    created_at = models.DateTimeField(auto_now_add=True, db_index=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+        indexes = [
+            models.Index(fields=["severity", "-created_at"], name="guard_event_sev_time_idx"),
+            models.Index(fields=["object_label", "object_id"], name="guard_event_object_idx"),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.get_severity_display()} - {self.title}"
+
+
+def _validate_status_transition(instance, allowed: dict[str, set[str]], *, label: str) -> None:
+    if not instance.pk:
+        return
+    current_status = type(instance).objects.filter(pk=instance.pk).values_list("status", flat=True).first()
+    if current_status and current_status != instance.status and instance.status not in allowed.get(current_status, set()):
+        raise ValidationError({"status": f"{label} cannot move from {current_status} to {instance.status}."})
+
+
+def _validate_initial_status(instance, allowed: set[str], *, label: str) -> None:
+    if not instance.pk and instance.status not in allowed:
+        raise ValidationError({"status": f"{label} must start as one of: {', '.join(sorted(allowed))}."})
 
 
 class GuardApplicant(models.Model):
@@ -59,6 +129,30 @@ class GuardApplicant(models.Model):
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
 
+    def clean(self):
+        allowed = {
+            self.Status.APPLIED: {self.Status.SCREENING, self.Status.REJECTED, self.Status.WITHDRAWN},
+            self.Status.SCREENING: {
+                self.Status.INTERVIEW,
+                self.Status.BACKGROUND_CHECK,
+                self.Status.REJECTED,
+                self.Status.WITHDRAWN,
+            },
+            self.Status.INTERVIEW: {
+                self.Status.BACKGROUND_CHECK,
+                self.Status.OFFERED,
+                self.Status.REJECTED,
+                self.Status.WITHDRAWN,
+            },
+            self.Status.BACKGROUND_CHECK: {self.Status.OFFERED, self.Status.REJECTED, self.Status.WITHDRAWN},
+            self.Status.OFFERED: {self.Status.REJECTED, self.Status.WITHDRAWN},
+            self.Status.HIRED: set(),
+            self.Status.REJECTED: set(),
+            self.Status.WITHDRAWN: set(),
+        }
+        _validate_initial_status(self, {self.Status.APPLIED}, label="Applicant")
+        _validate_status_transition(self, allowed, label="Applicant")
+
     def __str__(self) -> str:
         return self.full_name
 
@@ -110,6 +204,15 @@ class GuardProfile(models.Model):
     @property
     def full_name(self) -> str:
         return f"{self.first_name} {self.last_name}".strip()
+
+    def clean(self):
+        allowed = {
+            self.Status.ACTIVE: {self.Status.SUSPENDED, self.Status.INACTIVE, self.Status.TERMINATED},
+            self.Status.SUSPENDED: {self.Status.ACTIVE, self.Status.INACTIVE, self.Status.TERMINATED},
+            self.Status.INACTIVE: {self.Status.ACTIVE, self.Status.TERMINATED},
+            self.Status.TERMINATED: set(),
+        }
+        _validate_status_transition(self, allowed, label="Guard")
 
     def __str__(self) -> str:
         return f"{self.full_name} ({self.employee_number})"
@@ -271,6 +374,17 @@ class Shift(models.Model):
     def __str__(self) -> str:
         return f"{self.post} - {self.starts_at:%Y-%m-%d %H:%M}"
 
+    def clean(self):
+        allowed = {
+            self.Status.DRAFT: {self.Status.PUBLISHED, self.Status.CANCELLED},
+            self.Status.PUBLISHED: {self.Status.IN_PROGRESS, self.Status.CANCELLED},
+            self.Status.IN_PROGRESS: {self.Status.COMPLETED, self.Status.CANCELLED},
+            self.Status.COMPLETED: set(),
+            self.Status.CANCELLED: set(),
+        }
+        _validate_initial_status(self, {self.Status.DRAFT, self.Status.PUBLISHED}, label="Shift")
+        _validate_status_transition(self, allowed, label="Shift")
+
 
 class ShiftAssignment(models.Model):
     class Status(models.TextChoices):
@@ -306,6 +420,18 @@ class ShiftAssignment(models.Model):
 
     def __str__(self) -> str:
         return f"{self.guard} -> {self.shift}"
+
+    def clean(self):
+        allowed = {
+            self.Status.ASSIGNED: {self.Status.ACCEPTED, self.Status.DECLINED, self.Status.NO_SHOW, self.Status.REMOVED},
+            self.Status.ACCEPTED: {self.Status.CLOCKED_IN, self.Status.DECLINED, self.Status.NO_SHOW, self.Status.REMOVED},
+            self.Status.DECLINED: {self.Status.ACCEPTED, self.Status.REMOVED},
+            self.Status.CLOCKED_IN: {self.Status.CLOCKED_OUT},
+            self.Status.CLOCKED_OUT: set(),
+            self.Status.NO_SHOW: set(),
+            self.Status.REMOVED: set(),
+        }
+        _validate_status_transition(self, allowed, label="Assignment")
 
 
 class ClockEvent(models.Model):
@@ -426,6 +552,17 @@ class PatrolRound(models.Model):
     def __str__(self) -> str:
         return f"{self.route} - {self.scheduled_start:%Y-%m-%d %H:%M}"
 
+    def clean(self):
+        allowed = {
+            self.Status.SCHEDULED: {self.Status.IN_PROGRESS, self.Status.MISSED, self.Status.CANCELLED},
+            self.Status.IN_PROGRESS: {self.Status.COMPLETED, self.Status.MISSED, self.Status.CANCELLED},
+            self.Status.COMPLETED: set(),
+            self.Status.MISSED: set(),
+            self.Status.CANCELLED: set(),
+        }
+        _validate_initial_status(self, {self.Status.SCHEDULED}, label="Patrol round")
+        _validate_status_transition(self, allowed, label="Patrol round")
+
 
 class CheckpointScan(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -508,6 +645,16 @@ class FieldReport(models.Model):
 
     def __str__(self) -> str:
         return f"{self.get_report_type_display()} - {self.site} - {self.submitted_at:%Y-%m-%d}"
+
+    def clean(self):
+        allowed = {
+            self.Status.DRAFT: {self.Status.SUBMITTED},
+            self.Status.SUBMITTED: {self.Status.APPROVED, self.Status.REJECTED},
+            self.Status.APPROVED: set(),
+            self.Status.REJECTED: set(),
+        }
+        _validate_initial_status(self, {self.Status.DRAFT, self.Status.SUBMITTED}, label="Report")
+        _validate_status_transition(self, allowed, label="Report")
 
 
 class FieldReportAttachment(models.Model):
@@ -621,6 +768,16 @@ class GuardPanicAlert(models.Model):
     def __str__(self) -> str:
         return f"Panic alert - {self.guard} - {self.status}"
 
+    def clean(self):
+        allowed = {
+            self.Status.OPEN: {self.Status.ACKNOWLEDGED, self.Status.RESOLVED, self.Status.CANCELLED},
+            self.Status.ACKNOWLEDGED: {self.Status.RESOLVED, self.Status.CANCELLED},
+            self.Status.RESOLVED: set(),
+            self.Status.CANCELLED: set(),
+        }
+        _validate_initial_status(self, {self.Status.OPEN}, label="Panic alert")
+        _validate_status_transition(self, allowed, label="Panic alert")
+
 
 class DispatchTask(models.Model):
     class Status(models.TextChoices):
@@ -700,3 +857,17 @@ class DispatchTask(models.Model):
     def __str__(self) -> str:
         return f"{self.title} - {self.status}"
 
+    def clean(self):
+        allowed = {
+            self.Status.OPEN: {self.Status.ASSIGNED, self.Status.CANCELLED},
+            self.Status.ASSIGNED: {self.Status.ACCEPTED, self.Status.CANCELLED},
+            self.Status.ACCEPTED: {self.Status.EN_ROUTE, self.Status.CANCELLED},
+            self.Status.EN_ROUTE: {self.Status.ARRIVED, self.Status.CANCELLED},
+            self.Status.ARRIVED: {self.Status.RESOLVED, self.Status.CANCELLED},
+            self.Status.RESOLVED: set(),
+            self.Status.CANCELLED: set(),
+        }
+        _validate_initial_status(self, {self.Status.OPEN, self.Status.ASSIGNED}, label="Dispatch task")
+        if self.status == self.Status.ASSIGNED and self.assigned_guard_id is None:
+            raise ValidationError({"assigned_guard": "A guard is required for assigned dispatch tasks."})
+        _validate_status_transition(self, allowed, label="Dispatch task")

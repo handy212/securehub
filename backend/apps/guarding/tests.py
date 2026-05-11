@@ -6,7 +6,23 @@ from rest_framework.test import APITestCase
 
 from apps.sites.models import Site
 
-from .models import ClockEvent, FieldReport, GuardPanicAlert, GuardPost, GuardProfile, Shift, ShiftAssignment
+from .models import (
+    Checkpoint,
+    ClockEvent,
+    DispatchTask,
+    FieldReport,
+    GuardApplicant,
+    GuardPanicAlert,
+    GuardPost,
+    GuardProfile,
+    PatrolRoute,
+    PatrolRouteCheckpoint,
+    PatrolRound,
+    Shift,
+    ShiftAssignment,
+    WelfareCheck,
+)
+from .tasks import mark_overdue_patrol_rounds, mark_overdue_welfare_checks
 
 
 class GuardingApiTests(APITestCase):
@@ -88,6 +104,10 @@ class GuardingApiTests(APITestCase):
     def test_guard_can_clock_in(self):
         self.authenticate(self.guard_user)
 
+        accept_response = self.client.post(
+            reverse("guard-my-shift-action", kwargs={"assignment_id": self.assignment.id, "action": "accept"}),
+            format="json",
+        )
         response = self.client.post(
             reverse("guard-my-clock", kwargs={"assignment_id": self.assignment.id}),
             {
@@ -99,6 +119,7 @@ class GuardingApiTests(APITestCase):
             format="json",
         )
 
+        self.assertEqual(accept_response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assignment.refresh_from_db()
         self.assertEqual(self.assignment.status, ShiftAssignment.Status.CLOCKED_IN)
@@ -147,3 +168,187 @@ class GuardingApiTests(APITestCase):
         self.assertEqual(alert.site, self.site)
         self.assertEqual(alert.status, GuardPanicAlert.Status.OPEN)
 
+    def test_staff_can_hire_applicant_into_guard_profile(self):
+        applicant = GuardApplicant.objects.create(
+            first_name="Kojo",
+            last_name="Boateng",
+            phone_number="+233200000002",
+            email="kojo@example.com",
+            status=GuardApplicant.Status.OFFERED,
+        )
+        self.authenticate(self.staff)
+
+        response = self.client.post(
+            reverse("guard-applicant-hire", kwargs={"pk": applicant.id}),
+            {"employee_number": "G-002"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        applicant.refresh_from_db()
+        self.assertEqual(applicant.status, GuardApplicant.Status.HIRED)
+        self.assertEqual(applicant.hired_guard.employee_number, "G-002")
+
+    def test_shift_requires_end_after_start(self):
+        self.authenticate(self.staff)
+
+        response = self.client.post(
+            reverse("guard-shift-list"),
+            {
+                "post": str(self.post.id),
+                "starts_at": timezone.now().isoformat(),
+                "ends_at": (timezone.now() - timezone.timedelta(hours=1)).isoformat(),
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("ends_at", response.data)
+
+    def test_guard_can_accept_assignment(self):
+        self.authenticate(self.guard_user)
+
+        response = self.client.post(
+            reverse(
+                "guard-my-shift-action",
+                kwargs={"assignment_id": self.assignment.id, "action": "accept"},
+            ),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assignment.refresh_from_db()
+        self.assertEqual(self.assignment.status, ShiftAssignment.Status.ACCEPTED)
+
+    def test_patrol_route_rejects_checkpoint_from_another_post(self):
+        other_post = GuardPost.objects.create(site=self.site, name="Rear Gate")
+        route = PatrolRoute.objects.create(post=self.post, name="Main Patrol")
+        checkpoint = Checkpoint.objects.create(post=other_post, name="Rear Door", code="rear-door")
+        self.authenticate(self.staff)
+
+        response = self.client.post(
+            reverse("guard-patrol-route-checkpoint-list"),
+            {
+                "route": str(route.id),
+                "checkpoint": str(checkpoint.id),
+                "sequence": 1,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("checkpoint", response.data)
+
+    def test_guard_can_complete_patrol_after_all_route_checkpoints_are_scanned(self):
+        route = PatrolRoute.objects.create(post=self.post, name="Main Patrol")
+        checkpoint = Checkpoint.objects.create(post=self.post, name="Front Door", code="front-door")
+        PatrolRouteCheckpoint.objects.create(route=route, checkpoint=checkpoint, sequence=1)
+        patrol_round = PatrolRound.objects.create(
+            route=route,
+            assignment=self.assignment,
+            scheduled_start=timezone.now(),
+            scheduled_end=timezone.now() + timezone.timedelta(minutes=30),
+        )
+        self.authenticate(self.guard_user)
+
+        scan_response = self.client.post(
+            reverse("guard-my-scan", kwargs={"patrol_round_id": patrol_round.id}),
+            {
+                "checkpoint": str(checkpoint.id),
+                "latitude": "5.603716000",
+                "longitude": "-0.186964000",
+                "within_geofence": True,
+            },
+            format="json",
+        )
+        complete_response = self.client.post(
+            reverse("guard-my-patrol-complete", kwargs={"patrol_round_id": patrol_round.id}),
+            format="json",
+        )
+
+        self.assertEqual(scan_response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(complete_response.status_code, status.HTTP_200_OK)
+        patrol_round.refresh_from_db()
+        self.assertEqual(patrol_round.status, PatrolRound.Status.COMPLETED)
+
+    def test_staff_can_review_field_report(self):
+        report = FieldReport.objects.create(
+            site=self.site,
+            post=self.post,
+            assignment=self.assignment,
+            guard=self.guard,
+            report_type=FieldReport.ReportType.DAILY_ACTIVITY,
+            title="DAR",
+        )
+        self.authenticate(self.staff)
+
+        response = self.client.post(
+            reverse("guard-field-report-review", kwargs={"pk": report.id}),
+            {"status": FieldReport.Status.APPROVED, "note": "Looks good."},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        report.refresh_from_db()
+        self.assertEqual(report.status, FieldReport.Status.APPROVED)
+        self.assertEqual(report.reviewed_by, self.staff)
+
+    def test_guard_can_progress_assigned_dispatch_task(self):
+        task = DispatchTask.objects.create(
+            site=self.site,
+            assigned_guard=self.guard,
+            status=DispatchTask.Status.ASSIGNED,
+            priority=DispatchTask.Priority.HIGH,
+            title="Check alarm",
+        )
+        self.authenticate(self.guard_user)
+
+        accept_response = self.client.post(
+            reverse(
+                "guard-my-dispatch-action",
+                kwargs={"task_id": task.id, "action": "accept"},
+            ),
+            format="json",
+        )
+        en_route_response = self.client.post(
+            reverse(
+                "guard-my-dispatch-action",
+                kwargs={"task_id": task.id, "action": "en-route"},
+            ),
+            format="json",
+        )
+        arrive_response = self.client.post(
+            reverse(
+                "guard-my-dispatch-action",
+                kwargs={"task_id": task.id, "action": "arrive"},
+            ),
+            format="json",
+        )
+
+        self.assertEqual(accept_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(en_route_response.status_code, status.HTTP_200_OK)
+        self.assertEqual(arrive_response.status_code, status.HTTP_200_OK)
+        task.refresh_from_db()
+        self.assertEqual(task.status, DispatchTask.Status.ARRIVED)
+        self.assertIsNotNone(task.accepted_at)
+        self.assertIsNotNone(task.arrived_at)
+
+    def test_overdue_tasks_mark_patrols_and_welfare_checks_missed(self):
+        route = PatrolRoute.objects.create(post=self.post, name="Overdue Patrol")
+        patrol_round = PatrolRound.objects.create(
+            route=route,
+            assignment=self.assignment,
+            scheduled_start=timezone.now() - timezone.timedelta(hours=2),
+            scheduled_end=timezone.now() - timezone.timedelta(hours=1),
+        )
+        welfare_check = WelfareCheck.objects.create(
+            assignment=self.assignment,
+            due_at=timezone.now() - timezone.timedelta(minutes=10),
+        )
+
+        self.assertEqual(mark_overdue_patrol_rounds(), 1)
+        self.assertEqual(mark_overdue_welfare_checks(), 1)
+        patrol_round.refresh_from_db()
+        welfare_check.refresh_from_db()
+        self.assertEqual(patrol_round.status, PatrolRound.Status.MISSED)
+        self.assertEqual(welfare_check.status, WelfareCheck.Status.MISSED)

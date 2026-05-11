@@ -1,4 +1,4 @@
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 import json
 from decimal import Decimal, InvalidOperation
 
@@ -16,6 +16,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
+from django.utils.dateparse import parse_datetime
 from django.utils.timesince import timesince
 from django.views.generic import ListView, TemplateView, View
 
@@ -43,6 +44,47 @@ from apps.emergency.models import (
     EmergencyServicePlan,
     EmergencyServiceStatus,
     SiteEmergencyService,
+)
+from apps.guarding.models import (
+    Checkpoint,
+    CheckpointScan,
+    ClockEvent,
+    DispatchTask,
+    FieldReport,
+    FieldReportAttachment,
+    GuardApplicant,
+    GuardCredential,
+    GuardDocument,
+    GuardingEventLog,
+    GuardLocationPing,
+    GuardPanicAlert,
+    GuardPost,
+    GuardProfile,
+    PatrolRoute,
+    PatrolRouteCheckpoint,
+    PatrolRound,
+    PostOrder,
+    Shift,
+    ShiftAssignment,
+    WelfareCheck,
+)
+from apps.guarding.services import (
+    acknowledge_panic_alert,
+    complete_patrol_round,
+    ensure_applicant_status_transition,
+    ensure_guard_status_transition,
+    ensure_panic_alert_status_transition,
+    ensure_report_status_transition,
+    ensure_shift_status_transition,
+    hire_applicant,
+    record_clock_event,
+    review_field_report,
+    resolve_panic_alert,
+    transition_assignment,
+    transition_dispatch_task,
+    transition_panic_alert,
+    transition_patrol_round,
+    transition_shift,
 )
 from apps.dashboard.event_presenters import serialize_console_event, should_hide_console_event
 from apps.accounts.serializers import resolve_username_for_login
@@ -794,6 +836,1239 @@ class EmergencyConsoleActionView(StaffRequiredMixin, View):
         return redirect("dashboard:emergency")
 
 
+def _guarding_redirect(target, *, anchor=""):
+    url = reverse(target)
+    return f"{url}#{anchor}" if anchor else url
+
+
+def _parse_datetime_field(raw_value, *, label):
+    value = parse_datetime(str(raw_value or "").strip())
+    if value is None:
+        raise ValueError(f"{label} must be a valid date and time.")
+    if timezone.is_naive(value):
+        value = timezone.make_aware(value, timezone.get_current_timezone())
+    return value
+
+
+class GuardingOverviewMixin:
+    def get_guarding_counts(self):
+        active_dispatch_statuses = [
+            DispatchTask.Status.OPEN,
+            DispatchTask.Status.ASSIGNED,
+            DispatchTask.Status.ACCEPTED,
+            DispatchTask.Status.EN_ROUTE,
+            DispatchTask.Status.ARRIVED,
+        ]
+        return {
+            "guards": GuardProfile.objects.filter(status=GuardProfile.Status.ACTIVE).count(),
+            "applicants": GuardApplicant.objects.exclude(
+                status__in=[
+                    GuardApplicant.Status.HIRED,
+                    GuardApplicant.Status.REJECTED,
+                    GuardApplicant.Status.WITHDRAWN,
+                ]
+            ).count(),
+            "posts": GuardPost.objects.filter(is_active=True).count(),
+            "open_dispatch": DispatchTask.objects.filter(status__in=active_dispatch_statuses).count(),
+            "open_panic": GuardPanicAlert.objects.filter(status=GuardPanicAlert.Status.OPEN).count(),
+            "welfare_due": WelfareCheck.objects.filter(
+                status__in=[WelfareCheck.Status.PENDING, WelfareCheck.Status.ESCALATED]
+            ).count(),
+        }
+
+
+class GuardingOverviewView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
+    template_name = "dashboard/guarding_overview.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        now = timezone.now()
+        today = timezone.localdate()
+        day_start = timezone.make_aware(
+            datetime.combine(today, datetime.min.time()),
+            timezone.get_current_timezone(),
+        )
+        day_end = day_start + timedelta(days=1)
+        active_dispatch_statuses = [
+            DispatchTask.Status.OPEN,
+            DispatchTask.Status.ASSIGNED,
+            DispatchTask.Status.ACCEPTED,
+            DispatchTask.Status.EN_ROUTE,
+            DispatchTask.Status.ARRIVED,
+        ]
+        context["counts"] = self.get_guarding_counts()
+        todays_shifts = Shift.objects.filter(starts_at__lt=day_end, ends_at__gte=day_start)
+        required_guards_today = todays_shifts.aggregate(total=Sum("required_guards"))["total"] or 0
+        assigned_guards_today = ShiftAssignment.objects.filter(shift__in=todays_shifts).exclude(
+            status__in=[ShiftAssignment.Status.DECLINED, ShiftAssignment.Status.REMOVED, ShiftAssignment.Status.NO_SHOW]
+        ).count()
+        context["today_summary"] = {
+            "shifts": todays_shifts.count(),
+            "required_guards": required_guards_today,
+            "assigned_guards": assigned_guards_today,
+            "coverage_gap": max(required_guards_today - assigned_guards_today, 0),
+            "coverage_percent": min(100, round((assigned_guards_today / required_guards_today) * 100))
+            if required_guards_today
+            else 0,
+            "clocked_in": ShiftAssignment.objects.filter(
+                shift__in=todays_shifts,
+                status=ShiftAssignment.Status.CLOCKED_IN,
+            ).count(),
+            "patrol_scans": CheckpointScan.objects.filter(scanned_at__gte=day_start, scanned_at__lt=day_end).count(),
+            "reports": FieldReport.objects.filter(submitted_at__gte=day_start, submitted_at__lt=day_end).count(),
+        }
+        context["open_panic_alerts"] = (
+            GuardPanicAlert.objects.select_related("guard", "site")
+            .filter(status=GuardPanicAlert.Status.OPEN)
+            .order_by("-created_at")[:8]
+        )
+        context["active_dispatch_tasks"] = (
+            DispatchTask.objects.select_related("site", "assigned_guard")
+            .filter(status__in=active_dispatch_statuses)
+            .order_by("-created_at")[:8]
+        )
+        context["upcoming_shifts"] = (
+            Shift.objects.select_related("post", "post__site")
+            .prefetch_related("assignments__guard")
+            .filter(ends_at__gte=now)
+            .order_by("starts_at")[:8]
+        )
+        context["welfare_checks"] = (
+            WelfareCheck.objects.select_related("assignment", "assignment__guard", "assignment__shift__post")
+            .filter(status__in=[WelfareCheck.Status.PENDING, WelfareCheck.Status.ESCALATED])
+            .order_by("due_at")[:8]
+        )
+        context["recent_scans"] = (
+            CheckpointScan.objects.select_related("checkpoint", "guard", "patrol_round", "patrol_round__route")
+            .order_by("-scanned_at")[:8]
+        )
+        context["recent_reports"] = (
+            FieldReport.objects.select_related("site", "post", "guard")
+            .order_by("-submitted_at")[:8]
+        )
+        context["workflow_events"] = (
+            GuardingEventLog.objects.select_related("guard", "site", "actor")
+            .order_by("-created_at")[:10]
+        )
+        context["workflow_event_counts"] = {
+            "critical": GuardingEventLog.objects.filter(severity=GuardingEventLog.Severity.CRITICAL).count(),
+            "warning": GuardingEventLog.objects.filter(severity=GuardingEventLog.Severity.WARNING).count(),
+        }
+        return context
+
+
+class GuardingApplicantsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
+    template_name = "dashboard/guarding_applicants.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        applicants = GuardApplicant.objects.select_related("hired_guard", "created_by").order_by("-created_at")
+        query = self.request.GET.get("q", "").strip()
+        if query:
+            applicants = applicants.filter(
+                Q(first_name__icontains=query)
+                | Q(last_name__icontains=query)
+                | Q(email__icontains=query)
+                | Q(phone_number__icontains=query)
+            )
+        context["applicants"] = applicants[:200]
+        context["statuses"] = GuardApplicant.Status.choices
+        context["counts"] = self.get_guarding_counts()
+        context["current_query"] = query
+        return context
+
+    def post(self, request):
+        action = request.POST.get("action", "applicant")
+        if action == "update_applicant":
+            try:
+                applicant = get_object_or_404(GuardApplicant, pk=request.POST.get("applicant_id"))
+                first_name = request.POST.get("first_name", "").strip()
+                last_name = request.POST.get("last_name", "").strip()
+                if not first_name or not last_name:
+                    raise ValueError("First name and last name are required.")
+                applicant.first_name = first_name
+                applicant.last_name = last_name
+                applicant.email = request.POST.get("email", "").strip()
+                applicant.phone_number = request.POST.get("phone_number", "").strip()
+                applicant.source = request.POST.get("source", "").strip()
+                next_status = request.POST.get("status") or GuardApplicant.Status.APPLIED
+                ensure_applicant_status_transition(applicant, next_status)
+                applicant.status = next_status
+                applicant.save(
+                    update_fields=[
+                        "first_name",
+                        "last_name",
+                        "email",
+                        "phone_number",
+                        "source",
+                        "status",
+                        "updated_at",
+                    ]
+                )
+                messages.success(request, "Applicant updated.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-applicants")
+        if action == "delete_applicant":
+            try:
+                applicant = get_object_or_404(GuardApplicant, pk=request.POST.get("applicant_id"))
+                if applicant.hired_guard_id:
+                    raise ValueError("Hired applicants are linked to guard profiles and cannot be deleted here.")
+                applicant.delete()
+                messages.success(request, "Applicant deleted.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-applicants")
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        if not first_name or not last_name:
+            messages.error(request, "First name and last name are required.")
+            return redirect("dashboard:guarding-applicants")
+        GuardApplicant.objects.create(
+            first_name=first_name,
+            last_name=last_name,
+            email=request.POST.get("email", "").strip(),
+            phone_number=request.POST.get("phone_number", "").strip(),
+            source=request.POST.get("source", "").strip(),
+            status=GuardApplicant.Status.APPLIED,
+            created_by=request.user,
+        )
+        messages.success(request, "Applicant created.")
+        return redirect("dashboard:guarding-applicants")
+
+
+class GuardingApplicantHireView(StaffRequiredMixin, View):
+    def post(self, request, applicant_id):
+        applicant = get_object_or_404(GuardApplicant, pk=applicant_id)
+        try:
+            guard = hire_applicant(
+                applicant,
+                employee_number=request.POST.get("employee_number", "").strip(),
+                actor=request.user,
+            )
+            messages.success(request, f"{guard.full_name} hired as {guard.employee_number}.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:guarding-applicants")
+
+
+class GuardingGuardsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
+    template_name = "dashboard/guarding_guards.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        guards = (
+            GuardProfile.objects.select_related("user", "supervisor")
+            .prefetch_related("credentials", "documents")
+            .order_by("last_name", "first_name")
+        )
+        query = self.request.GET.get("q", "").strip()
+        if query:
+            guards = guards.filter(
+                Q(first_name__icontains=query)
+                | Q(last_name__icontains=query)
+                | Q(employee_number__icontains=query)
+                | Q(phone_number__icontains=query)
+                | Q(email__icontains=query)
+            )
+        context["guards"] = guards[:200]
+        context["users"] = User.objects.filter(is_active=True).order_by("username")
+        context["supervisors"] = User.objects.filter(is_active=True, is_staff=True).order_by("username")
+        context["statuses"] = GuardProfile.Status.choices
+        context["counts"] = self.get_guarding_counts()
+        context["current_query"] = query
+        context["credential_types"] = GuardCredential.CredentialType.choices
+        context["document_types"] = GuardDocument.DocumentType.choices
+        context["credentials"] = GuardCredential.objects.select_related("guard").order_by("expires_on", "name")[:100]
+        context["documents"] = GuardDocument.objects.select_related("guard", "uploaded_by").order_by("-created_at")[:100]
+        context["location_pings"] = GuardLocationPing.objects.select_related("guard", "assignment").order_by("-created_at")[:100]
+        context["assignments"] = ShiftAssignment.objects.select_related("shift", "shift__post", "guard").order_by("-shift__starts_at")[:200]
+        return context
+
+    def post(self, request):
+        action = request.POST.get("action", "guard")
+        if action == "update_guard":
+            try:
+                guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                employee_number = request.POST.get("employee_number", "").strip()
+                first_name = request.POST.get("first_name", "").strip()
+                last_name = request.POST.get("last_name", "").strip()
+                if not employee_number or not first_name or not last_name:
+                    raise ValueError("Employee number, first name, and last name are required.")
+                if GuardProfile.objects.filter(employee_number=employee_number).exclude(pk=guard.pk).exists():
+                    raise ValueError("Employee number is already in use.")
+                guard.user = User.objects.filter(pk=request.POST.get("user_id")).first()
+                guard.supervisor = User.objects.filter(pk=request.POST.get("supervisor_id"), is_staff=True).first()
+                guard.employee_number = employee_number
+                guard.first_name = first_name
+                guard.last_name = last_name
+                guard.phone_number = request.POST.get("phone_number", "").strip()
+                guard.email = request.POST.get("email", "").strip()
+                next_status = request.POST.get("status") or GuardProfile.Status.ACTIVE
+                ensure_guard_status_transition(guard, next_status)
+                guard.status = next_status
+                guard.save(
+                    update_fields=[
+                        "user",
+                        "supervisor",
+                        "employee_number",
+                        "first_name",
+                        "last_name",
+                        "phone_number",
+                        "email",
+                        "status",
+                        "updated_at",
+                    ]
+                )
+                messages.success(request, "Guard profile updated.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        if action == "delete_guard":
+            try:
+                guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                guard.delete()
+                messages.success(request, "Guard profile deleted.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        if action == "delete_credential":
+            try:
+                credential = get_object_or_404(GuardCredential, pk=request.POST.get("credential_id"))
+                credential.delete()
+                messages.success(request, "Guard credential deleted.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        if action == "update_credential":
+            try:
+                credential = get_object_or_404(GuardCredential, pk=request.POST.get("credential_id"))
+                credential.guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                credential.credential_type = request.POST.get("credential_type") or GuardCredential.CredentialType.OTHER
+                credential.name = request.POST.get("name", "").strip()
+                credential.issuing_authority = request.POST.get("issuing_authority", "").strip()
+                credential.reference_number = request.POST.get("reference_number", "").strip()
+                credential.issued_on = request.POST.get("issued_on") or None
+                credential.expires_on = request.POST.get("expires_on") or None
+                credential.verified = bool(request.POST.get("verified"))
+                credential.notes = request.POST.get("notes", "").strip()
+                credential.save(
+                    update_fields=[
+                        "guard",
+                        "credential_type",
+                        "name",
+                        "issuing_authority",
+                        "reference_number",
+                        "issued_on",
+                        "expires_on",
+                        "verified",
+                        "notes",
+                        "updated_at",
+                    ]
+                )
+                messages.success(request, "Guard credential updated.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        if action == "delete_document":
+            try:
+                document = get_object_or_404(GuardDocument, pk=request.POST.get("document_id"))
+                document.delete()
+                messages.success(request, "Guard document deleted.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        if action == "location_ping":
+            try:
+                guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                GuardLocationPing.objects.create(
+                    guard=guard,
+                    assignment=ShiftAssignment.objects.filter(pk=request.POST.get("assignment_id")).first(),
+                    latitude=_parse_decimal_field(request.POST.get("latitude"), label="Latitude"),
+                    longitude=_parse_decimal_field(request.POST.get("longitude"), label="Longitude"),
+                    accuracy_m=request.POST.get("accuracy_m") or None,
+                    speed_mps=request.POST.get("speed_mps") or None,
+                    heading_deg=request.POST.get("heading_deg") or None,
+                    device_timestamp=_parse_datetime_field(request.POST.get("device_timestamp"), label="Device timestamp")
+                    if request.POST.get("device_timestamp")
+                    else None,
+                )
+                messages.success(request, "Location ping recorded.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        if action == "update_location_ping":
+            try:
+                ping = get_object_or_404(GuardLocationPing, pk=request.POST.get("location_ping_id"))
+                ping.guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                ping.assignment = ShiftAssignment.objects.filter(pk=request.POST.get("assignment_id")).first()
+                ping.latitude = _parse_decimal_field(request.POST.get("latitude"), label="Latitude")
+                ping.longitude = _parse_decimal_field(request.POST.get("longitude"), label="Longitude")
+                ping.accuracy_m = request.POST.get("accuracy_m") or None
+                ping.speed_mps = request.POST.get("speed_mps") or None
+                ping.heading_deg = request.POST.get("heading_deg") or None
+                ping.device_timestamp = (
+                    _parse_datetime_field(request.POST.get("device_timestamp"), label="Device timestamp")
+                    if request.POST.get("device_timestamp")
+                    else None
+                )
+                ping.save()
+                messages.success(request, "Location ping updated.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        if action == "delete_location_ping":
+            try:
+                ping = get_object_or_404(GuardLocationPing, pk=request.POST.get("location_ping_id"))
+                ping.delete()
+                messages.success(request, "Location ping deleted.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        if action == "update_document":
+            try:
+                document = get_object_or_404(GuardDocument, pk=request.POST.get("document_id"))
+                upload = request.FILES.get("file")
+                document.guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                document.document_type = request.POST.get("document_type") or GuardDocument.DocumentType.OTHER
+                document.title = request.POST.get("title", "").strip()
+                document.reference_number = request.POST.get("reference_number", "").strip()
+                document.expires_on = request.POST.get("expires_on") or None
+                document.notes = request.POST.get("notes", "").strip()
+                if upload:
+                    document.file = upload
+                document.save()
+                messages.success(request, "Guard document updated.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        if action == "credential":
+            try:
+                guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                GuardCredential.objects.create(
+                    guard=guard,
+                    credential_type=request.POST.get("credential_type") or GuardCredential.CredentialType.OTHER,
+                    name=request.POST.get("name", "").strip(),
+                    issuing_authority=request.POST.get("issuing_authority", "").strip(),
+                    reference_number=request.POST.get("reference_number", "").strip(),
+                    issued_on=request.POST.get("issued_on") or None,
+                    expires_on=request.POST.get("expires_on") or None,
+                    verified=bool(request.POST.get("verified")),
+                    notes=request.POST.get("notes", "").strip(),
+                )
+                messages.success(request, "Guard credential created.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        if action == "document":
+            try:
+                guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                GuardDocument.objects.create(
+                    guard=guard,
+                    document_type=request.POST.get("document_type") or GuardDocument.DocumentType.OTHER,
+                    title=request.POST.get("title", "").strip(),
+                    file=request.FILES.get("file"),
+                    reference_number=request.POST.get("reference_number", "").strip(),
+                    expires_on=request.POST.get("expires_on") or None,
+                    notes=request.POST.get("notes", "").strip(),
+                    uploaded_by=request.user,
+                )
+                messages.success(request, "Guard document recorded.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-guards")
+        employee_number = request.POST.get("employee_number", "").strip()
+        first_name = request.POST.get("first_name", "").strip()
+        last_name = request.POST.get("last_name", "").strip()
+        if not employee_number or not first_name or not last_name:
+            messages.error(request, "Employee number, first name, and last name are required.")
+            return redirect("dashboard:guarding-guards")
+        if GuardProfile.objects.filter(employee_number=employee_number).exists():
+            messages.error(request, "Employee number is already in use.")
+            return redirect("dashboard:guarding-guards")
+        user = User.objects.filter(pk=request.POST.get("user_id")).first()
+        supervisor = User.objects.filter(pk=request.POST.get("supervisor_id"), is_staff=True).first()
+        GuardProfile.objects.create(
+            user=user,
+            employee_number=employee_number,
+            first_name=first_name,
+            last_name=last_name,
+            phone_number=request.POST.get("phone_number", "").strip(),
+            email=request.POST.get("email", "").strip(),
+            status=request.POST.get("status") or GuardProfile.Status.ACTIVE,
+            supervisor=supervisor,
+            hire_date=timezone.localdate(),
+        )
+        messages.success(request, "Guard profile created.")
+        return redirect("dashboard:guarding-guards")
+
+
+class GuardingPostsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
+    template_name = "dashboard/guarding_posts.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        posts = GuardPost.objects.select_related("site", "supervisor").order_by("site__name", "name")
+        query = self.request.GET.get("q", "").strip()
+        if query:
+            posts = posts.filter(Q(name__icontains=query) | Q(code__icontains=query) | Q(site__name__icontains=query))
+        context["posts"] = posts[:200]
+        context["sites"] = Site.objects.order_by("name")
+        context["supervisors"] = User.objects.filter(is_active=True, is_staff=True).order_by("username")
+        context["counts"] = self.get_guarding_counts()
+        context["current_query"] = query
+        context["post_orders"] = PostOrder.objects.select_related("post", "post__site", "created_by").order_by("post__site__name", "post__name", "-created_at")[:200]
+        return context
+
+    def post(self, request):
+        action = request.POST.get("action", "post")
+        if action == "update_post":
+            try:
+                post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                site = get_object_or_404(Site, pk=request.POST.get("site_id"))
+                name = request.POST.get("name", "").strip()
+                if not name:
+                    raise ValueError("Post name is required.")
+                post.site = site
+                post.name = name
+                post.code = request.POST.get("code", "").strip()
+                post.description = request.POST.get("description", "").strip()
+                post.geofence_radius_m = _parse_int_field(
+                    request.POST.get("geofence_radius_m") or 150,
+                    label="Geofence radius",
+                    min_value=1,
+                )
+                post.supervisor = User.objects.filter(pk=request.POST.get("supervisor_id"), is_staff=True).first()
+                post.is_active = not bool(request.POST.get("inactive"))
+                post.save(
+                    update_fields=[
+                        "site",
+                        "name",
+                        "code",
+                        "description",
+                        "geofence_radius_m",
+                        "supervisor",
+                        "is_active",
+                        "updated_at",
+                    ]
+                )
+                messages.success(request, "Guard post updated.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-posts")
+        if action == "delete_post":
+            try:
+                post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                post.delete()
+                messages.success(request, "Guard post deleted.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-posts")
+        if action == "update_post_order":
+            try:
+                order = get_object_or_404(PostOrder, pk=request.POST.get("order_id"))
+                post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                title = request.POST.get("title", "").strip()
+                body = request.POST.get("body", "").strip()
+                if not title or not body:
+                    raise ValueError("Order title and body are required.")
+                order.post = post
+                order.title = title
+                order.body = body
+                order.effective_from = request.POST.get("effective_from") or None
+                order.effective_until = request.POST.get("effective_until") or None
+                order.is_active = not bool(request.POST.get("inactive"))
+                order.save(
+                    update_fields=[
+                        "post",
+                        "title",
+                        "body",
+                        "effective_from",
+                        "effective_until",
+                        "is_active",
+                        "updated_at",
+                    ]
+                )
+                messages.success(request, "Post order updated.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-posts")
+        if action == "delete_post_order":
+            try:
+                order = get_object_or_404(PostOrder, pk=request.POST.get("order_id"))
+                order.delete()
+                messages.success(request, "Post order deleted.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-posts")
+        if action == "post_order":
+            try:
+                post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                PostOrder.objects.create(
+                    post=post,
+                    title=request.POST.get("title", "").strip(),
+                    body=request.POST.get("body", "").strip(),
+                    effective_from=request.POST.get("effective_from") or None,
+                    effective_until=request.POST.get("effective_until") or None,
+                    is_active=not bool(request.POST.get("inactive")),
+                    created_by=request.user,
+                )
+                messages.success(request, "Post order created.")
+            except Exception as exc:
+                messages.error(request, str(exc))
+            return redirect("dashboard:guarding-posts")
+        site = get_object_or_404(Site, pk=request.POST.get("site_id"))
+        name = request.POST.get("name", "").strip()
+        if not name:
+            messages.error(request, "Post name is required.")
+            return redirect("dashboard:guarding-posts")
+        supervisor = User.objects.filter(pk=request.POST.get("supervisor_id"), is_staff=True).first()
+        try:
+            GuardPost.objects.create(
+                site=site,
+                name=name,
+                code=request.POST.get("code", "").strip(),
+                description=request.POST.get("description", "").strip(),
+                geofence_radius_m=_parse_int_field(
+                    request.POST.get("geofence_radius_m") or 150,
+                    label="Geofence radius",
+                    min_value=1,
+                ),
+                supervisor=supervisor,
+            )
+            messages.success(request, "Guard post created.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:guarding-posts")
+
+
+class GuardingShiftsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
+    template_name = "dashboard/guarding_shifts.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["shifts"] = (
+            Shift.objects.select_related("post", "post__site")
+            .prefetch_related("assignments__guard")
+            .order_by("-starts_at")[:200]
+        )
+        context["posts"] = GuardPost.objects.filter(is_active=True).select_related("site").order_by("site__name", "name")
+        context["guards"] = GuardProfile.objects.filter(status=GuardProfile.Status.ACTIVE).order_by("last_name", "first_name")
+        context["assignments"] = ShiftAssignment.objects.select_related("shift", "shift__post", "guard").order_by("-shift__starts_at")[:200]
+        context["clock_events"] = ClockEvent.objects.select_related("assignment", "assignment__guard", "assignment__shift__post").order_by("-created_at")[:100]
+        context["welfare_checks"] = WelfareCheck.objects.select_related("assignment", "assignment__guard", "assignment__shift__post").order_by("due_at")[:100]
+        context["statuses"] = Shift.Status.choices
+        context["assignment_statuses"] = ShiftAssignment.Status.choices
+        context["clock_event_types"] = ClockEvent.EventType.choices
+        context["welfare_statuses"] = WelfareCheck.Status.choices
+        context["counts"] = self.get_guarding_counts()
+        return context
+
+    def post(self, request):
+        action = request.POST.get("action", "shift")
+        try:
+            if action == "update_shift":
+                shift = get_object_or_404(Shift, pk=request.POST.get("shift_id"))
+                post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                next_status = request.POST.get("status") or Shift.Status.PUBLISHED
+                shift.post = post
+                shift.starts_at = _parse_datetime_field(request.POST.get("starts_at"), label="Start time")
+                shift.ends_at = _parse_datetime_field(request.POST.get("ends_at"), label="End time")
+                shift.required_guards = _parse_int_field(
+                    request.POST.get("required_guards") or 1,
+                    label="Required guards",
+                    min_value=1,
+                )
+                shift.notes = request.POST.get("notes", "").strip()
+                shift.save(
+                    update_fields=[
+                        "post",
+                        "starts_at",
+                        "ends_at",
+                        "required_guards",
+                        "notes",
+                        "updated_at",
+                    ]
+                )
+                existing_guard_ids = set(shift.assignments.values_list("guard_id", flat=True))
+                for guard_id in request.POST.getlist("guard_ids"):
+                    guard = GuardProfile.objects.filter(pk=guard_id, status=GuardProfile.Status.ACTIVE).first()
+                    if guard and guard.pk not in existing_guard_ids:
+                        ShiftAssignment.objects.get_or_create(shift=shift, guard=guard, defaults={"assigned_by": request.user})
+                if next_status != shift.status:
+                    transition_shift(shift, next_status)
+                messages.success(request, "Shift updated.")
+            elif action == "delete_shift":
+                shift = get_object_or_404(Shift, pk=request.POST.get("shift_id"))
+                shift.delete()
+                messages.success(request, "Shift deleted.")
+            elif action == "update_assignment":
+                assignment = get_object_or_404(ShiftAssignment, pk=request.POST.get("assignment_id"))
+                transition_assignment(
+                    assignment,
+                    request.POST.get("status") or ShiftAssignment.Status.ASSIGNED,
+                    note=request.POST.get("notes", "").strip(),
+                )
+                messages.success(request, "Shift assignment updated.")
+            elif action == "delete_assignment":
+                assignment = get_object_or_404(ShiftAssignment, pk=request.POST.get("assignment_id"))
+                assignment.delete()
+                messages.success(request, "Shift assignment deleted.")
+            elif action == "delete_clock_event":
+                event = get_object_or_404(ClockEvent, pk=request.POST.get("clock_event_id"))
+                event.delete()
+                messages.success(request, "Clock event deleted.")
+            elif action == "update_clock_event":
+                event = get_object_or_404(ClockEvent, pk=request.POST.get("clock_event_id"))
+                event.assignment = get_object_or_404(ShiftAssignment, pk=request.POST.get("assignment_id"))
+                event.event_type = request.POST.get("event_type") or ClockEvent.EventType.CLOCK_IN
+                event.latitude = request.POST.get("latitude") or None
+                event.longitude = request.POST.get("longitude") or None
+                event.accuracy_m = request.POST.get("accuracy_m") or None
+                event.within_geofence = bool(request.POST.get("within_geofence"))
+                event.device_timestamp = (
+                    _parse_datetime_field(request.POST.get("device_timestamp"), label="Device timestamp")
+                    if request.POST.get("device_timestamp")
+                    else None
+                )
+                event.save()
+                messages.success(request, "Clock event updated.")
+            elif action == "update_welfare_check":
+                check = get_object_or_404(WelfareCheck, pk=request.POST.get("welfare_check_id"))
+                check.due_at = _parse_datetime_field(request.POST.get("due_at"), label="Due time")
+                check.status = request.POST.get("status") or WelfareCheck.Status.PENDING
+                check.response_note = request.POST.get("response_note", "").strip()
+                if check.status == WelfareCheck.Status.CONFIRMED and check.responded_at is None:
+                    check.responded_at = timezone.now()
+                check.save(update_fields=["due_at", "status", "response_note", "responded_at", "updated_at"])
+                messages.success(request, "Welfare check updated.")
+            elif action == "delete_welfare_check":
+                check = get_object_or_404(WelfareCheck, pk=request.POST.get("welfare_check_id"))
+                check.delete()
+                messages.success(request, "Welfare check deleted.")
+            elif action == "clock_event":
+                assignment = get_object_or_404(ShiftAssignment, pk=request.POST.get("assignment_id"))
+                record_clock_event(
+                    assignment=assignment,
+                    event_type=request.POST.get("event_type") or ClockEvent.EventType.CLOCK_IN,
+                    latitude=request.POST.get("latitude") or None,
+                    longitude=request.POST.get("longitude") or None,
+                    accuracy_m=request.POST.get("accuracy_m") or None,
+                    within_geofence=bool(request.POST.get("within_geofence")),
+                    device_timestamp=_parse_datetime_field(request.POST.get("device_timestamp"), label="Device timestamp")
+                    if request.POST.get("device_timestamp")
+                    else None,
+                )
+                messages.success(request, "Clock event recorded.")
+            elif action == "welfare_check":
+                assignment = get_object_or_404(ShiftAssignment, pk=request.POST.get("assignment_id"))
+                WelfareCheck.objects.create(
+                    assignment=assignment,
+                    due_at=_parse_datetime_field(request.POST.get("due_at"), label="Due time"),
+                    status=request.POST.get("status") or WelfareCheck.Status.PENDING,
+                    response_note=request.POST.get("response_note", "").strip(),
+                )
+                messages.success(request, "Welfare check created.")
+            else:
+                post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                shift = Shift.objects.create(
+                    post=post,
+                    starts_at=_parse_datetime_field(request.POST.get("starts_at"), label="Start time"),
+                    ends_at=_parse_datetime_field(request.POST.get("ends_at"), label="End time"),
+                    status=request.POST.get("status") or Shift.Status.PUBLISHED,
+                    required_guards=_parse_int_field(request.POST.get("required_guards") or 1, label="Required guards", min_value=1),
+                    notes=request.POST.get("notes", "").strip(),
+                    created_by=request.user,
+                )
+                for guard_id in request.POST.getlist("guard_ids"):
+                    guard = GuardProfile.objects.filter(pk=guard_id, status=GuardProfile.Status.ACTIVE).first()
+                    if guard:
+                        ShiftAssignment.objects.get_or_create(shift=shift, guard=guard, defaults={"assigned_by": request.user})
+                messages.success(request, "Shift created.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:guarding-shifts")
+
+
+class GuardingPatrolsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
+    template_name = "dashboard/guarding_patrols.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["checkpoints"] = Checkpoint.objects.select_related("post", "post__site").order_by("post__site__name", "post__name", "name")[:200]
+        context["routes"] = PatrolRoute.objects.select_related("post", "post__site").prefetch_related("patrolroutecheckpoint_set__checkpoint").order_by("post__site__name", "name")[:200]
+        context["rounds"] = PatrolRound.objects.select_related("route", "assignment", "assignment__guard").prefetch_related("scans").order_by("-scheduled_start")[:200]
+        context["scans"] = CheckpointScan.objects.select_related("patrol_round", "checkpoint", "guard").order_by("-scanned_at")[:100]
+        context["posts"] = GuardPost.objects.filter(is_active=True).select_related("site").order_by("site__name", "name")
+        context["assignments"] = ShiftAssignment.objects.select_related("shift", "shift__post", "guard").order_by("-shift__starts_at")[:200]
+        context["guards"] = GuardProfile.objects.filter(status=GuardProfile.Status.ACTIVE).order_by("last_name", "first_name")
+        context["counts"] = self.get_guarding_counts()
+        return context
+
+    def post(self, request):
+        action = request.POST.get("action")
+        try:
+            if action == "update_checkpoint":
+                checkpoint = get_object_or_404(Checkpoint, pk=request.POST.get("checkpoint_id"))
+                post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                name = request.POST.get("name", "").strip()
+                code = request.POST.get("code", "").strip()
+                if not name or not code:
+                    raise ValueError("Checkpoint name and code are required.")
+                checkpoint.post = post
+                checkpoint.name = name
+                checkpoint.code = code
+                checkpoint.checkpoint_type = request.POST.get("checkpoint_type") or Checkpoint.CheckpointType.QR
+                checkpoint.geofence_radius_m = _parse_int_field(
+                    request.POST.get("geofence_radius_m") or 50,
+                    label="Geofence radius",
+                    min_value=1,
+                )
+                checkpoint.is_active = not bool(request.POST.get("inactive"))
+                checkpoint.save(
+                    update_fields=[
+                        "post",
+                        "name",
+                        "code",
+                        "checkpoint_type",
+                        "geofence_radius_m",
+                        "is_active",
+                        "updated_at",
+                    ]
+                )
+                messages.success(request, "Checkpoint updated.")
+            elif action == "delete_checkpoint":
+                checkpoint = get_object_or_404(Checkpoint, pk=request.POST.get("checkpoint_id"))
+                checkpoint.delete()
+                messages.success(request, "Checkpoint deleted.")
+            elif action == "update_route":
+                route = get_object_or_404(PatrolRoute, pk=request.POST.get("route_id"))
+                post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                name = request.POST.get("name", "").strip()
+                if not name:
+                    raise ValueError("Route name is required.")
+                route.post = post
+                route.name = name
+                route.expected_duration_minutes = _parse_int_field(
+                    request.POST.get("expected_duration_minutes") or 30,
+                    label="Expected duration",
+                    min_value=1,
+                )
+                route.is_active = not bool(request.POST.get("inactive"))
+                route.save(update_fields=["post", "name", "expected_duration_minutes", "is_active", "updated_at"])
+                route.patrolroutecheckpoint_set.all().delete()
+                for index, checkpoint_id in enumerate(request.POST.getlist("checkpoint_ids"), start=1):
+                    checkpoint = Checkpoint.objects.filter(pk=checkpoint_id, post=post).first()
+                    if checkpoint:
+                        PatrolRouteCheckpoint.objects.create(route=route, checkpoint=checkpoint, sequence=index)
+                messages.success(request, "Patrol route updated.")
+            elif action == "delete_route":
+                route = get_object_or_404(PatrolRoute, pk=request.POST.get("route_id"))
+                route.delete()
+                messages.success(request, "Patrol route deleted.")
+            elif action == "update_round":
+                patrol_round = get_object_or_404(PatrolRound, pk=request.POST.get("round_id"))
+                next_status = request.POST.get("status") or PatrolRound.Status.SCHEDULED
+                patrol_round.route = get_object_or_404(PatrolRoute, pk=request.POST.get("route_id"))
+                patrol_round.assignment = ShiftAssignment.objects.filter(pk=request.POST.get("assignment_id")).first()
+                patrol_round.scheduled_start = _parse_datetime_field(request.POST.get("scheduled_start"), label="Scheduled start")
+                patrol_round.scheduled_end = _parse_datetime_field(request.POST.get("scheduled_end"), label="Scheduled end")
+                patrol_round.save(
+                    update_fields=[
+                        "route",
+                        "assignment",
+                        "scheduled_start",
+                        "scheduled_end",
+                        "updated_at",
+                    ]
+                )
+                if next_status != patrol_round.status:
+                    transition_patrol_round(patrol_round, next_status)
+                messages.success(request, "Patrol round updated.")
+            elif action == "delete_round":
+                patrol_round = get_object_or_404(PatrolRound, pk=request.POST.get("round_id"))
+                patrol_round.delete()
+                messages.success(request, "Patrol round deleted.")
+            elif action == "delete_scan":
+                scan = get_object_or_404(CheckpointScan, pk=request.POST.get("scan_id"))
+                scan.delete()
+                messages.success(request, "Checkpoint scan deleted.")
+            elif action == "update_scan":
+                scan = get_object_or_404(CheckpointScan, pk=request.POST.get("scan_id"))
+                scan.patrol_round = get_object_or_404(PatrolRound, pk=request.POST.get("patrol_round_id"))
+                scan.checkpoint = get_object_or_404(Checkpoint, pk=request.POST.get("checkpoint_id"))
+                scan.guard = GuardProfile.objects.filter(pk=request.POST.get("guard_id")).first()
+                scan.scanned_at = (
+                    _parse_datetime_field(request.POST.get("scanned_at"), label="Scanned time")
+                    if request.POST.get("scanned_at")
+                    else scan.scanned_at
+                )
+                scan.latitude = request.POST.get("latitude") or None
+                scan.longitude = request.POST.get("longitude") or None
+                scan.accuracy_m = request.POST.get("accuracy_m") or None
+                scan.within_geofence = bool(request.POST.get("within_geofence"))
+                scan.save()
+                messages.success(request, "Checkpoint scan updated.")
+            elif action == "checkpoint":
+                post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                Checkpoint.objects.create(
+                    post=post,
+                    name=request.POST.get("name", "").strip(),
+                    code=request.POST.get("code", "").strip(),
+                    checkpoint_type=request.POST.get("checkpoint_type") or Checkpoint.CheckpointType.QR,
+                    geofence_radius_m=_parse_int_field(request.POST.get("geofence_radius_m") or 50, label="Geofence radius", min_value=1),
+                )
+                messages.success(request, "Checkpoint created.")
+            elif action == "route":
+                post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                route = PatrolRoute.objects.create(
+                    post=post,
+                    name=request.POST.get("name", "").strip(),
+                    expected_duration_minutes=_parse_int_field(request.POST.get("expected_duration_minutes") or 30, label="Expected duration", min_value=1),
+                )
+                for index, checkpoint_id in enumerate(request.POST.getlist("checkpoint_ids"), start=1):
+                    checkpoint = Checkpoint.objects.filter(pk=checkpoint_id, post=post).first()
+                    if checkpoint:
+                        PatrolRouteCheckpoint.objects.create(route=route, checkpoint=checkpoint, sequence=index)
+                messages.success(request, "Patrol route created.")
+            elif action == "round":
+                route = get_object_or_404(PatrolRoute, pk=request.POST.get("route_id"))
+                assignment = ShiftAssignment.objects.filter(pk=request.POST.get("assignment_id")).first()
+                PatrolRound.objects.create(
+                    route=route,
+                    assignment=assignment,
+                    scheduled_start=_parse_datetime_field(request.POST.get("scheduled_start"), label="Scheduled start"),
+                    scheduled_end=_parse_datetime_field(request.POST.get("scheduled_end"), label="Scheduled end"),
+                )
+                messages.success(request, "Patrol round scheduled.")
+            elif action == "scan":
+                patrol_round = get_object_or_404(PatrolRound, pk=request.POST.get("patrol_round_id"))
+                checkpoint = get_object_or_404(Checkpoint, pk=request.POST.get("checkpoint_id"))
+                guard = GuardProfile.objects.filter(pk=request.POST.get("guard_id")).first()
+                CheckpointScan.objects.create(
+                    patrol_round=patrol_round,
+                    checkpoint=checkpoint,
+                    guard=guard,
+                    scanned_at=_parse_datetime_field(request.POST.get("scanned_at"), label="Scanned time")
+                    if request.POST.get("scanned_at")
+                    else timezone.now(),
+                    latitude=request.POST.get("latitude") or None,
+                    longitude=request.POST.get("longitude") or None,
+                    accuracy_m=request.POST.get("accuracy_m") or None,
+                    within_geofence=bool(request.POST.get("within_geofence")),
+                )
+                if patrol_round.status == PatrolRound.Status.SCHEDULED:
+                    transition_patrol_round(patrol_round, PatrolRound.Status.IN_PROGRESS)
+                messages.success(request, "Checkpoint scan recorded.")
+            else:
+                messages.error(request, "Unsupported patrol action.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:guarding-patrols")
+
+
+class GuardingPatrolCompleteView(StaffRequiredMixin, View):
+    def post(self, request, round_id):
+        patrol_round = get_object_or_404(PatrolRound, pk=round_id)
+        try:
+            complete_patrol_round(patrol_round)
+            messages.success(request, "Patrol round completed.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:guarding-patrols")
+
+
+class GuardingReportsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
+    template_name = "dashboard/guarding_reports.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["reports"] = (
+            FieldReport.objects.select_related("site", "post", "guard", "reviewed_by")
+            .prefetch_related("attachments")
+            .order_by("-submitted_at")[:200]
+        )
+        context["attachments"] = FieldReportAttachment.objects.select_related("report", "report__guard", "report__site").order_by("-uploaded_at")[:100]
+        context["sites"] = Site.objects.order_by("name")
+        context["posts"] = GuardPost.objects.select_related("site").order_by("site__name", "name")
+        context["guards"] = GuardProfile.objects.filter(status=GuardProfile.Status.ACTIVE).order_by("last_name", "first_name")
+        context["assignments"] = ShiftAssignment.objects.select_related("shift", "shift__post", "guard").order_by("-shift__starts_at")[:200]
+        context["report_types"] = FieldReport.ReportType.choices
+        context["report_statuses"] = FieldReport.Status.choices
+        context["counts"] = self.get_guarding_counts()
+        return context
+
+    def post(self, request):
+        action = request.POST.get("action", "report")
+        try:
+            if action == "update_report":
+                report = get_object_or_404(FieldReport, pk=request.POST.get("report_id"))
+                site = get_object_or_404(Site, pk=request.POST.get("site_id"))
+                title = request.POST.get("title", "").strip()
+                if not title:
+                    raise ValueError("Report title is required.")
+                report.site = site
+                report.post = GuardPost.objects.filter(pk=request.POST.get("post_id")).first()
+                report.assignment = ShiftAssignment.objects.filter(pk=request.POST.get("assignment_id")).first()
+                report.guard = GuardProfile.objects.filter(pk=request.POST.get("guard_id")).first()
+                report.report_type = request.POST.get("report_type") or FieldReport.ReportType.OTHER
+                next_status = request.POST.get("status") or FieldReport.Status.SUBMITTED
+                if next_status in {FieldReport.Status.APPROVED, FieldReport.Status.REJECTED} and next_status != report.status:
+                    raise ValueError("Use the review action to approve or reject reports.")
+                ensure_report_status_transition(report, next_status)
+                report.status = next_status
+                report.title = title
+                report.body = request.POST.get("body", "").strip()
+                report.visible_to_client = not bool(request.POST.get("hidden_from_client"))
+                report.submitted_at = (
+                    _parse_datetime_field(request.POST.get("submitted_at"), label="Submitted time")
+                    if request.POST.get("submitted_at")
+                    else report.submitted_at
+                )
+                report.save(
+                    update_fields=[
+                        "site",
+                        "post",
+                        "assignment",
+                        "guard",
+                        "report_type",
+                        "status",
+                        "title",
+                        "body",
+                        "visible_to_client",
+                        "submitted_at",
+                        "updated_at",
+                    ]
+                )
+                messages.success(request, "Field report updated.")
+            elif action == "delete_report":
+                report = get_object_or_404(FieldReport, pk=request.POST.get("report_id"))
+                report.delete()
+                messages.success(request, "Field report deleted.")
+            elif action == "delete_attachment":
+                attachment = get_object_or_404(FieldReportAttachment, pk=request.POST.get("attachment_id"))
+                attachment.delete()
+                messages.success(request, "Report attachment deleted.")
+            elif action == "update_attachment":
+                attachment = get_object_or_404(FieldReportAttachment, pk=request.POST.get("attachment_id"))
+                report = get_object_or_404(FieldReport, pk=request.POST.get("report_id"))
+                upload = request.FILES.get("file")
+                attachment.report = report
+                attachment.caption = request.POST.get("caption", "").strip()
+                if upload:
+                    attachment.file = upload
+                    attachment.content_type = getattr(upload, "content_type", "") or attachment.content_type
+                attachment.save()
+                messages.success(request, "Report attachment updated.")
+            elif action == "attachment":
+                report = get_object_or_404(FieldReport, pk=request.POST.get("report_id"))
+                upload = request.FILES.get("file")
+                if not upload:
+                    raise ValueError("Attachment file is required.")
+                FieldReportAttachment.objects.create(
+                    report=report,
+                    file=upload,
+                    caption=request.POST.get("caption", "").strip(),
+                    content_type=getattr(upload, "content_type", "") or "",
+                )
+                messages.success(request, "Report attachment uploaded.")
+            else:
+                site = get_object_or_404(Site, pk=request.POST.get("site_id"))
+                post = GuardPost.objects.filter(pk=request.POST.get("post_id")).first()
+                guard = GuardProfile.objects.filter(pk=request.POST.get("guard_id")).first()
+                assignment = ShiftAssignment.objects.filter(pk=request.POST.get("assignment_id")).first()
+                FieldReport.objects.create(
+                    site=site,
+                    post=post,
+                    assignment=assignment,
+                    guard=guard,
+                    report_type=request.POST.get("report_type") or FieldReport.ReportType.OTHER,
+                    status=request.POST.get("status")
+                    if request.POST.get("status") in {FieldReport.Status.DRAFT, FieldReport.Status.SUBMITTED}
+                    else FieldReport.Status.SUBMITTED,
+                    title=request.POST.get("title", "").strip(),
+                    body=request.POST.get("body", "").strip(),
+                    visible_to_client=not bool(request.POST.get("hidden_from_client")),
+                    submitted_at=_parse_datetime_field(request.POST.get("submitted_at"), label="Submitted time")
+                    if request.POST.get("submitted_at")
+                    else timezone.now(),
+                )
+                messages.success(request, "Field report created.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:guarding-reports")
+
+
+class GuardingReportReviewView(StaffRequiredMixin, View):
+    def post(self, request, report_id):
+        report = get_object_or_404(FieldReport, pk=report_id)
+        try:
+            review_field_report(
+                report,
+                actor=request.user,
+                status=request.POST.get("status"),
+                note=request.POST.get("note", "").strip(),
+            )
+            messages.success(request, "Report reviewed.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:guarding-reports")
+
+
+class GuardingDispatchView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
+    template_name = "dashboard/guarding_dispatch.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["panic_alerts"] = GuardPanicAlert.objects.select_related("guard", "site", "assignment").order_by("-created_at")[:100]
+        context["dispatch_tasks"] = DispatchTask.objects.select_related("site", "assigned_guard", "panic_alert").order_by("-created_at")[:200]
+        context["guards"] = GuardProfile.objects.filter(status=GuardProfile.Status.ACTIVE).order_by("last_name", "first_name")
+        context["sites"] = Site.objects.order_by("name")
+        context["assignments"] = ShiftAssignment.objects.select_related("shift", "shift__post", "guard").order_by("-shift__starts_at")[:200]
+        context["priorities"] = DispatchTask.Priority.choices
+        context["panic_statuses"] = GuardPanicAlert.Status.choices
+        context["counts"] = self.get_guarding_counts()
+        return context
+
+    def post(self, request):
+        try:
+            action = request.POST.get("action", "task")
+            if action == "panic_alert":
+                guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                assignment = ShiftAssignment.objects.filter(pk=request.POST.get("assignment_id")).first()
+                site = Site.objects.filter(pk=request.POST.get("site_id")).first()
+                if site is None and assignment:
+                    site = assignment.shift.post.site
+                GuardPanicAlert.objects.create(
+                    guard=guard,
+                    assignment=assignment,
+                    site=site,
+                    status=GuardPanicAlert.Status.OPEN,
+                    latitude=request.POST.get("latitude") or None,
+                    longitude=request.POST.get("longitude") or None,
+                    accuracy_m=request.POST.get("accuracy_m") or None,
+                    note=request.POST.get("note", "").strip(),
+                )
+                messages.success(request, "Panic alert created.")
+            elif action == "update_panic_alert":
+                alert = get_object_or_404(GuardPanicAlert, pk=request.POST.get("alert_id"))
+                assignment = ShiftAssignment.objects.filter(pk=request.POST.get("assignment_id")).first()
+                next_status = request.POST.get("status") or GuardPanicAlert.Status.OPEN
+                if next_status != alert.status:
+                    ensure_panic_alert_status_transition(alert, next_status)
+                alert.guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                alert.assignment = assignment
+                alert.site = Site.objects.filter(pk=request.POST.get("site_id")).first()
+                alert.latitude = request.POST.get("latitude") or None
+                alert.longitude = request.POST.get("longitude") or None
+                alert.accuracy_m = request.POST.get("accuracy_m") or None
+                alert.note = request.POST.get("note", "").strip()
+                alert.save(update_fields=["guard", "assignment", "site", "latitude", "longitude", "accuracy_m", "note", "updated_at"])
+                if next_status != alert.status:
+                    transition_panic_alert(alert, status=next_status, actor=request.user)
+                messages.success(request, "Panic alert updated.")
+            elif action == "delete_panic_alert":
+                alert = get_object_or_404(GuardPanicAlert, pk=request.POST.get("alert_id"))
+                alert.delete()
+                messages.success(request, "Panic alert deleted.")
+            elif action == "update_task":
+                task = get_object_or_404(DispatchTask, pk=request.POST.get("task_id"))
+                guard = GuardProfile.objects.filter(pk=request.POST.get("guard_id")).first()
+                title = request.POST.get("title", "").strip()
+                if not title:
+                    raise ValueError("Dispatch title is required.")
+                was_unassigned = task.assigned_guard_id is None
+                task.site = Site.objects.filter(pk=request.POST.get("site_id")).first()
+                task.assigned_guard = guard
+                task.priority = request.POST.get("priority") or DispatchTask.Priority.MEDIUM
+                task.title = title
+                task.description = request.POST.get("description", "").strip()
+                if guard and was_unassigned:
+                    task.assigned_at = timezone.now()
+                task.save(
+                    update_fields=[
+                        "site",
+                        "assigned_guard",
+                        "priority",
+                        "title",
+                        "description",
+                        "assigned_at",
+                        "updated_at",
+                    ]
+                )
+                messages.success(request, "Dispatch task updated.")
+            elif action == "delete_task":
+                task = get_object_or_404(DispatchTask, pk=request.POST.get("task_id"))
+                task.delete()
+                messages.success(request, "Dispatch task deleted.")
+            else:
+                site = Site.objects.filter(pk=request.POST.get("site_id")).first()
+                guard = GuardProfile.objects.filter(pk=request.POST.get("guard_id")).first()
+                DispatchTask.objects.create(
+                    site=site,
+                    assigned_guard=guard,
+                    assigned_at=timezone.now() if guard else None,
+                    status=DispatchTask.Status.ASSIGNED if guard else DispatchTask.Status.OPEN,
+                    priority=request.POST.get("priority") or DispatchTask.Priority.MEDIUM,
+                    title=request.POST.get("title", "").strip(),
+                    description=request.POST.get("description", "").strip(),
+                    created_by=request.user,
+                )
+                messages.success(request, "Dispatch task created.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:guarding-dispatch")
+
+
+class GuardingPanicActionView(StaffRequiredMixin, View):
+    def post(self, request, alert_id, action):
+        alert = get_object_or_404(GuardPanicAlert, pk=alert_id)
+        try:
+            if action == "acknowledge":
+                acknowledge_panic_alert(alert, actor=request.user)
+            elif action == "resolve":
+                resolve_panic_alert(alert, actor=request.user)
+            else:
+                messages.error(request, "Unsupported panic action.")
+                return redirect("dashboard:guarding-dispatch")
+            messages.success(request, "Panic alert updated.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:guarding-dispatch")
+
+
+class GuardingDispatchActionView(StaffRequiredMixin, View):
+    action_statuses = {
+        "assign": DispatchTask.Status.ASSIGNED,
+        "accept": DispatchTask.Status.ACCEPTED,
+        "en-route": DispatchTask.Status.EN_ROUTE,
+        "arrive": DispatchTask.Status.ARRIVED,
+        "resolve": DispatchTask.Status.RESOLVED,
+        "cancel": DispatchTask.Status.CANCELLED,
+    }
+
+    def post(self, request, task_id, action):
+        task = get_object_or_404(DispatchTask, pk=task_id)
+        if action not in self.action_statuses:
+            messages.error(request, "Unsupported dispatch action.")
+            return redirect("dashboard:guarding-dispatch")
+        guard = GuardProfile.objects.filter(pk=request.POST.get("guard_id")).first()
+        if guard:
+            task.assigned_guard = guard
+            task.save(update_fields=["assigned_guard", "updated_at"])
+        try:
+            transition_dispatch_task(
+                task,
+                status=self.action_statuses[action],
+                actor=request.user,
+                note=request.POST.get("note", "").strip(),
+            )
+            messages.success(request, "Dispatch task updated.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:guarding-dispatch")
+
+
 class EmergencyServiceManagementView(StaffRequiredMixin, TemplateView):
     template_name = "dashboard/emergency_services.html"
 
@@ -977,6 +2252,15 @@ class DeleteAccountEmergencyServiceView(StaffRequiredMixin, View):
 class SiteConsoleView(StaffRequiredMixin, TemplateView):
     template_name = "dashboard/site_console.html"
 
+    def _fallback_panic_capability(self):
+        return {
+            "audible_enabled": False,
+            "silent_enabled": False,
+            "mode": "unavailable",
+            "summary_message": "Panic capability could not be confirmed for this site.",
+            "panels": [],
+        }
+
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         site = get_object_or_404(Site, pk=self.kwargs["pk"])
@@ -996,7 +2280,10 @@ class SiteConsoleView(StaffRequiredMixin, TemplateView):
         context["has_online_control_areas"] = online_control_area_count > 0
         panic_capability = cache.get(f"site-panic-capability:{site.id}")
         if panic_capability is None:
-            panic_capability = service.get_site_panic_capability(site)
+            try:
+                panic_capability = service.get_site_panic_capability(site)
+            except Exception:
+                panic_capability = self._fallback_panic_capability()
             cache.set(f"site-panic-capability:{site.id}", panic_capability, timeout=60)
         context["panic_capability"] = panic_capability
         display_alarm_peripherals = _build_display_alarm_peripherals(site)
