@@ -243,6 +243,10 @@ class EmergencyRequest(models.Model):
             self.cancellation_reason = reason
             update_fields += ["cancelled_at", "cancellation_reason"]
         self.save(update_fields=update_fields)
+        if status == self.STATUS_DISPATCHED:
+            from apps.guarding.dispatch_bridge import create_dispatch_from_emergency
+
+            create_dispatch_from_emergency(self, actor=actor)
 
     def __str__(self) -> str:
         return f"Emergency {self.id} - {self.customer} - {self.status}"

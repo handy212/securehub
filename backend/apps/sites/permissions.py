@@ -4,6 +4,22 @@ from rest_framework.exceptions import PermissionDenied
 
 from .models import CustomerSiteAccess
 
+# Site-scoped customer roles (mobile app / alarm API)
+SITE_ROLE_OWNER = CustomerSiteAccess.ROLE_OWNER
+SITE_ROLE_MANAGER = CustomerSiteAccess.ROLE_MANAGER
+SITE_ROLE_VIEWER = CustomerSiteAccess.ROLE_VIEWER
+
+SITE_ROLE_CAN_CONTROL_ALARM = {
+    SITE_ROLE_OWNER,
+    SITE_ROLE_MANAGER,
+}
+
+
+def site_role_allows_alarm_control(role: str, *, can_control_alarm: bool) -> bool:
+    if role in SITE_ROLE_CAN_CONTROL_ALARM:
+        return can_control_alarm
+    return False
+
 
 def user_can_access_all_sites(user) -> bool:
     return bool(user and user.is_authenticated and (user.is_staff or user.is_superuser))
@@ -84,7 +100,12 @@ class CanControlAlarm(HasSiteAccess):
         access = CustomerSiteAccess.objects.filter(
             user=request.user, site_id=site_id
         ).first()
-        return bool(access and access.can_control_alarm)
+        return bool(
+            access
+            and site_role_allows_alarm_control(
+                access.role, can_control_alarm=access.can_control_alarm
+            )
+        )
 
 
 class IsSubscriptionActive(permissions.BasePermission):

@@ -1,0 +1,105 @@
+{# Expects: item (applicant) #}
+<div class="guarding-intake-records space-y-4">
+    <p class="console-meta">Upload documents and add education, employment, and references. Changes save immediately when you submit each sub-form.</p>
+
+    <section class="guarding-record-block">
+        <div class="guarding-record-block__head">
+            <div>
+                <h3 class="guarding-record-block__title">Documents</h3>
+                <p class="guarding-record-block__meta">{{ item.documents.count }} on file</p>
+            </div>
+            <button type="button" class="btn-console-secondary btn-console-sm" @click="docModal = '{{ item.id }}'">Upload</button>
+        </div>
+        <ul class="guarding-record-list">
+            {% for doc in item.documents.all %}
+            <li class="guarding-record-list__item">
+                <div class="min-w-0">
+                    <span class="font-semibold text-slate-900 dark:text-slate-100">{{ doc.title }}</span>
+                    <span class="console-meta block">{{ doc.get_document_type_display }}{% if doc.reference_number %} · {{ doc.reference_number }}{% endif %}</span>
+                </div>
+                <form method="post" class="shrink-0">{% csrf_token %}<input type="hidden" name="action" value="delete_applicant_document"><input type="hidden" name="document_id" value="{{ doc.id }}"><button type="submit" class="text-xs font-semibold text-red-500 hover:text-red-600" onclick="return confirm('Delete this document?');">Delete</button></form>
+            </li>
+            {% empty %}
+            <li class="guarding-record-list__empty">No documents uploaded yet.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="guarding-record-block">
+        <div class="guarding-record-block__head">
+            <div>
+                <h3 class="guarding-record-block__title">Education</h3>
+                <p class="guarding-record-block__meta">{{ item.education_records.count }} record{{ item.education_records.count|pluralize }}</p>
+            </div>
+            <button type="button" class="btn-console-secondary btn-console-sm" @click="eduModal = '{{ item.id }}'">Add</button>
+        </div>
+        <ul class="guarding-record-list">
+            {% for edu in item.education_records.all %}
+            <li class="guarding-record-list__item">
+                <div class="min-w-0">
+                    <span class="font-semibold text-slate-900 dark:text-slate-100">{{ edu.education_level }}</span>
+                    <span class="console-meta block">{{ edu.institution_name|default:"—" }}{% if edu.year_completed %} · {{ edu.year_completed }}{% endif %}</span>
+                </div>
+                <span class="flex shrink-0 items-center gap-2">
+                    <button type="button" class="text-xs font-semibold text-brand" @click="eduEditId = '{{ edu.id }}'">Edit</button>
+                    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="delete_applicant_education"><input type="hidden" name="education_id" value="{{ edu.id }}"><button type="submit" class="text-xs font-semibold text-red-500" onclick="return confirm('Delete education record?');">Delete</button></form>
+                </span>
+            </li>
+            {% empty %}
+            <li class="guarding-record-list__empty">No education records.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="guarding-record-block">
+        <div class="guarding-record-block__head">
+            <div>
+                <h3 class="guarding-record-block__title">Employment history</h3>
+                <p class="guarding-record-block__meta">{{ item.employment_records.count }} record{{ item.employment_records.count|pluralize }}</p>
+            </div>
+            <button type="button" class="btn-console-secondary btn-console-sm" @click="empModal = '{{ item.id }}'">Add</button>
+        </div>
+        <ul class="guarding-record-list">
+            {% for emp in item.employment_records.all %}
+            <li class="guarding-record-list__item">
+                <div class="min-w-0">
+                    <span class="font-semibold text-slate-900 dark:text-slate-100">{{ emp.company_name }}</span>
+                    <span class="console-meta block">{{ emp.position|default:"—" }}</span>
+                </div>
+                <span class="flex shrink-0 items-center gap-2">
+                    <button type="button" class="text-xs font-semibold text-brand" @click="empEditId = '{{ emp.id }}'">Edit</button>
+                    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="delete_applicant_employment"><input type="hidden" name="employment_id" value="{{ emp.id }}"><button type="submit" class="text-xs font-semibold text-red-500" onclick="return confirm('Delete employment record?');">Delete</button></form>
+                </span>
+            </li>
+            {% empty %}
+            <li class="guarding-record-list__empty">No employment history.</li>
+            {% endfor %}
+        </ul>
+    </section>
+
+    <section class="guarding-record-block">
+        <div class="guarding-record-block__head">
+            <div>
+                <h3 class="guarding-record-block__title">References</h3>
+                <p class="guarding-record-block__meta">{{ item.references.count }} reference{{ item.references.count|pluralize }}</p>
+            </div>
+            <button type="button" class="btn-console-secondary btn-console-sm" @click="refModal = '{{ item.id }}'">Add</button>
+        </div>
+        <ul class="guarding-record-list">
+            {% for ref in item.references.all %}
+            <li class="guarding-record-list__item">
+                <div class="min-w-0">
+                    <span class="font-semibold text-slate-900 dark:text-slate-100">{{ ref.full_name }}</span>
+                    <span class="console-meta block">{{ ref.company|default:"—" }} · {{ ref.phone_number|default:"—" }}</span>
+                </div>
+                <span class="flex shrink-0 items-center gap-2">
+                    <button type="button" class="text-xs font-semibold text-brand" @click="refEditId = '{{ ref.id }}'">Edit</button>
+                    <form method="post">{% csrf_token %}<input type="hidden" name="action" value="delete_applicant_reference"><input type="hidden" name="reference_id" value="{{ ref.id }}"><button type="submit" class="text-xs font-semibold text-red-500" onclick="return confirm('Delete reference?');">Delete</button></form>
+                </span>
+            </li>
+            {% empty %}
+            <li class="guarding-record-list__empty">No references.</li>
+            {% endfor %}
+        </ul>
+    </section>
+</div>

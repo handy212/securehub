@@ -11,6 +11,7 @@ from rest_framework_simplejwt.settings import api_settings
 from rest_framework_simplejwt.views import TokenObtainPairView
 
 from .models import CustomerProfile, FCMDevice
+from .profile import build_user_profile_payload
 from .serializers import (
     CustomerProfileSerializer,
     FCMDeviceSerializer,
@@ -35,20 +36,7 @@ class ProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
-        profile = getattr(request.user, "customer_profile", None)
-        if not profile:
-            return Response(
-                {
-                    "user": {
-                        "id": request.user.id,
-                        "username": request.user.username,
-                        "email": request.user.email,
-                    },
-                    "phone_number": "",
-                    "is_mobile_user": False,
-                }
-            )
-        return Response(CustomerProfileSerializer(profile).data)
+        return Response(build_user_profile_payload(request.user))
 
 
 class FCMDeviceView(APIView):

@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 import '../../features/messages/providers/messages_provider.dart';
@@ -69,7 +68,7 @@ class MainScaffold extends ConsumerWidget {
           children: [
             Text(
               location.startsWith('/home') ? 'Secure Hub' : header.title,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.7,
@@ -79,7 +78,7 @@ class MainScaffold extends ConsumerWidget {
             if (siteSubtitle.isNotEmpty)
               Text(
                 siteSubtitle,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   color: AppTheme.onSurfaceVariant.withValues(alpha: 0.6),
@@ -332,7 +331,7 @@ class _NavButton extends StatelessWidget {
                       padding: const EdgeInsets.only(left: 8),
                       child: Text(
                         label,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           color: AppTheme.primary,
@@ -347,3 +346,4 @@ class _NavButton extends StatelessWidget {
     );
   }
 }
+

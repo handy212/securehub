@@ -1,0 +1,19 @@
+{# Pass ref= when editing #}
+<div class="form-group">
+    <label>Full name *</label>
+    <input name="full_name" required value="{% if ref %}{{ ref.full_name }}{% endif %}" {% if not ref %}data-modal-initial-focus{% endif %}>
+</div>
+<div class="grid gap-3 sm:grid-cols-2">
+    <div class="form-group">
+        <label>Company</label>
+        <input name="company" value="{% if ref %}{{ ref.company }}{% endif %}">
+    </div>
+    <div class="form-group">
+        <label>Position</label>
+        <input name="position" value="{% if ref %}{{ ref.position }}{% endif %}">
+    </div>
+</div>
+<div class="form-group">
+    <label>Phone</label>
+    <input name="phone_number" value="{% if ref %}{{ ref.phone_number }}{% endif %}">
+</div>

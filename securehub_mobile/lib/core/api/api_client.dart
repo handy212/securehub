@@ -17,13 +17,10 @@ String _getBaseUrl() {
   const envUrl = String.fromEnvironment('API_BASE_URL');
   if (envUrl.isNotEmpty) return envUrl;
 
-  // In release builds with no URL configured, surface a clear error rather
-  // than silently falling back to localhost which will always fail.
+  // In release builds with no URL configured, let API callers surface a clear
+  // in-app error instead of crashing during provider construction.
   if (kReleaseMode) {
-    throw StateError(
-      'API_BASE_URL must be set via --dart-define=API_BASE_URL=<url> '
-      'for release builds.',
-    );
+    return '';
   }
 
   // Local development fallbacks.
@@ -45,6 +42,13 @@ const String googleServerClientId = String.fromEnvironment(
 
 @riverpod
 Dio dio(Ref ref) {
+  if (_baseUrl.isEmpty) {
+    throw const AppConfigurationException(
+      'Secure Hub is missing its production API URL. '
+      'Build with --dart-define=API_BASE_URL=<url>.',
+    );
+  }
+
   final tokenStorage = ref.watch(tokenStorageProvider);
 
   final dioInstance = Dio(
@@ -161,7 +165,6 @@ Never throwAppException(DioException e) {
     message = e.message ?? 'Unknown error';
   }
 
-  // Sanitize Hikvision technical errors for better UX
   if (message.contains('LAP020011')) {
     message = 'Panel communication error. Please try again in a moment.';
   } else if (message.contains('1073774671')) {

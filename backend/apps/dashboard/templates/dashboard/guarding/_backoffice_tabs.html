@@ -1,0 +1,33 @@
+{% comment %}Requires `backoffice_tab_counts` and Alpine `tab` / `setTab()`.{% endcomment %}
+<nav class="console-tab-bar" role="tablist" aria-label="Back office sections">
+    <button type="button" role="tab" :aria-selected="tab === 'contracts'" @click="setTab('contracts')"
+            :class="tab === 'contracts' ? 'console-tab-btn console-tab-btn--active' : 'console-tab-btn'">
+        <span>Contracts</span>
+        {% if backoffice_tab_counts.contracts %}<span class="console-tab-badge">{{ backoffice_tab_counts.contracts }}</span>{% endif %}
+    </button>
+    <button type="button" role="tab" :aria-selected="tab === 'attendance'" @click="setTab('attendance')"
+            :class="tab === 'attendance' ? 'console-tab-btn console-tab-btn--active' : 'console-tab-btn'">
+        <span>Attendance</span>
+        {% if backoffice_tab_counts.attendance_actions %}
+        <span class="console-tab-badge console-tab-badge--alert">{{ backoffice_tab_counts.attendance_actions }}</span>
+        {% endif %}
+    </button>
+    <button type="button" role="tab" :aria-selected="tab === 'templates'" @click="setTab('templates')"
+            :class="tab === 'templates' ? 'console-tab-btn console-tab-btn--active' : 'console-tab-btn'">
+        <span>Templates</span>
+        {% with template_total=backoffice_tab_counts.shift_templates|add:backoffice_tab_counts.report_templates|add:backoffice_tab_counts.client_access %}
+        {% if template_total %}<span class="console-tab-badge">{{ template_total }}</span>{% endif %}
+        {% endwith %}
+    </button>
+    <button type="button" role="tab" :aria-selected="tab === 'people'" @click="setTab('people')"
+            :class="tab === 'people' ? 'console-tab-btn console-tab-btn--active' : 'console-tab-btn'">
+        <span>People</span>
+        {% if backoffice_tab_counts.open_offboarding %}
+        <span class="console-tab-badge console-tab-badge--alert">{{ backoffice_tab_counts.open_offboarding }}</span>
+        {% endif %}
+    </button>
+</nav>
+<p class="console-tab-hint" x-show="tab === 'contracts'" x-cloak>Commercial contracts, rates, and SLA windows per site or post.</p>
+<p class="console-tab-hint" x-show="tab === 'attendance'" x-cloak>Leave, availability, shift swaps, timesheet review, and invoicing.</p>
+<p class="console-tab-hint" x-show="tab === 'templates'" x-cloak>Recurring shift patterns, report schemas, and client portal access.</p>
+<p class="console-tab-hint" x-show="tab === 'people'" x-cloak>Training compliance, equipment issues, and offboarding checklists.</p>

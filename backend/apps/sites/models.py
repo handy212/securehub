@@ -23,9 +23,37 @@ class Site(models.Model):
     # Industry / Scenario categorization ("Scenes")
     primary_industry = models.CharField(max_length=128, blank=True)
     secondary_industry = models.CharField(max_length=128, blank=True)
+    operations_zone = models.ForeignKey(
+        "OperationsZone",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="sites",
+    )
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self) -> str:
+        return self.name
+
+
+class OperationsZone(models.Model):
+    """Geographic/operational grouping for map sites and field guards."""
+
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    name = models.CharField(max_length=100)
+    color = models.CharField(max_length=7, default="#6366f1")
+    description = models.CharField(max_length=255, blank=True)
+    sort_order = models.PositiveSmallIntegerField(default=0)
+    is_active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        ordering = ["sort_order", "name"]
+        verbose_name = "operations zone"
+        verbose_name_plural = "operations zones"
 
     def __str__(self) -> str:
         return self.name

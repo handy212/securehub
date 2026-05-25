@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
-
 import '../../../core/auth/auth_notifier.dart';
 import '../../../core/models/site.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/emergency_provider.dart';
+import 'emergency_request_dialog.dart';
 
 class EmergencyActionCard extends ConsumerWidget {
   const EmergencyActionCard({
@@ -65,40 +64,37 @@ class EmergencyActionCard extends ConsumerWidget {
                   children: [
                     Text(
                       activeForThisCard
-                          ? 'Patrol request sent'
-                          : 'Emergency patrol',
-                      style: GoogleFonts.inter(
+                          ? 'Emergency Request Sent'
+                          : 'Emergency Request',
+                      style: TextStyle(
                         color: activeForThisCard
                             ? Colors.white
                             : AppTheme.primary,
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: -0.2,
                       ),
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      activeForThisCard
-                          ? 'Live GPS is updating dispatch'
-                          : (site == null
-                                ? 'Send away-from-site GPS'
-                                : 'Send site and GPS to dispatch'),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: GoogleFonts.inter(
-                        color: activeForThisCard
-                            ? Colors.white.withValues(alpha: 0.76)
-                            : AppTheme.onSurfaceVariant,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+                    if (activeForThisCard) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        'Live GPS is updating dispatch',
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.76),
+                          fontSize: 11,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
+                    ],
                   ],
                 ),
               ),
               const SizedBox(width: 10),
               if (activeForThisCard)
                 _EmergencyButton(
-                  label: emergencyState.isCancelling ? '...' : 'Cancel',
+                  label: emergencyState.isCancelling ? '...' : 'CANCEL',
                   foreground: AppTheme.error,
                   background: Colors.white,
                   onPressed: emergencyState.isCancelling
@@ -107,7 +103,7 @@ class EmergencyActionCard extends ConsumerWidget {
                 )
               else
                 _EmergencyButton(
-                  label: emergencyState.isSending ? '...' : 'Send',
+                  label: emergencyState.isSending ? '...' : 'TRIGGER',
                   foreground: Colors.white,
                   background: hasOtherActive
                       ? AppTheme.outlineVariant
@@ -125,42 +121,8 @@ class EmergencyActionCard extends ConsumerWidget {
 
   Future<void> _confirmAndTrigger(BuildContext context, WidgetRef ref) async {
     HapticFeedback.mediumImpact();
-    final confirmed = await showDialog<bool>(
-      context: context,
-      barrierColor: AppTheme.primary.withValues(alpha: 0.42),
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppTheme.surfaceContainerLowest,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
-        title: Text(
-          'Send Emergency Request?',
-          style: GoogleFonts.inter(
-            fontWeight: FontWeight.w800,
-            color: AppTheme.primary,
-          ),
-        ),
-        content: Text(
-          'SecureHub will share your GPS location with dispatch and keep updating it until the request is cancelled or resolved.',
-          style: GoogleFonts.inter(
-            color: AppTheme.onSurfaceVariant,
-            height: 1.4,
-            fontSize: 13,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(backgroundColor: AppTheme.error),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Send'),
-          ),
-        ],
-      ),
-    );
+    final confirmed = await EmergencyRequestDialog.show(context);
+
     if (confirmed != true || !context.mounted) return;
 
     final authState = ref.read(authNotifierProvider);
@@ -265,8 +227,9 @@ class _EmergencyButton extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.inter(fontSize: 11, fontWeight: FontWeight.w900),
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w900),
       ),
     );
   }
 }
+

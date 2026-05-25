@@ -201,7 +201,6 @@ class AuthInterceptor extends Interceptor {
   bool _isPublicAuthRequest(String path) {
     return path.contains(ApiEndpoints.login) ||
         path.contains(ApiEndpoints.googleLogin) ||
-        path.contains(ApiEndpoints.passwordReset) ||
         path.contains(ApiEndpoints.refresh) ||
         path.contains(ApiEndpoints.logout);
   }

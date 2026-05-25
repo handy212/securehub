@@ -68,9 +68,14 @@ def _dispatch_push(msg):
     sent = failed = 0
     for i in range(0, len(tokens), 500):
         batch = tokens[i : i + 500]
+        data = {"type": msg.message_type, "message_id": str(msg.id)}
+        if msg.push_data:
+            for key, value in msg.push_data.items():
+                if value is not None:
+                    data[str(key)] = str(value)
         multicast = messaging.MulticastMessage(
             notification=messaging.Notification(title=msg.title, body=msg.body),
-            data={"type": msg.message_type, "message_id": str(msg.id)},
+            data=data,
             tokens=batch,
         )
         try:

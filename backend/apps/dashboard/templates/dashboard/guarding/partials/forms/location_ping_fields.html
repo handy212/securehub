@@ -1,0 +1,44 @@
+{# Optional: ping for edit mode #}
+<div class="grid gap-3 sm:grid-cols-2">
+    <div class="form-group">
+        <label>Guard *</label>
+        <select name="guard_id" required {% if not ping %}data-modal-initial-focus{% endif %}>
+            {% for guard in guards %}<option value="{{ guard.id }}" {% if ping and ping.guard_id == guard.id %}selected{% endif %}>{{ guard.full_name }} · {{ guard.employee_number }}</option>{% endfor %}
+        </select>
+    </div>
+    <div class="form-group">
+        <label>Shift assignment</label>
+        <select name="assignment_id">
+            <option value="">No assignment</option>
+            {% for assignment in assignments %}<option value="{{ assignment.id }}" {% if ping and ping.assignment_id == assignment.id %}selected{% endif %}>{{ assignment.guard.full_name }} · {{ assignment.shift.post.name }}</option>{% endfor %}
+        </select>
+    </div>
+</div>
+<div class="grid gap-3 sm:grid-cols-2">
+    <div class="form-group">
+        <label>Latitude *</label>
+        <input name="latitude" required value="{% if ping %}{{ ping.latitude }}{% endif %}">
+    </div>
+    <div class="form-group">
+        <label>Longitude *</label>
+        <input name="longitude" required value="{% if ping %}{{ ping.longitude }}{% endif %}">
+    </div>
+</div>
+<div class="grid gap-3 sm:grid-cols-4">
+    <div class="form-group">
+        <label>Accuracy (m)</label>
+        <input name="accuracy_m" value="{% if ping and ping.accuracy_m %}{{ ping.accuracy_m }}{% endif %}">
+    </div>
+    <div class="form-group">
+        <label>Speed (m/s)</label>
+        <input name="speed_mps" value="{% if ping and ping.speed_mps %}{{ ping.speed_mps }}{% endif %}">
+    </div>
+    <div class="form-group">
+        <label>Heading (°)</label>
+        <input name="heading_deg" value="{% if ping and ping.heading_deg %}{{ ping.heading_deg }}{% endif %}">
+    </div>
+    <div class="form-group">
+        <label>Device timestamp</label>
+        <input name="device_timestamp" type="datetime-local" value="{% if ping and ping.device_timestamp %}{{ ping.device_timestamp|date:'Y-m-d\TH:i' }}{% endif %}">
+    </div>
+</div>

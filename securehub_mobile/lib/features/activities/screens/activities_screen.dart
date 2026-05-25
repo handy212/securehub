@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../core/models/alarm_event.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_surfaces.dart';
@@ -88,13 +87,13 @@ class _ActivitiesScreenState extends ConsumerState<ActivitiesScreen> {
                   children: [
                     TextField(
                       onChanged: (v) => setState(() => _searchQuery = v),
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.onSurface,
                         fontSize: 14,
                       ),
                       decoration: InputDecoration(
                         hintText: 'Search by event, user, or zone...',
-                        hintStyle: GoogleFonts.inter(
+                        hintStyle: TextStyle(
                           color: AppTheme.onSurfaceVariant.withValues(
                             alpha: 0.5,
                           ),
@@ -426,7 +425,7 @@ class _EventCard extends StatelessWidget {
                     children: [
                       Text(
                         event.activityTitle.toUpperCase(),
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 13,
                           letterSpacing: 0.2,
@@ -437,7 +436,7 @@ class _EventCard extends StatelessWidget {
                         const SizedBox(height: 2),
                         Text(
                           event.displaySubtitle,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w600,
                             color: AppTheme.onSurfaceVariant,
@@ -539,7 +538,7 @@ class _FilterPillState extends State<_FilterPill> {
           ),
           child: Text(
             widget.label,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w700,
               color: widget.isSelected
@@ -552,3 +551,4 @@ class _FilterPillState extends State<_FilterPill> {
     );
   }
 }
+

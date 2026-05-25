@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:font_awesome_flutter/font_awesome_flutter.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/biometric/biometric_lock_service.dart';
-import '../../../core/auth/auth_repository.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../shared/widgets/app_backdrop.dart';
 import '../../../shared/widgets/app_surfaces.dart';
@@ -23,8 +21,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _usernameCtrl = TextEditingController();
   final _passwordCtrl = TextEditingController();
   bool _obscurePassword = true;
-  bool _acceptedPolicies = false;
-  bool _showConsentError = false;
   bool _showBiometricLogin = false;
 
   @override
@@ -48,15 +44,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     setState(() => _showBiometricLogin = isEnabled);
   }
 
-  bool _ensurePoliciesAccepted() {
-    if (_acceptedPolicies) return true;
-    FocusScope.of(context).unfocus();
-    setState(() => _showConsentError = true);
-    return false;
-  }
-
   void _submit() {
-    if (!_ensurePoliciesAccepted()) return;
     if (_formKey.currentState?.validate() != true) return;
     ref
         .read(loginNotifierProvider.notifier)
@@ -64,33 +52,28 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   }
 
   void _submitBiometric() {
-    if (!_ensurePoliciesAccepted()) return;
     ref.read(loginNotifierProvider.notifier).signInWithBiometrics();
   }
 
   void _submitGoogle() {
-    if (!_ensurePoliciesAccepted()) return;
     ref.read(loginNotifierProvider.notifier).signInWithGoogle();
   }
 
-  Future<void> _showPolicySheet({
-    required String title,
-    required List<_PolicySectionData> sections,
-  }) async {
-    await showModalBottomSheet<void>(
+  void _showForgotPassword() {
+    showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (ctx) => Container(
-        height: MediaQuery.of(context).size.height * 0.82,
         decoration: const BoxDecoration(
           color: AppTheme.surfaceContainerLowest,
           borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
         ),
-        padding: const EdgeInsets.fromLTRB(24, 16, 24, 24),
+        padding: const EdgeInsets.fromLTRB(24, 12, 24, 32),
         child: SafeArea(
           top: false,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Center(
@@ -98,59 +81,62 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   width: 40,
                   height: 4,
                   decoration: BoxDecoration(
-                    color: AppTheme.outlineVariant.withValues(alpha: 0.3),
+                    color: AppTheme.outlineVariant.withValues(alpha: 0.4),
                     borderRadius: BorderRadius.circular(100),
                   ),
                 ),
               ),
               const SizedBox(height: 24),
               Text(
-                title,
-                style: GoogleFonts.inter(
-                  fontSize: 24,
+                'Password Help',
+                style: TextStyle(
+                  fontSize: 22,
                   fontWeight: FontWeight.w800,
                   color: AppTheme.primary,
                 ),
               ),
-              const SizedBox(height: 16),
-              Expanded(
-                child: ListView.separated(
-                  itemCount: sections.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 20),
-                  itemBuilder: (context, index) {
-                    final section = sections[index];
-                    return Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          section.title.toUpperCase(),
-                          style: GoogleFonts.inter(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w800,
-                            letterSpacing: 1.2,
-                            color: AppTheme.secondary,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          section.body,
-                          style: GoogleFonts.inter(
-                            fontSize: 14,
-                            height: 1.6,
-                            color: AppTheme.onSurfaceVariant,
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+              const SizedBox(height: 12),
+              Text(
+                'For security, password resets are handled by your provider or administrator. If you still have access on this device, you may also be able to use biometric sign-in.',
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppTheme.onSurfaceVariant,
+                  height: 1.5,
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: 24),
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.support_agent_rounded,
+                      color: AppTheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Have your site name and username ready before contacting support.',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppTheme.onSurface,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
               SizedBox(
                 width: double.infinity,
                 child: FilledButton(
                   onPressed: () => Navigator.pop(ctx),
-                  child: const Text('Close'),
+                  child: const Text('Understood'),
                 ),
               ),
             ],
@@ -158,233 +144,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
         ),
       ),
     );
-  }
-
-  Future<void> _showTermsOfService() {
-    return _showPolicySheet(
-      title: 'Terms of Service',
-      sections: const [
-        _PolicySectionData(
-          title: 'Authorized Use',
-          body:
-              'Secure Hub may only be used by authorized operators for approved site monitoring, alarm review, and command execution.',
-        ),
-        _PolicySectionData(
-          title: 'Account Responsibility',
-          body:
-              'You are responsible for maintaining the confidentiality of your credentials and for activity performed through your signed-in account.',
-        ),
-        _PolicySectionData(
-          title: 'Operational Actions',
-          body:
-              'Commands issued through the app, including arming and disarming, may affect live monitored systems and are logged for audit purposes.',
-        ),
-        _PolicySectionData(
-          title: 'Service Availability',
-          body:
-              'Access may be suspended when monitoring or billing status requires review by your provider or administrator.',
-        ),
-      ],
-    );
-  }
-
-  Future<void> _showPrivacyPolicy() {
-    return _showPolicySheet(
-      title: 'Privacy Policy',
-      sections: const [
-        _PolicySectionData(
-          title: 'Operational Data',
-          body:
-              'Secure Hub processes account details, site information, events, and command history to provide monitoring and security workflows.',
-        ),
-        _PolicySectionData(
-          title: 'Device Security',
-          body:
-              'Biometric authentication stays on your device. The app does not upload your fingerprint or face data.',
-        ),
-        _PolicySectionData(
-          title: 'Notifications',
-          body:
-              'Push tokens may be used to deliver alarms, support messages, and system updates relevant to your monitored sites.',
-        ),
-        _PolicySectionData(
-          title: 'Access Control',
-          body:
-              'Only authorized personnel and approved service providers should access the information shown inside the app.',
-        ),
-      ],
-    );
-  }
-
-  Future<void> _showForgotPassword() async {
-    final recoveryCtrl = TextEditingController(text: _usernameCtrl.text.trim());
-    var submitting = false;
-    await showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: Colors.transparent,
-      isScrollControlled: true,
-      builder: (ctx) => StatefulBuilder(
-        builder: (ctx, setSheetState) {
-          return Container(
-            decoration: const BoxDecoration(
-              color: AppTheme.surfaceContainerLowest,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(32)),
-            ),
-            padding: EdgeInsets.fromLTRB(
-              24,
-              12,
-              24,
-              32 + MediaQuery.of(ctx).viewInsets.bottom,
-            ),
-            child: SafeArea(
-              top: false,
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Center(
-                    child: Container(
-                      width: 40,
-                      height: 4,
-                      decoration: BoxDecoration(
-                        color: AppTheme.outlineVariant.withValues(alpha: 0.4),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Recover Password',
-                    style: GoogleFonts.inter(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w800,
-                      color: AppTheme.primary,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    'Enter your username or email address and we will send reset instructions if the account is eligible.',
-                    style: GoogleFonts.inter(
-                      fontSize: 14,
-                      color: AppTheme.onSurfaceVariant,
-                      height: 1.5,
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: recoveryCtrl,
-                    keyboardType: TextInputType.emailAddress,
-                    textInputAction: TextInputAction.done,
-                    decoration: const InputDecoration(
-                      labelText: 'Username or email',
-                      prefixIcon: Icon(Icons.alternate_email_rounded),
-                    ),
-                    onSubmitted: (_) async {
-                      if (submitting) return;
-                      final identifier = recoveryCtrl.text.trim();
-                      if (identifier.isEmpty) return;
-                      setSheetState(() => submitting = true);
-                      try {
-                        await ref
-                            .read(authRepositoryProvider)
-                            .requestPasswordReset(identifier);
-                        if (!ctx.mounted) return;
-                        Navigator.pop(ctx);
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'If the account is eligible, reset instructions will be sent.',
-                            ),
-                          ),
-                        );
-                      } catch (_) {
-                        if (!ctx.mounted) return;
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text(
-                              'Could not request a reset. Please try again.',
-                            ),
-                          ),
-                        );
-                      } finally {
-                        if (ctx.mounted) {
-                          setSheetState(() => submitting = false);
-                        }
-                      }
-                    },
-                  ),
-                  const SizedBox(height: 24),
-                  SizedBox(
-                    width: double.infinity,
-                    child: FilledButton(
-                      onPressed: submitting
-                          ? null
-                          : () async {
-                              final identifier = recoveryCtrl.text.trim();
-                              if (identifier.isEmpty) {
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Enter your username or email address.',
-                                    ),
-                                  ),
-                                );
-                                return;
-                              }
-                              setSheetState(() => submitting = true);
-                              try {
-                                await ref
-                                    .read(authRepositoryProvider)
-                                    .requestPasswordReset(identifier);
-                                if (!ctx.mounted) return;
-                                Navigator.pop(ctx);
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'If the account is eligible, reset instructions will be sent.',
-                                    ),
-                                  ),
-                                );
-                              } catch (_) {
-                                if (!ctx.mounted) return;
-                                ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
-                                    content: Text(
-                                      'Could not request a reset. Please try again.',
-                                    ),
-                                  ),
-                                );
-                              } finally {
-                                if (ctx.mounted) {
-                                  setSheetState(() => submitting = false);
-                                }
-                              }
-                            },
-                      child: submitting
-                          ? const SizedBox(
-                              height: 18,
-                              width: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : const Text('Send reset link'),
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  SizedBox(
-                    width: double.infinity,
-                    child: TextButton(
-                      onPressed: submitting ? null : () => Navigator.pop(ctx),
-                      child: const Text('Cancel'),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        },
-      ),
-    );
-    recoveryCtrl.dispose();
   }
 
   Future<void> _showUrgentHelp() async {
@@ -416,8 +175,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                 ),
               ),
               Text(
-                'Experiencing login issues.?',
-                style: GoogleFonts.inter(
+                'Experiencing login issues?',
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: AppTheme.primary,
@@ -426,7 +185,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
               const SizedBox(height: 20),
               Text(
                 'CALL THE CONTROL CENTER (24/7)',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   letterSpacing: 1.0,
@@ -517,7 +276,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                       const SizedBox(height: 20),
                                       Text(
                                         'Secure Hub',
-                                        style: GoogleFonts.inter(
+                                        style: TextStyle(
                                           fontSize: 30,
                                           fontWeight: FontWeight.w800,
                                           letterSpacing: -0.9,
@@ -550,7 +309,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         keyboardType:
                                             TextInputType.emailAddress,
                                         textInputAction: TextInputAction.next,
-                                        style: GoogleFonts.inter(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                         ),
                                         decoration: const InputDecoration(
@@ -570,7 +329,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         controller: _passwordCtrl,
                                         obscureText: _obscurePassword,
                                         textInputAction: TextInputAction.done,
-                                        style: GoogleFonts.inter(
+                                        style: TextStyle(
                                           fontWeight: FontWeight.w600,
                                         ),
                                         onFieldSubmitted: (_) => _submit(),
@@ -627,7 +386,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             style: TextButton.styleFrom(
                                               foregroundColor:
                                                   AppTheme.onSurfaceVariant,
-                                              textStyle: const TextStyle(
+                                              textStyle: TextStyle(
                                                 fontSize: 13,
                                                 fontWeight: FontWeight.w600,
                                               ),
@@ -638,166 +397,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                           ),
                                         ),
                                       ),
-                                      Container(
-                                        padding: const EdgeInsets.all(14),
-                                        decoration: BoxDecoration(
-                                          color:
-                                              _showConsentError &&
-                                                  !_acceptedPolicies
-                                              ? AppTheme.error.withValues(
-                                                  alpha: 0.06,
-                                                )
-                                              : AppTheme.surfaceContainerLow,
-                                          borderRadius: BorderRadius.circular(
-                                            18,
-                                          ),
-                                          border: Border.all(
-                                            color:
-                                                _showConsentError &&
-                                                    !_acceptedPolicies
-                                                ? AppTheme.error.withValues(
-                                                    alpha: 0.26,
-                                                  )
-                                                : AppTheme.outlineVariant
-                                                      .withValues(alpha: 0.14),
-                                          ),
-                                        ),
-                                        child: Column(
-                                          crossAxisAlignment:
-                                              CrossAxisAlignment.start,
-                                          children: [
-                                            Row(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.start,
-                                              children: [
-                                                Checkbox(
-                                                  value: _acceptedPolicies,
-                                                  activeColor: AppTheme.primary,
-                                                  visualDensity:
-                                                      VisualDensity.compact,
-                                                  onChanged: (value) {
-                                                    setState(() {
-                                                      _acceptedPolicies =
-                                                          value ?? false;
-                                                      if (_acceptedPolicies) {
-                                                        _showConsentError =
-                                                            false;
-                                                      }
-                                                    });
-                                                  },
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Expanded(
-                                                  child: Padding(
-                                                    padding:
-                                                        const EdgeInsets.only(
-                                                          top: 4,
-                                                        ),
-                                                    child: Wrap(
-                                                      crossAxisAlignment:
-                                                          WrapCrossAlignment
-                                                              .center,
-                                                      spacing: 4,
-                                                      runSpacing: 2,
-                                                      children: [
-                                                        Text(
-                                                          'I have read and agree to the',
-                                                          style:
-                                                              GoogleFonts.inter(
-                                                                fontSize: 13,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color: AppTheme
-                                                                    .onSurface,
-                                                                height: 1.45,
-                                                              ),
-                                                        ),
-                                                        TextButton(
-                                                          onPressed:
-                                                              _showTermsOfService,
-                                                          style: TextButton.styleFrom(
-                                                            foregroundColor:
-                                                                Colors
-                                                                    .blue
-                                                                    .shade700,
-                                                            padding:
-                                                                EdgeInsets.zero,
-                                                            minimumSize:
-                                                                const Size(
-                                                                  0,
-                                                                  0,
-                                                                ),
-                                                            tapTargetSize:
-                                                                MaterialTapTargetSize
-                                                                    .shrinkWrap,
-                                                          ),
-                                                          child: const Text(
-                                                            'Terms of Service',
-                                                          ),
-                                                        ),
-                                                        Text(
-                                                          'and',
-                                                          style:
-                                                              GoogleFonts.inter(
-                                                                fontSize: 13,
-                                                                fontWeight:
-                                                                    FontWeight
-                                                                        .w600,
-                                                                color: AppTheme
-                                                                    .onSurface,
-                                                              ),
-                                                        ),
-                                                        TextButton(
-                                                          onPressed:
-                                                              _showPrivacyPolicy,
-                                                          style: TextButton.styleFrom(
-                                                            foregroundColor:
-                                                                Colors
-                                                                    .blue
-                                                                    .shade700,
-                                                            padding:
-                                                                EdgeInsets.zero,
-                                                            minimumSize:
-                                                                const Size(
-                                                                  0,
-                                                                  0,
-                                                                ),
-                                                            tapTargetSize:
-                                                                MaterialTapTargetSize
-                                                                    .shrinkWrap,
-                                                          ),
-                                                          child: const Text(
-                                                            'Privacy Policy',
-                                                          ),
-                                                        ),
-                                                      ],
-                                                    ),
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                            if (_showConsentError &&
-                                                !_acceptedPolicies) ...[
-                                              const SizedBox(height: 6),
-                                              Padding(
-                                                padding: const EdgeInsets.only(
-                                                  left: 40,
-                                                ),
-                                                child: Text(
-                                                  'You must accept the terms before signing in.',
-                                                  style: GoogleFonts.inter(
-                                                    fontSize: 12,
-                                                    fontWeight: FontWeight.w600,
-                                                    color: AppTheme.error,
-                                                  ),
-                                                ),
-                                              ),
-                                            ],
-                                          ],
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
+                                      const SizedBox(height: 16),
                                       SizedBox(
                                         height: 56,
                                         child: FilledButton(
@@ -832,7 +432,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                             ),
                                             child: Text(
                                               'OR',
-                                              style: GoogleFonts.inter(
+                                              style: TextStyle(
                                                 fontSize: 11,
                                                 fontWeight: FontWeight.w800,
                                                 letterSpacing: 1.1,
@@ -900,7 +500,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                               const SizedBox(width: 12),
                                               Text(
                                                 'Continue with Google',
-                                                style: GoogleFonts.inter(
+                                                style: TextStyle(
                                                   fontSize: 14,
                                                   fontWeight: FontWeight.w700,
                                                   letterSpacing: -0.1,
@@ -923,7 +523,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                     children: [
                                       Text(
                                         'Having trouble?',
-                                        style: GoogleFonts.inter(
+                                        style: TextStyle(
                                           fontSize: 13,
                                           fontWeight: FontWeight.w500,
                                           color: AppTheme.onSurfaceVariant,
@@ -933,7 +533,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                                         onPressed: _showUrgentHelp,
                                         style: TextButton.styleFrom(
                                           foregroundColor: AppTheme.error,
-                                          textStyle: const TextStyle(
+                                          textStyle: TextStyle(
                                             fontSize: 13,
                                             fontWeight: FontWeight.w700,
                                           ),
@@ -979,7 +579,7 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
           Expanded(
             child: Text(
               message,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.error,
                 fontSize: 13,
                 fontWeight: FontWeight.w600,
@@ -990,13 +590,6 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
       ),
     );
   }
-}
-
-class _PolicySectionData {
-  const _PolicySectionData({required this.title, required this.body});
-
-  final String title;
-  final String body;
 }
 
 class _EmergencyPhoneTile extends StatelessWidget {
@@ -1034,7 +627,7 @@ class _EmergencyPhoneTile extends StatelessWidget {
               const SizedBox(width: 16),
               Text(
                 number,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.w800,
                   color: AppTheme.error,
@@ -1050,3 +643,5 @@ class _EmergencyPhoneTile extends StatelessWidget {
     );
   }
 }
+
+

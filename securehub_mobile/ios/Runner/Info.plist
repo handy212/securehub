@@ -81,6 +81,8 @@
 		<string>SecureHub requires Biometric access to lock your security dashboard.</string>
 		<key>NSLocationWhenInUseUsageDescription</key>
 		<string>SecureHub shares your location with the dispatch team when you request emergency patrol support.</string>
+		<key>NSCameraUsageDescription</key>
+		<string>SecureHub uses the camera to scan checkpoint QR codes during patrols.</string>
 		<key>UIBackgroundModes</key>
 		<array>
 			<string>remote-notification</string>

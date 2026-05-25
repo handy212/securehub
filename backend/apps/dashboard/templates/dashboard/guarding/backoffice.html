@@ -1,0 +1,300 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Guarding Back Office | SecureHub{% endblock %}
+{% block header_title %}Guarding Back Office{% endblock %}
+{% block content %}
+{% include "dashboard/guarding/_nav.html" %}
+<div class="space-y-3" x-data="{
+        tab: (() => {
+            const allowed = ['contracts', 'attendance', 'templates', 'people'];
+            const fromUrl = new URLSearchParams(window.location.search).get('tab');
+            return allowed.includes(fromUrl) ? fromUrl : 'contracts';
+        })(),
+        editContractId: null,
+        setTab(name) {
+            this.tab = name;
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', name);
+            window.history.replaceState({}, '', url);
+        },
+    }">
+    <div class="console-page-toolbar !mb-0 !pb-2">
+    {% include "dashboard/guarding/_kpi_strip.html" %}
+
+        <div class="min-w-0 flex-1">
+            {% include "dashboard/partials/console/page_header.html" with page_title="Back office" page_subtitle="Contracts, payroll, templates, and people operations" %}
+        </div>
+    </div>
+
+    {% include "dashboard/guarding/_backoffice_tabs.html" %}
+
+    <section x-cloak x-show="tab === 'contracts'" role="tabpanel" class="space-y-3">
+        <div class="console-table-card p-4">
+            <p class="console-label text-slate-400 dark:text-slate-500">New Contract</p>
+            <form method="post" class="mt-3 grid gap-2 lg:grid-cols-6">
+                {% csrf_token %}<input type="hidden" name="action" value="contract">
+                <input name="name" required placeholder="Contract name" class="lg:col-span-2">
+                <select name="site_id" required>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select>
+                <select name="post_id"><option value="">Any post</option>{% for post in posts %}<option value="{{ post.id }}">{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select>
+                <select name="status">{% for value,label in contract_statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+                <input name="starts_on" type="date" required>
+                <input name="ends_on" type="date">
+                <input name="bill_rate" placeholder="Bill/hr" value="0.00">
+                <input name="pay_rate" placeholder="Pay/hr" value="0.00">
+                <input name="overtime_multiplier" placeholder="OT x" value="1.50">
+                <input name="sla_minutes" placeholder="SLA min" value="30">
+                <button type="submit" class="btn-console">Save</button>
+            </form>
+        </div>
+            {% include "dashboard/partials/console/data_table_start.html" with table_min_width_class="min-w-[960px]" %}
+                    <thead class="console-thead">
+                        <tr>
+                            <th scope="col" class="console-th">Contract</th>
+                            <th scope="col" class="console-th">Site/Post</th>
+                            <th scope="col" class="console-th">Status</th>
+                            <th scope="col" class="console-th">Rates</th>
+                            <th scope="col" class="console-th">Window</th>
+                            <th scope="col" class="console-th text-right">Manage</th>
+                        </tr>
+                    </thead>
+                    <tbody class="console-tbody">
+                    {% for contract in contracts %}
+                    <tr>
+                        <td class="console-td"><div class="console-row-title">{{ contract.name }}</div><div class="console-meta">SLA {{ contract.sla_minutes }} min · OT x{{ contract.overtime_multiplier }}</div></td>
+                        <td class="console-td">{{ contract.site.name }}<div class="console-meta">{{ contract.post.name|default:"Any post" }}</div></td>
+                        <td class="console-td"><span class="badge-console badge-console-slate">{{ contract.get_status_display }}</span></td>
+                        <td class="console-td">Bill {{ contract.bill_rate }} · Pay {{ contract.pay_rate }}</td>
+                        <td class="console-td whitespace-nowrap">{{ contract.starts_on|date:"Y-m-d" }} - {{ contract.ends_on|date:"Y-m-d"|default:"Open" }}</td>
+                        <td class="console-td text-right">
+                            <button type="button" class="btn-console-secondary" @click="editContractId = '{{ contract.id }}'">Edit</button>
+                        </td>
+                    </tr>
+                    {% empty %}<tr><td colspan="6" class="console-td console-empty-state">No contracts yet.</td></tr>{% endfor %}
+                    </tbody>
+            {% include "dashboard/partials/console/data_table_end.html" %}
+
+        {% for contract in contracts %}
+        <template x-if="editContractId === '{{ contract.id }}'">
+            {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit contract" modal_subtitle=contract.name modal_close="editContractId = null" modal_max_width="max-w-2xl" modal_title_id="contract-edit-title" %}
+            <form method="post" class="form-perfex space-y-3">
+                {% csrf_token %}<input type="hidden" name="action" value="update_contract"><input type="hidden" name="contract_id" value="{{ contract.id }}">
+                <input name="name" value="{{ contract.name }}" required data-modal-initial-focus>
+                <div class="grid gap-2 sm:grid-cols-3"><select name="site_id" required>{% for site in sites %}<option value="{{ site.id }}" {% if contract.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}</select><select name="post_id"><option value="">Any post</option>{% for post in posts %}<option value="{{ post.id }}" {% if contract.post_id == post.id %}selected{% endif %}>{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select><select name="status">{% for value,label in contract_statuses %}<option value="{{ value }}" {% if contract.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+                <div class="grid gap-2 sm:grid-cols-5"><input name="starts_on" type="date" value="{{ contract.starts_on|date:'Y-m-d' }}" required><input name="ends_on" type="date" value="{{ contract.ends_on|date:'Y-m-d' }}"><input name="bill_rate" value="{{ contract.bill_rate }}"><input name="pay_rate" value="{{ contract.pay_rate }}"><input name="sla_minutes" value="{{ contract.sla_minutes }}"></div>
+                <input name="overtime_multiplier" value="{{ contract.overtime_multiplier }}">
+                <textarea name="notes" placeholder="Notes">{{ contract.notes }}</textarea>
+                <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                    <button type="button" class="btn-console-secondary" @click="editContractId = null">Cancel</button>
+                    <button type="submit" class="btn-console">Save</button>
+                </div>
+            </form>
+            <form method="post" class="px-5 pb-5">{% csrf_token %}<input type="hidden" name="action" value="delete_contract"><input type="hidden" name="contract_id" value="{{ contract.id }}"><button type="submit" class="btn-console-danger" onclick="return confirm('Delete contract?');">Delete</button></form>
+            {% include "dashboard/partials/console/modal_end.html" %}
+        </template>
+        {% endfor %}
+    </section>
+
+    <section x-cloak x-show="tab === 'attendance'" role="tabpanel" class="grid gap-3 xl:grid-cols-2">
+        <div class="console-table-card p-4">
+            <p class="console-label text-slate-400 dark:text-slate-500">Availability / Leave</p>
+            <form method="post" class="mt-3 grid gap-2 sm:grid-cols-2">
+                {% csrf_token %}<input type="hidden" name="action" value="availability">
+                <select name="guard_id" required>{% for guard in guards %}<option value="{{ guard.id }}">{{ guard.full_name }} · {{ guard.employee_number }}</option>{% endfor %}</select>
+                <select name="availability_type">{% for value,label in availability_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+                <input name="starts_at" type="datetime-local" required><input name="ends_at" type="datetime-local" required>
+                <input name="reason" placeholder="Reason" class="sm:col-span-2">
+                <button type="submit" class="btn-console">Add Availability</button>
+            </form>
+            <form method="post" class="mt-4 grid gap-2 sm:grid-cols-2">
+                {% csrf_token %}<input type="hidden" name="action" value="leave">
+                <select name="guard_id" required>{% for guard in guards %}<option value="{{ guard.id }}">{{ guard.full_name }} · {{ guard.employee_number }}</option>{% endfor %}</select>
+                <select name="status">{% for value,label in leave_statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+                <input name="starts_at" type="datetime-local" required><input name="ends_at" type="datetime-local" required>
+                <input name="reason" placeholder="Leave reason" class="sm:col-span-2">
+                <button type="submit" class="btn-console">Add Leave</button>
+            </form>
+            <div class="mt-4 divide-y divide-slate-100">
+                {% for availability in availability_records|slice:":8" %}
+                <div class="flex items-center justify-between gap-3 py-2 text-[11px]"><span><span class="font-semibold">{{ availability.guard.full_name }}</span> · {{ availability.get_availability_type_display }}</span><span class="text-slate-400">{{ availability.starts_at|date:"M j H:i" }}</span></div>
+                {% empty %}<p class="console-empty-state !py-6">No availability records.</p>{% endfor %}
+            </div>
+        </div>
+
+        <div class="console-table-card">
+            <div class="console-card-section-title">Leave Requests</div>
+            <div class="divide-y divide-slate-100">
+                {% for leave in leave_requests %}
+                <div class="px-4 py-3 text-[11px]">
+                    <div class="flex items-start justify-between gap-3"><div><div class="console-row-title">{{ leave.guard.full_name }}</div><div class="text-xs text-slate-400">{{ leave.starts_at|date:"M j H:i" }} - {{ leave.ends_at|date:"M j H:i" }} · {{ leave.reason|default:"No reason" }}</div></div><span class="badge-console badge-console-slate">{{ leave.get_status_display }}</span></div>
+                    {% if leave.status == 'pending' %}<form method="post" class="mt-2 flex flex-wrap gap-2">{% csrf_token %}<input type="hidden" name="action" value="review_leave"><input type="hidden" name="leave_id" value="{{ leave.id }}"><input name="note" placeholder="Note" class="h-8 min-w-0 flex-1 console-inline-input min-w-0 flex-1"><button type="submit" name="status" value="approved" class="btn-console-approve shrink-0">Approve</button><button type="submit" name="status" value="rejected" class="btn-console-reject shrink-0">Reject</button></form>{% endif %}
+                </div>
+                {% empty %}<p class="console-empty-state">No leave requests.</p>{% endfor %}
+            </div>
+        </div>
+
+        <div class="console-table-card xl:col-span-2">
+            <div class="console-card-section-title">Shift Swaps</div>
+            <div class="divide-y divide-slate-100">
+                {% for swap in shift_swaps %}
+                <div class="px-4 py-3 text-[11px]">
+                    <div class="flex flex-col gap-2 lg:flex-row lg:items-center lg:justify-between">
+                        <div><div class="console-row-title">{{ swap.requested_by.full_name }} → {{ swap.target_guard.full_name|default:"Open" }}</div><div class="text-xs text-slate-400">{{ swap.assignment.shift.post.name }} · {{ swap.assignment.shift.starts_at|date:"Y-m-d H:i" }} · {{ swap.reason|default:"No reason" }}</div></div>
+                        <span class="badge-console badge-console-slate w-fit">{{ swap.get_status_display }}</span>
+                    </div>
+                    {% if swap.status == 'pending' %}<form method="post" class="mt-2 flex flex-wrap justify-end gap-2">{% csrf_token %}<input type="hidden" name="action" value="review_shift_swap"><input type="hidden" name="swap_id" value="{{ swap.id }}"><input name="note" placeholder="Review note" class="h-8 min-w-0 flex-1 console-inline-input min-w-0 flex-1 lg:max-w-xs"><button type="submit" name="status" value="approved" class="btn-console-approve shrink-0">Approve</button><button type="submit" name="status" value="rejected" class="btn-console-reject shrink-0">Reject</button></form>{% endif %}
+                </div>
+                {% empty %}<p class="console-empty-state">No shift swap requests.</p>{% endfor %}
+            </div>
+        </div>
+
+        <div class="console-table-card xl:col-span-2">
+            <div class="console-card-section-title flex flex-wrap items-center justify-between gap-2">
+                <span>Timesheets</span>
+                <a href="{% url 'dashboard:guarding-timesheets-export' %}" class="btn-console-secondary shrink-0 py-1.5 text-xs">Export</a>
+            </div>
+            <div class="console-table-wrap console-table-wrap--scroll">
+            <table class="console-table min-w-[960px]">
+                <thead class="console-thead"><tr><th scope="col" class="console-th">Guard</th><th scope="col" class="console-th">Site/Post</th><th scope="col" class="console-th">Time</th><th scope="col" class="console-th">Minutes</th><th scope="col" class="console-th">Amount</th><th scope="col" class="console-th text-right">Review</th></tr></thead>
+                <tbody class="console-tbody">{% for sheet in timesheets %}<tr><td class="console-td font-semibold text-slate-900 dark:text-slate-100">{{ sheet.guard.full_name }}</td><td class="console-td">{{ sheet.site.name }}<div class="console-meta">{{ sheet.post.name|default:"No post" }}</div></td><td class="console-td whitespace-nowrap">{{ sheet.period_start|date:"M j H:i" }} - {{ sheet.period_end|date:"H:i" }}</td><td class="console-td">{{ sheet.regular_minutes }} regular · {{ sheet.overtime_minutes }} OT</td><td class="console-td">Pay {{ sheet.pay_amount }} · Bill {{ sheet.bill_amount }}</td><td class="console-td text-right"><form method="post" class="flex flex-wrap justify-end gap-2">{% csrf_token %}<input type="hidden" name="action" value="review_timesheet"><input type="hidden" name="timesheet_id" value="{{ sheet.id }}"><select name="status" class="h-8 max-w-[10rem] console-table-card px-2 text-xs dark:border-slate-600 dark:bg-slate-800">{% for value,label in timesheet_statuses %}<option value="{{ value }}" {% if sheet.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button type="submit" class="btn-console shrink-0 py-1.5 text-xs">Save</button></form></td></tr>{% empty %}<tr><td colspan="6" class="console-td console-empty-state">No timesheets generated.</td></tr>{% endfor %}</tbody>
+            </table>
+            </div>
+        </div>
+
+        <div class="console-table-card p-4 xl:col-span-2">
+            <div class="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+                <div><p class="console-label text-slate-400 dark:text-slate-500">Invoices</p><p class="mt-1 text-sm font-bold text-slate-500 dark:text-slate-400">Generated from approved, uninvoiced timesheets.</p></div>
+                <form method="post" class="grid gap-2 sm:grid-cols-5">{% csrf_token %}<input type="hidden" name="action" value="generate_invoice"><select name="site_id" required>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select><select name="contract_id"><option value="">Any contract</option>{% for contract in contracts %}<option value="{{ contract.id }}">{{ contract.name }}</option>{% endfor %}</select><input name="period_start" type="date" required><input name="period_end" type="date" required><button type="submit" class="btn-console">Generate</button></form>
+            </div>
+            <div class="console-table-wrap mt-4">
+            <table class="console-table min-w-[840px]">
+                <thead class="console-thead"><tr><th scope="col" class="console-th">Invoice</th><th scope="col" class="console-th">Site</th><th scope="col" class="console-th">Period</th><th scope="col" class="console-th">Total</th><th scope="col" class="console-th text-right">Status</th></tr></thead>
+                <tbody class="console-tbody">{% for invoice in invoices %}<tr><td class="console-td font-semibold text-slate-900 dark:text-slate-100">{{ invoice.invoice_number }}</td><td class="console-td">{{ invoice.site.name }}<div class="console-meta">{{ invoice.contract.name|default:"No contract filter" }}</div></td><td class="console-td whitespace-nowrap">{{ invoice.period_start|date:"Y-m-d" }} - {{ invoice.period_end|date:"Y-m-d" }}</td><td class="console-td">{{ invoice.total }}</td><td class="console-td text-right"><form method="post" class="flex flex-wrap justify-end gap-2">{% csrf_token %}<input type="hidden" name="action" value="transition_invoice"><input type="hidden" name="invoice_id" value="{{ invoice.id }}"><select name="status" class="h-8 max-w-[10rem] console-table-card px-2 text-xs dark:border-slate-600 dark:bg-slate-800">{% for value,label in invoice_statuses %}<option value="{{ value }}" {% if invoice.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><button type="submit" class="btn-console shrink-0 py-1.5 text-xs">Save</button></form></td></tr>{% empty %}<tr><td colspan="5" class="console-td console-empty-state">No invoices generated.</td></tr>{% endfor %}</tbody>
+            </table>
+            </div>
+        </div>
+    </section>
+
+    <section x-cloak x-show="tab === 'templates'" role="tabpanel" class="grid gap-3 xl:grid-cols-3">
+        <div class="console-table-card p-4">
+            <p class="console-label text-slate-400">Shift Template</p>
+            <form method="post" class="mt-3 grid gap-2">
+                {% csrf_token %}<input type="hidden" name="action" value="shift_template">
+                <input name="name" required placeholder="Template name">
+                <select name="post_id" required>{% for post in posts %}<option value="{{ post.id }}">{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select>
+                <div class="grid gap-2 sm:grid-cols-3"><input name="start_time" type="time" required><input name="end_time" type="time" required><input name="required_guards" value="1"></div>
+                <div class="grid grid-cols-4 gap-2 console-label text-slate-500"><label><input name="days_of_week" value="1" type="checkbox"> Mon</label><label><input name="days_of_week" value="2" type="checkbox"> Tue</label><label><input name="days_of_week" value="3" type="checkbox"> Wed</label><label><input name="days_of_week" value="4" type="checkbox"> Thu</label><label><input name="days_of_week" value="5" type="checkbox"> Fri</label><label><input name="days_of_week" value="6" type="checkbox"> Sat</label><label><input name="days_of_week" value="0" type="checkbox"> Sun</label><label><input name="is_active" type="checkbox" checked> Active</label></div>
+                <button type="submit" class="btn-console">Save Shift Template</button>
+            </form>
+            <div class="mt-4 divide-y divide-slate-100">{% for shift_template in shift_templates %}<div class="flex items-center justify-between gap-3 py-2 text-[11px]"><span><span class="font-semibold">{{ shift_template.name }}</span> · {{ shift_template.post.name }}</span><span class="text-slate-400">{{ shift_template.start_time|time:"H:i" }}-{{ shift_template.end_time|time:"H:i" }}</span></div>{% empty %}<p class="console-empty-state !py-6">No shift templates.</p>{% endfor %}</div>
+        </div>
+        <div class="console-table-card p-4">
+            <p class="console-label text-slate-400">Report Template</p>
+            <form method="post" class="mt-3 grid gap-2">
+                {% csrf_token %}<input type="hidden" name="action" value="report_template">
+                <input name="name" required placeholder="Template name">
+                <div class="grid gap-2 sm:grid-cols-3"><select name="report_type">{% for value,label in report_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select><select name="site_id"><option value="">All sites</option>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select><label class="flex items-center gap-2 console-label text-slate-500"><input name="is_active" type="checkbox" checked> Active</label></div>
+                <textarea name="fields" rows="4" placeholder="One field per line"></textarea>
+                <button type="submit" class="btn-console">Save Template</button>
+            </form>
+            <div class="mt-4 divide-y divide-slate-100">{% for template in report_templates %}<div class="flex items-center justify-between gap-3 py-2 text-[11px]"><span><span class="font-semibold">{{ template.name }}</span> · {{ template.get_report_type_display }}</span><span class="text-slate-400">{{ template.site.name|default:"All sites" }}</span></div>{% empty %}<p class="console-empty-state !py-6">No templates.</p>{% endfor %}</div>
+        </div>
+        <div class="console-table-card p-4">
+            <p class="console-label text-slate-400">Client Access</p>
+            <form method="post" class="mt-3 grid gap-2">
+                {% csrf_token %}<input type="hidden" name="action" value="client_access">
+                <div class="grid gap-2 sm:grid-cols-3"><select name="user_id" required>{% for user in users %}<option value="{{ user.id }}">{{ user.username }}</option>{% endfor %}</select><select name="site_id" required>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select><select name="role">{% for value,label in client_roles %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+                <div class="grid gap-2 sm:grid-cols-4 console-label text-slate-500"><label><input name="can_view_reports" type="checkbox" checked> Reports</label><label><input name="can_view_patrols" type="checkbox" checked> Patrols</label><label><input name="can_view_attendance" type="checkbox" checked> Attendance</label><label><input name="can_acknowledge_reports" type="checkbox"> Ack</label></div>
+                <button type="submit" class="btn-console">Grant Access</button>
+            </form>
+            <div class="mt-4 divide-y divide-slate-100 dark:divide-slate-800">{% for access in client_access %}<div class="flex items-center justify-between gap-3 py-2 text-[11px]"><span><span class="font-semibold">{{ access.user.username }}</span> · {{ access.site.name }}</span><span class="badge-console badge-console-slate">{{ access.get_role_display }}</span></div>{% empty %}<p class="console-empty-state !py-6">No client guard access.</p>{% endfor %}</div>
+        </div>
+    </section>
+
+    <section x-cloak x-show="tab === 'people'" role="tabpanel" class="grid gap-3 xl:grid-cols-3" x-data="{ editTrainingId: null, editEquipmentId: null, editOffboardingId: null }">
+        <div class="console-table-card p-4">
+            <p class="console-label text-slate-400">Training</p>
+            <form method="post" class="mt-3 grid gap-2">
+                {% csrf_token %}<input type="hidden" name="action" value="training">
+                <select name="guard_id" required>{% for guard in guards %}<option value="{{ guard.id }}">{{ guard.full_name }}</option>{% endfor %}</select>
+                <input name="name" required placeholder="Training name"><input name="provider" placeholder="Provider">
+                <div class="grid gap-2 sm:grid-cols-3"><select name="status">{% for value,label in training_statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select><input name="completed_on" type="date"><input name="expires_on" type="date"></div>
+                <input name="certificate_number" placeholder="Certificate #">
+                <textarea name="notes" placeholder="Notes" class="w-full"></textarea>
+                <button type="submit" class="btn-console">Save Training</button>
+            </form>
+            <div class="mt-4 divide-y divide-slate-100">{% for training in training_records|slice:":8" %}<div class="flex items-start justify-between gap-2 py-2 text-[11px]"><div><span class="font-semibold">{{ training.guard.full_name }}</span><div class="text-[10px] text-slate-400">{{ training.name }} · expires {{ training.expires_on|date:"Y-m-d"|default:"-" }}</div></div><button type="button" class="shrink-0 text-xs font-semibold text-brand" @click="editTrainingId = '{{ training.id }}'">Edit</button></div>{% empty %}<p class="console-empty-state !py-6">No training records.</p>{% endfor %}</div>
+        </div>
+        <div class="console-table-card p-4">
+            <p class="console-label text-slate-400">Equipment</p>
+            <form method="post" class="mt-3 grid gap-2">
+                {% csrf_token %}<input type="hidden" name="action" value="equipment">
+                <select name="guard_id" required>{% for guard in guards %}<option value="{{ guard.id }}">{{ guard.full_name }}</option>{% endfor %}</select>
+                <input name="item_name" required placeholder="Item"><input name="item_code" placeholder="Code">
+                <div class="grid gap-2 sm:grid-cols-2"><input name="quantity" value="1"><select name="status">{% for value,label in equipment_statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+                <input name="issued_at" type="datetime-local" placeholder="Issued at">
+                <textarea name="notes" placeholder="Notes" class="w-full"></textarea>
+                <button type="submit" class="btn-console">Issue</button>
+            </form>
+            <div class="mt-4 divide-y divide-slate-100">{% for equipment in equipment_issues|slice:":8" %}<div class="flex items-start justify-between gap-2 py-2 text-[11px]"><div><span class="font-semibold">{{ equipment.guard.full_name }}</span> · {{ equipment.item_name }}</div><div class="flex shrink-0 flex-col items-end gap-1"><span class="text-slate-400">{{ equipment.get_status_display }}</span><button type="button" class="text-xs font-semibold text-brand" @click="editEquipmentId = '{{ equipment.id }}'">Edit</button></div></div>{% empty %}<p class="console-empty-state !py-6">No equipment issues.</p>{% endfor %}</div>
+        </div>
+        <div class="console-table-card p-4">
+            <p class="console-label text-slate-400">Offboarding</p>
+            <form method="post" class="mt-3 grid gap-2">
+                {% csrf_token %}<input type="hidden" name="action" value="offboarding">
+                <select name="guard_id" required>{% for guard in guards %}<option value="{{ guard.id }}">{{ guard.full_name }}</option>{% endfor %}</select>
+                <div class="grid gap-2 console-label text-slate-500"><label><input name="equipment_returned" type="checkbox"> Equipment returned</label><label><input name="documents_archived" type="checkbox"> Docs archived</label><label><input name="access_revoked" type="checkbox"> Access revoked</label><label><input name="final_timesheet_approved" type="checkbox"> Final sheet approved</label></div>
+                <textarea name="exit_notes" placeholder="Exit notes"></textarea>
+                <button type="submit" class="btn-console">Save Checklist</button>
+            </form>
+            <div class="mt-4 divide-y divide-slate-100">{% for checklist in offboarding_checklists|slice:":8" %}<div class="flex items-start justify-between gap-2 py-2 text-[11px]"><span class="font-semibold">{{ checklist.guard.full_name }}</span><div class="flex shrink-0 flex-col items-end gap-1"><span class="{% if checklist.is_complete %}text-emerald-600{% else %}text-amber-600{% endif %}">{{ checklist.is_complete|yesno:"Complete,Open" }}</span><button type="button" class="text-xs font-semibold text-brand" @click="editOffboardingId = '{{ checklist.id }}'">Edit</button></div></div>{% empty %}<p class="console-empty-state !py-6">No offboarding checklists.</p>{% endfor %}</div>
+        </div>
+
+        {% for training in training_records %}
+        <template x-if="editTrainingId === '{{ training.id }}'">
+            {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit training" modal_subtitle=training.name modal_close="editTrainingId = null" modal_max_width="max-w-xl" modal_title_id="training-edit-title" %}
+            <form method="post" class="form-perfex space-y-3">
+                {% csrf_token %}<input type="hidden" name="action" value="update_training"><input type="hidden" name="training_id" value="{{ training.id }}">
+                <select name="guard_id" required>{% for guard in guards %}<option value="{{ guard.id }}" {% if training.guard_id == guard.id %}selected{% endif %}>{{ guard.full_name }}</option>{% endfor %}</select>
+                <input name="name" value="{{ training.name }}" required>
+                <input name="provider" value="{{ training.provider }}" placeholder="Provider">
+                <div class="grid gap-2 sm:grid-cols-3"><select name="status">{% for value,label in training_statuses %}<option value="{{ value }}" {% if training.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select><input name="completed_on" type="date" value="{{ training.completed_on|date:'Y-m-d' }}"><input name="expires_on" type="date" value="{{ training.expires_on|date:'Y-m-d' }}"></div>
+                <input name="certificate_number" value="{{ training.certificate_number }}" placeholder="Certificate #">
+                <textarea name="notes" class="w-full">{{ training.notes }}</textarea>
+                <div class="flex justify-end gap-2"><button type="button" class="btn-console-secondary" @click="editTrainingId = null">Cancel</button><button type="submit" class="btn-console">Save</button></div>
+            </form>
+            {% include "dashboard/partials/console/modal_end.html" %}
+        </template>
+        {% endfor %}
+
+        {% for equipment in equipment_issues %}
+        <template x-if="editEquipmentId === '{{ equipment.id }}'">
+            {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit equipment" modal_subtitle=equipment.item_name modal_close="editEquipmentId = null" modal_max_width="max-w-xl" modal_title_id="equipment-edit-title" %}
+            <form method="post" class="form-perfex space-y-3">
+                {% csrf_token %}<input type="hidden" name="action" value="update_equipment"><input type="hidden" name="equipment_id" value="{{ equipment.id }}">
+                <select name="guard_id" required>{% for guard in guards %}<option value="{{ guard.id }}" {% if equipment.guard_id == guard.id %}selected{% endif %}>{{ guard.full_name }}</option>{% endfor %}</select>
+                <input name="item_name" value="{{ equipment.item_name }}" required><input name="item_code" value="{{ equipment.item_code }}" placeholder="Code">
+                <div class="grid gap-2 sm:grid-cols-2"><input name="quantity" value="{{ equipment.quantity }}"><select name="status">{% for value,label in equipment_statuses %}<option value="{{ value }}" {% if equipment.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+                <div class="grid gap-2 sm:grid-cols-2"><input name="issued_at" type="datetime-local" value="{{ equipment.issued_at|date:'Y-m-d\\TH:i' }}"><input name="returned_at" type="datetime-local" value="{{ equipment.returned_at|date:'Y-m-d\\TH:i' }}"></div>
+                <textarea name="notes" class="w-full">{{ equipment.notes }}</textarea>
+                <div class="flex justify-end gap-2"><button type="button" class="btn-console-secondary" @click="editEquipmentId = null">Cancel</button><button type="submit" class="btn-console">Save</button></div>
+            </form>
+            {% include "dashboard/partials/console/modal_end.html" %}
+        </template>
+        {% endfor %}
+
+        {% for checklist in offboarding_checklists %}
+        <template x-if="editOffboardingId === '{{ checklist.id }}'">
+            {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit offboarding" modal_subtitle=checklist.guard.full_name modal_close="editOffboardingId = null" modal_max_width="max-w-xl" modal_title_id="offboarding-edit-title" %}
+            <form method="post" class="form-perfex space-y-3">
+                {% csrf_token %}<input type="hidden" name="action" value="update_offboarding"><input type="hidden" name="offboarding_id" value="{{ checklist.id }}">
+                <select name="guard_id" required>{% for guard in guards %}<option value="{{ guard.id }}" {% if checklist.guard_id == guard.id %}selected{% endif %}>{{ guard.full_name }}</option>{% endfor %}</select>
+                <div class="grid gap-2 console-label text-slate-500"><label><input name="equipment_returned" type="checkbox" {% if checklist.equipment_returned %}checked{% endif %}> Equipment returned</label><label><input name="documents_archived" type="checkbox" {% if checklist.documents_archived %}checked{% endif %}> Docs archived</label><label><input name="access_revoked" type="checkbox" {% if checklist.access_revoked %}checked{% endif %}> Access revoked</label><label><input name="final_timesheet_approved" type="checkbox" {% if checklist.final_timesheet_approved %}checked{% endif %}> Final sheet approved</label></div>
+                <textarea name="exit_notes" class="w-full">{{ checklist.exit_notes }}</textarea>
+                {% if checklist.completed_by %}<p class="text-xs text-slate-500">Completed by {{ checklist.completed_by.username }} on {{ checklist.completed_at|date:"Y-m-d H:i" }}</p>{% endif %}
+                <div class="flex justify-end gap-2"><button type="button" class="btn-console-secondary" @click="editOffboardingId = null">Cancel</button><button type="submit" class="btn-console">Save</button></div>
+            </form>
+            {% include "dashboard/partials/console/modal_end.html" %}
+        </template>
+        {% endfor %}
+    </section>
+</div>
+{% endblock %}

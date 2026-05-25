@@ -1,0 +1,16 @@
+{% comment %}
+Optional `with`:
+  breadcrumb_parent_url, breadcrumb_parent_label — middle crumb (linked)
+  breadcrumb_current — tail crumb (plain text)
+{% endcomment %}
+<nav class="console-breadcrumb mb-3" aria-label="Breadcrumb">
+    <a href="{% url 'dashboard:home' %}">Dashboard</a>
+    {% if breadcrumb_parent_url and breadcrumb_parent_label %}
+    <span class="console-breadcrumb-sep" aria-hidden="true">/</span>
+    <a href="{{ breadcrumb_parent_url }}">{{ breadcrumb_parent_label }}</a>
+    {% endif %}
+    {% if breadcrumb_current %}
+    <span class="console-breadcrumb-sep" aria-hidden="true">/</span>
+    <span class="console-breadcrumb-current">{{ breadcrumb_current }}</span>
+    {% endif %}
+</nav>

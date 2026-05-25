@@ -6,6 +6,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../api/api_client.dart';
 import '../api/api_endpoints.dart';
+import '../models/session_profile.dart';
 import '../models/user.dart';
 import 'token_storage.dart';
 
@@ -27,7 +28,7 @@ class AuthRepository {
 
   /// Log in with [username] and [password].
   /// Stores tokens on success and returns the [CustomerProfile].
-  Future<CustomerProfile> login(String username, String password) async {
+  Future<SessionProfile> login(String username, String password) async {
     try {
       final resp = await _dio.post(
         ApiEndpoints.login,
@@ -64,7 +65,7 @@ class AuthRepository {
         throw Exception('Server returned an invalid profile response.');
       }
 
-      return CustomerProfile.fromJson(Map<String, dynamic>.from(profileData));
+      return SessionProfile.fromJson(Map<String, dynamic>.from(profileData));
     } on DioException catch (e) {
       throwAppException(e);
     } catch (e, stack) {
@@ -76,7 +77,7 @@ class AuthRepository {
     }
   }
 
-  Future<CustomerProfile> signInWithGoogle() async {
+  Future<SessionProfile> signInWithGoogle() async {
     try {
       final googleSignIn = GoogleSignIn(
         serverClientId: googleServerClientId.isEmpty
@@ -111,7 +112,7 @@ class AuthRepository {
       await _tokens.saveTokens(accessToken: access, refreshToken: refresh);
 
       final profileResp = await _dio.get(ApiEndpoints.profile);
-      return CustomerProfile.fromJson(profileResp.data as Map<String, dynamic>);
+      return SessionProfile.fromJson(profileResp.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throwAppException(e);
     } catch (e) {
@@ -122,21 +123,10 @@ class AuthRepository {
     }
   }
 
-  Future<void> requestPasswordReset(String identifier) async {
-    try {
-      await _dio.post(
-        ApiEndpoints.passwordReset,
-        data: {'identifier': identifier},
-      );
-    } on DioException catch (e) {
-      throwAppException(e);
-    }
-  }
-
-  Future<CustomerProfile> fetchProfile() async {
+  Future<SessionProfile> fetchProfile() async {
     try {
       final resp = await _dio.get(ApiEndpoints.profile);
-      return CustomerProfile.fromJson(resp.data as Map<String, dynamic>);
+      return SessionProfile.fromJson(resp.data as Map<String, dynamic>);
     } on DioException catch (e) {
       throwAppException(e);
     }

@@ -1,0 +1,1250 @@
+{% extends 'dashboard/base.html' %}
+{% load static %}
+
+{% block title %}Global Map | SecureHub{% endblock %}
+{% block header_title %}Global Map{% endblock %}
+{% block content_classes %}p-0{% endblock %}
+
+{% block extra_css %}
+<!-- Leaflet CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+<!-- MarkerCluster CSS -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+
+<style>
+    #map {
+        height: 100%;
+        width: 100%;
+        z-index: 10;
+        background: #f8fafc;
+    }
+
+    .leaflet-popup-content-wrapper {
+        border-radius: 6px;
+        padding: 0;
+        overflow: hidden;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+
+    .leaflet-popup-content {
+        margin: 0;
+        width: 300px !important;
+    }
+
+    .leaflet-container a.leaflet-popup-close-button {
+        color: #fff;
+        padding: 8px;
+    }
+
+    /* Marker Styles */
+    .custom-marker {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 34px;
+        height: 34px;
+        border-radius: 50%;
+        border: 2px solid white;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+        color: white;
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .custom-marker:hover {
+        transform: scale(1.1);
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    }
+
+    .marker-online {
+        background: linear-gradient(135deg, #10b981, #059669);
+    }
+
+    .marker-offline {
+        background: linear-gradient(135deg, #ef4444, #dc2626);
+    }
+
+    .marker-house {
+        background: linear-gradient(135deg, #dc2626, #b91c1c);
+    }
+
+    .marker-apartment {
+        background: linear-gradient(135deg, #7c3aed, #6d28d9);
+    }
+
+    .marker-villa {
+        background: linear-gradient(135deg, #0891b2, #0e7490);
+    }
+
+    .marker-commercial {
+        background: linear-gradient(135deg, #0f766e, #115e59);
+    }
+
+    .marker-store {
+        background: linear-gradient(135deg, #ea580c, #c2410c);
+    }
+
+    .marker-office {
+        background: linear-gradient(135deg, #475569, #334155);
+    }
+
+    .marker-factory {
+        background: linear-gradient(135deg, #4b5563, #374151);
+    }
+
+    .marker-hotel {
+        background: linear-gradient(135deg, #be123c, #9f1239);
+    }
+
+    .marker-pharmacy {
+        background: linear-gradient(135deg, #16a34a, #15803d);
+    }
+
+    .marker-restaurant {
+        background: linear-gradient(135deg, #b45309, #92400e);
+    }
+
+    .marker-community {
+        background: linear-gradient(135deg, #0f766e, #0f766e);
+    }
+
+    .marker-school {
+        background: linear-gradient(135deg, #4338ca, #3730a3);
+    }
+
+    .marker-emergency {
+        background: linear-gradient(135deg, #ef4444, #991b1b);
+        animation: emergency-pulse 1.4s ease-in-out infinite;
+    }
+
+    @keyframes emergency-pulse {
+        0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.45); }
+        50% { transform: scale(1.12); box-shadow: 0 0 0 10px rgba(239, 68, 68, 0); }
+    }
+
+    /* Cluster Styles */
+    .marker-cluster-small {
+        background-color: rgba(16, 185, 129, 0.4);
+    }
+
+    .marker-cluster-small div {
+        background-color: rgba(16, 185, 129, 0.8);
+        color: white;
+        font-weight: 800;
+    }
+
+    .marker-cluster-medium {
+        background-color: rgba(245, 158, 11, 0.4);
+    }
+
+    .marker-cluster-medium div {
+        background-color: rgba(245, 158, 11, 0.8);
+        color: white;
+        font-weight: 800;
+    }
+
+    .marker-cluster-large {
+        background-color: rgba(239, 68, 68, 0.4);
+    }
+
+    .marker-cluster-large div {
+        background-color: rgba(239, 68, 68, 0.8);
+        color: white;
+        font-weight: 800;
+    }
+
+    .marker-suspended {
+        background: linear-gradient(135deg, #94a3b8, #64748b);
+    }
+
+    .marker-guard-ok {
+        background: linear-gradient(135deg, #059669, #047857);
+    }
+
+    .marker-guard-dispatch {
+        background: linear-gradient(135deg, #ea580c, #c2410c);
+    }
+
+    .marker-guard-sos {
+        background: linear-gradient(135deg, #ef4444, #991b1b);
+        animation: emergency-pulse 1.4s ease-in-out infinite;
+    }
+
+    .leaflet-popup.map-site-popup .leaflet-popup-content-wrapper {
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+        border-radius: 12px;
+        overflow: visible;
+    }
+
+    .leaflet-popup.map-site-popup .leaflet-popup-content {
+        margin: 0 !important;
+        width: 248px !important;
+    }
+
+    .leaflet-popup.map-site-popup .leaflet-popup-tip-container {
+        display: block !important;
+    }
+
+    .leaflet-popup.map-site-popup .leaflet-popup-tip {
+        background: #fff;
+        box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+    }
+
+    .dark .leaflet-popup.map-site-popup .leaflet-popup-tip {
+        background: #0f172a;
+    }
+
+    .map-site-popup-card {
+        overflow: hidden;
+        border-radius: 10px;
+        border: 1px solid #e2e8f0;
+        background: #fff;
+        box-shadow: 0 12px 32px -8px rgba(15, 23, 42, 0.28);
+        font-size: 11px;
+    }
+
+    .dark .map-site-popup-card {
+        border-color: #334155;
+        background: #0f172a;
+    }
+
+    .map-popup-stat-row {
+        display: flex;
+        gap: 4px;
+    }
+
+    .map-popup-stat {
+        flex: 1;
+        border-radius: 6px;
+        border: 1px solid #f1f5f9;
+        background: #f8fafc;
+        padding: 4px 6px;
+        text-align: center;
+    }
+
+    .dark .map-popup-stat {
+        border-color: #1e293b;
+        background: #1e293b;
+    }
+
+    .map-popup-stat-label {
+        display: block;
+        font-size: 9px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: #94a3b8;
+    }
+
+    .map-popup-stat-value {
+        display: block;
+        margin-top: 1px;
+        font-size: 11px;
+        font-weight: 700;
+        font-variant-numeric: tabular-nums;
+        color: #0f172a;
+    }
+
+    .dark .map-popup-stat-value {
+        color: #f1f5f9;
+    }
+
+    .map-site-device-list .map-site-device-row {
+        padding: 6px 8px;
+    }
+
+    .map-site-device-list .console-row-title {
+        font-size: 11px;
+    }
+
+    .map-site-device-list .console-meta {
+        font-size: 10px;
+    }
+
+    .map-popup-badge {
+        display: inline-flex;
+        align-items: center;
+        border-radius: 4px;
+        padding: 1px 5px;
+        font-size: 9px;
+        font-weight: 600;
+        line-height: 1.2;
+    }
+
+    .map-popup-badge-emerald {
+        background: #ecfdf5;
+        color: #059669;
+    }
+
+    .map-popup-badge-slate {
+        background: #f1f5f9;
+        color: #64748b;
+    }
+
+    .map-popup-badge-red {
+        background: #fef2f2;
+        color: #dc2626;
+    }
+
+    .dark .map-popup-badge-emerald {
+        background: rgba(16, 185, 129, 0.15);
+        color: #34d399;
+    }
+
+    .dark .map-popup-badge-slate {
+        background: #334155;
+        color: #cbd5e1;
+    }
+
+    .dark .map-popup-badge-red {
+        background: rgba(239, 68, 68, 0.15);
+        color: #f87171;
+    }
+
+    .leaflet-container a.leaflet-popup-close-button {
+        color: white !important;
+        padding: 8px !important;
+        font-weight: bold;
+    }
+
+    .dark #map {
+        background: #0f172a;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="relative w-full h-full" x-data="mapController()">
+    <!-- ── MAP CONTAINER (FULL BLEED) ────────────────────── -->
+    <div class="relative overflow-hidden w-full h-[calc(100vh-3rem)]">
+        <div id="map" class="w-full h-full"></div>
+
+        <!-- Map controls -->
+        <div class="map-controls">
+            <div class="console-table-card overflow-hidden shadow-lg">
+
+                <div class="console-panel-header cursor-pointer select-none" @click="panelOpen = !panelOpen">
+                    <div class="min-w-0">
+                        <h2 class="console-panel-title">Map controls</h2>
+                        <p class="console-meta mt-0.5">
+                            <span x-text="visibleCount"></span> sites visible
+                            <span x-show="guardStats.on_map !== undefined"> · <span x-text="guardStats.on_map"></span> guards</span>
+                            <span x-show="stats.emergencies > 0"> · <span x-text="stats.emergencies"></span> emerg.</span>
+                            <span x-show="guardRefreshing" class="text-brand"> · updating</span>
+                        </p>
+                    </div>
+                    <svg class="h-3.5 w-3.5 shrink-0 text-slate-400 transition-transform duration-200" :class="panelOpen ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m18 15-6-6-6 6"/></svg>
+                </div>
+
+                <!-- Collapsible body -->
+                <div x-show="panelOpen"
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 -translate-y-1"
+                     x-transition:enter-end="opacity-100 translate-y-0"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 translate-y-0"
+                     x-transition:leave-end="opacity-0 -translate-y-1"
+                     class="map-panel-body border-t border-slate-100 pt-3 dark:border-slate-800">
+
+                    <div class="console-search-bar !rounded-lg !border !border-slate-100 !px-2.5 !py-2 dark:!border-slate-800">
+                        <svg class="shrink-0 text-slate-300" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                        <input type="text" x-model="searchQuery" @input="applySearch"
+                               class="console-search-input" placeholder="Search sites, guards, places…">
+                    </div>
+                    <button type="button" x-show="activeZoneFilter" @click="clearZoneFilter()"
+                            class="map-zone-filter-chip">
+                        <span class="map-zone-dot" :style="{ backgroundColor: activeZoneColor() }"></span>
+                        <span x-text="activeZoneLabel()"></span>
+                        <span class="text-slate-400">&times;</span>
+                    </button>
+
+                    <div class="map-panel-section">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="console-label">Fleet</p>
+                            <div class="flex items-center gap-2">
+                                <label class="flex cursor-pointer items-center gap-1" title="Show sites on map">
+                                    <input type="checkbox" x-model="filters.showSites" @change="applySearch"
+                                           class="h-3 w-3 rounded text-brand focus:ring-brand">
+                                    <span class="console-meta">Sites</span>
+                                </label>
+                                <label class="flex cursor-pointer items-center gap-1" title="Show guards on map">
+                                    <input type="checkbox" x-model="filters.showGuards" @change="applySearch"
+                                           class="h-3 w-3 rounded text-brand focus:ring-brand">
+                                    <span class="console-meta">Guards</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-4 gap-1">
+                            <div class="console-kpi-tile !p-2">
+                                <p class="console-stat-label !text-[9px]">Sites</p>
+                                <p class="console-stat-value-xs !text-sm mt-0.5" x-text="stats.total"></p>
+                            </div>
+                            <div class="console-kpi-tile !p-2">
+                                <p class="console-stat-label !text-[9px] text-emerald-600">Online</p>
+                                <p class="console-stat-value-xs !text-sm mt-0.5 text-emerald-600" x-text="stats.online"></p>
+                            </div>
+                            <div class="console-kpi-tile !p-2">
+                                <p class="console-stat-label !text-[9px]">Guards</p>
+                                <p class="console-stat-value-xs !text-sm mt-0.5" x-text="guardStats.on_map"></p>
+                            </div>
+                            <div class="console-kpi-tile !p-2 border-red-100 bg-red-50/70 dark:border-red-900/40 dark:bg-red-950/30">
+                                <p class="console-stat-label !text-[9px] text-red-500">Emerg.</p>
+                                <p class="console-stat-value-xs !text-sm mt-0.5 text-red-600" x-text="stats.emergencies"></p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="map-panel-section">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="console-label">Zones</p>
+                            {% if can_manage_zones %}
+                            <a href="{% url 'dashboard:map-zones' %}" class="console-segment-link">Manage</a>
+                            {% endif %}
+                        </div>
+                        <template x-if="zonesPanel.length === 0">
+                            <p class="console-empty-state !py-4" x-text="zonePanelEmptyMessage"></p>
+                        </template>
+                        <div class="map-zone-list" x-show="zonesPanel.length > 0">
+                            <template x-for="zone in zonesPanel" :key="zone.id">
+                                <div class="map-zone-block" :class="activeZoneFilter === zone.id ? 'ring-1 ring-brand/40' : ''">
+                                    <div class="map-zone-header flex items-center gap-1">
+                                        <button type="button" @click="focusZoneOnMap(zone.id)" class="flex min-w-0 flex-1 items-center gap-2 text-left">
+                                            <span class="map-zone-dot" :style="{ backgroundColor: zone.color }"></span>
+                                            <span class="min-w-0 flex-1">
+                                                <span class="console-row-title block truncate" x-text="zone.name"></span>
+                                                <span class="console-meta" x-text="`${zone.sites.length} sites · ${zone.guards.length} guards`"></span>
+                                            </span>
+                                        </button>
+                                        <button type="button" @click.stop="toggleZone(zone.id)" class="p-1 text-slate-400 hover:text-slate-600" title="Expand">
+                                            <svg class="h-3 w-3 transition-transform" :class="isZoneExpanded(zone.id) ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
+                                        </button>
+                                    </div>
+                                    <div x-show="isZoneExpanded(zone.id)"
+                                         x-transition:enter="transition ease-out duration-150"
+                                         x-transition:enter-start="opacity-0"
+                                         x-transition:enter-end="opacity-100"
+                                         class="map-zone-body">
+                                        <template x-if="zone.sites.length > 0">
+                                            <div class="map-zone-group">
+                                                <p class="map-zone-group-label">Sites</p>
+                                                <template x-for="site in zone.sites" :key="site.id">
+                                                    <button type="button" @click="selectSite(site)" class="map-zone-row">
+                                                        <div class="min-w-0">
+                                                            <p class="console-row-title truncate" x-text="site.name"></p>
+                                                            <p class="console-meta truncate" x-text="[site.city, site.state].filter(Boolean).join(', ') || 'No address'"></p>
+                                                        </div>
+                                                        <span class="badge-console shrink-0"
+                                                              :class="site.is_online ? 'badge-console-emerald' : 'badge-console-red'"
+                                                              x-text="site.is_online ? 'Online' : 'Offline'"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </template>
+                                        <template x-if="zone.guards.length > 0">
+                                            <div class="map-zone-group">
+                                                <p class="map-zone-group-label">Guards</p>
+                                                <template x-for="guard in zone.guards" :key="guard.id">
+                                                    <button type="button" @click="focusGuard(guard)" class="map-zone-row">
+                                                        <div class="min-w-0">
+                                                            <p class="console-row-title truncate" x-text="guard.name"></p>
+                                                            <p class="console-meta truncate" x-text="guard.site + ' · ' + guard.post"></p>
+                                                        </div>
+                                                        <span class="badge-console shrink-0"
+                                                              :class="guard.open_panic ? 'badge-console-red' : (guard.active_dispatch ? 'badge-console-amber' : 'badge-console-emerald')"
+                                                              x-text="guard.open_panic ? 'SOS' : (guard.active_dispatch ? 'Dispatch' : 'On post')"></span>
+                                                    </button>
+                                                </template>
+                                            </div>
+                                        </template>
+                                    </div>
+                                </div>
+                            </template>
+                        </div>
+                        <a href="{% url 'dashboard:guarding-dispatch' %}" class="console-panel-link">Dispatch desk →</a>
+                    </div>
+
+                    <div class="map-panel-section">
+                        <p class="console-label">Filters</p>
+                        <label class="map-filter-row cursor-pointer">
+                            <span class="console-meta flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Operational (<span x-text="stats.operational"></span>)</span>
+                            <input type="checkbox" x-model="filters.operational" @change="applySearch" class="h-3 w-3 rounded text-brand focus:ring-brand">
+                        </label>
+                        <label class="map-filter-row cursor-pointer">
+                            <span class="console-meta flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>Blocked (<span x-text="stats.blocked"></span>)</span>
+                            <input type="checkbox" x-model="filters.blocked" @change="applySearch" class="h-3 w-3 rounded text-brand focus:ring-brand">
+                        </label>
+                        <label class="map-filter-row cursor-pointer">
+                            <span class="console-meta flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-cyan-500"></span>Online (<span x-text="stats.online"></span>)</span>
+                            <input type="checkbox" x-model="filters.online" @change="applySearch" class="h-3 w-3 rounded text-brand focus:ring-brand">
+                        </label>
+                        <label class="map-filter-row cursor-pointer">
+                            <span class="console-meta flex items-center gap-2"><span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>Offline (<span x-text="stats.offline"></span>)</span>
+                            <input type="checkbox" x-model="filters.offline" @change="applySearch" class="h-3 w-3 rounded text-brand focus:ring-brand">
+                        </label>
+                    </div>
+
+                    <div class="map-panel-section">
+                        <div class="flex items-center justify-between gap-2">
+                            <p class="console-label">Legend</p>
+                            <button type="button" @click="showLegend = !showLegend" class="console-segment-link" x-text="showLegend ? 'Hide' : 'Show'"></button>
+                        </div>
+                        <div x-show="showLegend" x-transition class="map-legend-grid">
+                            <template x-for="item in sceneLegend" :key="item.label">
+                                <div class="map-legend-item">
+                                    <div class="shrink-0" x-html="item.icon"></div>
+                                    <span class="console-meta text-slate-600 dark:text-slate-300" x-text="item.label"></span>
+                                </div>
+                            </template>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2 pt-1">
+                        <button type="button" @click="resetFilters" class="btn-console-secondary flex-1 justify-center py-1.5">Reset</button>
+                        <button type="button" @click="resetView" class="btn-console-secondary flex-1 justify-center py-1.5">Fit view</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Snapshot -->
+            <!-- <div class="glass-panel">
+                <div class="flex items-end justify-between mb-2">
+                    <span class="text-[10px] font-semibold text-slate-900">System Health</span>
+                    <span class="text-xs font-semibold text-brand" x-text="healthPercentage + '%'"></span>
+                </div>
+                <div class="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                    <div class="h-full bg-brand transition-all duration-500"
+                        :style="'width: ' + healthPercentage + '%'"></div>
+                </div>
+            </div> -->
+        </div>
+    </div>
+</div>
+
+{{ sites_data|json_script:"sites-data" }}
+{{ zones_data|json_script:"zones-data" }}
+{{ emergencies_data|json_script:"emergencies-data" }}
+{{ guards_data|json_script:"guards-data" }}
+{{ guard_snapshot|json_script:"guard-snapshot-data" }}
+{% endblock %}
+
+{% block extra_scripts %}
+<!-- Leaflet JS Libraries -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+    integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
+
+<script>
+    function mapController() {
+        return {
+            map: null,
+            markerCluster: null,
+            emergencyLayer: null,
+            guardLayer: null,
+            allMarkers: [],
+            allSites: [],
+            zones: [],
+            expandedZones: {},
+            activeZoneFilter: null,
+            emergencyMarkers: [],
+            allGuardMarkers: [],
+            visibleGuards: [],
+            searchQuery: '',
+            theme: 'voyager',
+            showLegend: false,
+            panelOpen: true,
+            sceneLegend: [],
+            visibleCount: 0,
+            guardStats: {
+                on_duty: 0,
+                on_map: 0,
+                open_panic: 0,
+                active_dispatch: 0,
+            },
+            filters: {
+                operational: true,
+                blocked: true,
+                online: true,
+                offline: true,
+                showSites: true,
+                showGuards: true,
+            },
+            stats: {
+                total: 0,
+                operational: 0,
+                blocked: 0,
+                online: 0,
+                offline: 0,
+                emergencies: 0
+            },
+            healthPercentage: 0,
+            guardPollUrl: '{% url "dashboard:guard-map-poll" %}',
+            guardPollMs: 30000,
+            guardPollHandle: null,
+            guardRefreshing: false,
+            escapeHTML(value) {
+                return String(value || '')
+                    .replaceAll('&', '&amp;')
+                    .replaceAll('<', '&lt;')
+                    .replaceAll('>', '&gt;')
+                    .replaceAll('"', '&quot;')
+                    .replaceAll("'", '&#039;');
+            },
+
+            buildSitePopupHTML(site) {
+                const esc = this.escapeHTML.bind(this);
+                const devices = site.devices || [];
+                const online = devices.filter(d => d.is_online).length;
+                const offline = Math.max(devices.length - online, 0);
+                const address = site.address || [site.city, site.state].filter(Boolean).join(', ') || 'Location not synced';
+                const badge = (text, kind) => `<span class="map-popup-badge map-popup-badge-${kind}">${text}</span>`;
+                const badges = [
+                    badge(site.is_active ? 'Active' : 'Suspended', site.is_active ? 'emerald' : 'slate'),
+                    badge(site.is_online ? 'Online' : 'Offline', site.is_online ? 'emerald' : 'red'),
+                    site.primary_industry ? badge(esc(site.primary_industry), 'slate') : '',
+                ].join('');
+                const deviceRows = devices.slice(0, 4).map(d => {
+                    const statusBadge = d.is_online
+                        ? badge('On', 'emerald')
+                        : badge('Off', 'red');
+                    const model = esc(d.model || 'Panel');
+                    const fw = d.firmware ? ` v${esc(d.firmware)}` : '';
+                    return `<div class="map-site-device-row flex items-center justify-between gap-2">
+                        <div class="min-w-0">
+                            <p class="console-row-title truncate">${esc(d.name || 'Alarm panel')}</p>
+                            <p class="console-meta truncate">${model}${fw}</p>
+                        </div>
+                        ${statusBadge}
+                    </div>`;
+                }).join('');
+                const morePanels = devices.length > 4
+                    ? `<p class="console-meta mt-1 text-right text-[10px]">+${devices.length - 4} more</p>`
+                    : '';
+                const emptyPanels = devices.length === 0
+                    ? '<p class="console-meta py-2 text-center text-slate-400">No panels enrolled</p>'
+                    : `<div class="map-site-device-list divide-y divide-slate-100 dark:divide-slate-800">${deviceRows}</div>${morePanels}`;
+
+                return `<div class="map-site-popup-card">
+                    <div class="border-b border-slate-100 px-2.5 py-2 dark:border-slate-800">
+                        <h3 class="text-[12px] font-semibold leading-tight text-slate-900 dark:text-slate-100">${esc(site.name)}</h3>
+                        <p class="mt-0.5 text-[10px] leading-snug text-slate-500 dark:text-slate-400">${esc(address)}</p>
+                        ${site.zone_name ? `<p class="mt-1 text-[10px] font-medium text-brand">${esc(site.zone_name)}</p>` : ''}
+                        <div class="mt-1.5 flex flex-wrap gap-0.5">${badges}</div>
+                    </div>
+                    <div class="space-y-2 px-2.5 py-2">
+                        <div class="map-popup-stat-row">
+                            <div class="map-popup-stat"><span class="map-popup-stat-label">Panels</span><span class="map-popup-stat-value">${devices.length}</span></div>
+                            <div class="map-popup-stat"><span class="map-popup-stat-label">Online</span><span class="map-popup-stat-value text-emerald-600">${online}</span></div>
+                            <div class="map-popup-stat"><span class="map-popup-stat-label">Offline</span><span class="map-popup-stat-value text-red-600">${offline}</span></div>
+                        </div>
+                        ${emptyPanels}
+                        <a href="${esc(site.url)}" class="btn-console flex w-full justify-center py-1.5 text-[10px]">Open console</a>
+                    </div>
+                </div>`;
+            },
+
+            searchQueryNormalized() {
+                return this.searchQuery.trim().toLowerCase();
+            },
+
+            guardMatchesSearch(guard) {
+                const q = this.searchQueryNormalized();
+                if (!q) return true;
+                return [guard.name, guard.site, guard.post, guard.zone_name]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase()
+                    .includes(q);
+            },
+
+            sitePassesFilters(site) {
+                const matchesAdmin = (site.is_active && this.filters.operational) || (!site.is_active && this.filters.blocked);
+                const matchesConnect = (site.is_online && this.filters.online) || (!site.is_online && this.filters.offline);
+                return matchesAdmin && matchesConnect;
+            },
+
+            siteMatchesSearch(site) {
+                const q = this.searchQueryNormalized();
+                if (!q) return true;
+                const searchable = [site.name, site.address, site.city, site.state, site.zone_name]
+                    .filter(Boolean)
+                    .join(' ')
+                    .toLowerCase();
+                return searchable.includes(q);
+            },
+
+            isZoneExpanded(zoneId) {
+                return this.expandedZones[zoneId] !== false;
+            },
+
+            toggleZone(zoneId) {
+                this.expandedZones[zoneId] = !this.isZoneExpanded(zoneId);
+            },
+
+            zoneSortOrder(zoneId) {
+                const meta = (this.zones || []).find(z => z.id === zoneId);
+                if (meta) {
+                    return meta.sort_order ?? 0;
+                }
+                return zoneId === '__unassigned__' ? 9999 : 5000;
+            },
+
+            siteMatchesZoneFilter(site) {
+                if (!this.activeZoneFilter) {
+                    return true;
+                }
+                const zoneId = site.zone_id || '__unassigned__';
+                return zoneId === this.activeZoneFilter;
+            },
+
+            guardMatchesZoneFilter(guard) {
+                if (!this.activeZoneFilter) {
+                    return true;
+                }
+                const zoneId = guard.zone_id || '__unassigned__';
+                return zoneId === this.activeZoneFilter;
+            },
+
+            activeZoneLabel() {
+                if (!this.activeZoneFilter) {
+                    return '';
+                }
+                if (this.activeZoneFilter === '__unassigned__') {
+                    return 'Unassigned';
+                }
+                const zone = (this.zones || []).find(z => z.id === this.activeZoneFilter);
+                return zone ? zone.name : 'Zone';
+            },
+
+            activeZoneColor() {
+                if (!this.activeZoneFilter) {
+                    return '#94a3b8';
+                }
+                if (this.activeZoneFilter === '__unassigned__') {
+                    return '#94a3b8';
+                }
+                const zone = (this.zones || []).find(z => z.id === this.activeZoneFilter);
+                return zone ? zone.color : '#6366f1';
+            },
+
+            focusZoneOnMap(zoneId) {
+                this.activeZoneFilter = zoneId;
+                this.expandedZones[zoneId] = true;
+                this.applySearch();
+                this.resetView();
+            },
+
+            clearZoneFilter() {
+                this.activeZoneFilter = null;
+                this.applySearch();
+            },
+
+            get zonePanelEmptyMessage() {
+                if (!this.filters.showSites && !this.filters.showGuards) {
+                    return 'Turn on Sites or Guards to see zone groups.';
+                }
+                if (this.searchQuery.trim() || this.activeZoneFilter) {
+                    return 'No zones match your filters.';
+                }
+                if (!this.zones || this.zones.length === 0) {
+                    return 'Create zones to group sites and guards.';
+                }
+                return 'No sites or guards in any zone yet.';
+            },
+
+            get zonesPanel() {
+                const buckets = {};
+                const ensureBucket = (id, name, color, sortOrder) => {
+                    if (!buckets[id]) {
+                        buckets[id] = { id, name, color, sort_order: sortOrder, sites: [], guards: [] };
+                    }
+                    return buckets[id];
+                };
+
+                if (!this.searchQueryNormalized()) {
+                    (this.zones || []).forEach(z => ensureBucket(z.id, z.name, z.color, z.sort_order ?? 0));
+                }
+                ensureBucket('__unassigned__', 'Unassigned', '#94a3b8', 9999);
+
+                if (this.filters.showSites) {
+                    this.allSites.forEach(site => {
+                        if (!this.sitePassesFilters(site) || !this.siteMatchesSearch(site) || !this.siteMatchesZoneFilter(site)) {
+                            return;
+                        }
+                        const zoneId = site.zone_id || '__unassigned__';
+                        const bucket = ensureBucket(
+                            zoneId,
+                            site.zone_name || 'Unassigned',
+                            site.zone_color || '#94a3b8',
+                            this.zoneSortOrder(zoneId),
+                        );
+                        bucket.sites.push(site);
+                    });
+                }
+
+                if (this.filters.showGuards) {
+                    this.visibleGuards.forEach(guard => {
+                        if (!this.guardMatchesSearch(guard) || !this.guardMatchesZoneFilter(guard)) {
+                            return;
+                        }
+                        const zoneId = guard.zone_id || '__unassigned__';
+                        const bucket = ensureBucket(
+                            zoneId,
+                            guard.zone_name || 'Unassigned',
+                            guard.zone_color || '#94a3b8',
+                            this.zoneSortOrder(zoneId),
+                        );
+                        bucket.guards.push(guard);
+                    });
+                }
+
+                let result = Object.values(buckets).filter(z => {
+                    if (!this.searchQueryNormalized()) {
+                        return z.sites.length > 0 || z.guards.length > 0 || (this.zones || []).some(meta => meta.id === z.id);
+                    }
+                    return z.sites.length > 0 || z.guards.length > 0;
+                });
+
+                if (this.activeZoneFilter) {
+                    result = result.filter(z => z.id === this.activeZoneFilter);
+                }
+
+                return result.sort((a, b) => (a.sort_order - b.sort_order) || a.name.localeCompare(b.name));
+            },
+
+            applySearch() {
+                this.filterMarkers();
+                this.syncGuardLayer();
+            },
+
+            selectSite(site) {
+                const marker = this.allMarkers.find(m => m.siteData.id === site.id);
+                if (!marker) return;
+                const openPopup = () => {
+                    this.map.setView(marker.getLatLng(), Math.max(this.map.getZoom(), 15), { animate: true });
+                    marker.openPopup();
+                };
+                if (this.markerCluster.hasLayer(marker)) {
+                    openPopup();
+                } else {
+                    this.markerCluster.zoomToShowLayer(marker, openPopup);
+                }
+            },
+
+            init() {
+                const rawData = JSON.parse(document.getElementById('sites-data').textContent);
+                const zonesData = JSON.parse(document.getElementById('zones-data').textContent);
+                const emergencyData = JSON.parse(document.getElementById('emergencies-data').textContent);
+                const rawGuards = JSON.parse(document.getElementById('guards-data').textContent);
+                const guardSnapshot = JSON.parse(document.getElementById('guard-snapshot-data').textContent);
+
+                this.allSites = rawData;
+                this.zones = zonesData;
+
+                if (new URLSearchParams(window.location.search).get('focus') === 'guards') {
+                    this.panelOpen = true;
+                    this.filters.showGuards = true;
+                    this.filters.showSites = false;
+                }
+
+                const zoneFocus = new URLSearchParams(window.location.search).get('zone');
+                if (zoneFocus) {
+                    this.panelOpen = true;
+                    this.activeZoneFilter = zoneFocus;
+                    this.expandedZones[zoneFocus] = true;
+                }
+
+                this.guardStats = {
+                    on_duty: guardSnapshot.on_duty_count || 0,
+                    on_map: guardSnapshot.on_map_count || 0,
+                    open_panic: guardSnapshot.open_panic_count || 0,
+                    active_dispatch: guardSnapshot.active_dispatch_count || 0,
+                };
+                this.visibleGuards = rawGuards;
+                this.stats.total = rawData.length;
+                this.stats.emergencies = emergencyData.length;
+                this.stats.operational = rawData.filter(s => s.is_active).length;
+                this.stats.blocked = rawData.filter(s => !s.is_active).length;
+                this.stats.online = rawData.filter(s => s.is_online).length;
+                this.stats.offline = rawData.filter(s => !s.is_online).length;
+
+                this.healthPercentage = Math.round((this.stats.online / (this.stats.online + this.stats.offline || 1)) * 100);
+
+                this.map = L.map('map', {
+                    zoomControl: false,
+                    attributionControl: false
+                }).setView([0, 0], 2);
+
+                L.control.zoom({ position: 'bottomright' }).addTo(this.map);
+                this.setTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'voyager');
+
+                new MutationObserver(() => {
+                    this.setTheme(document.documentElement.classList.contains('dark') ? 'dark' : 'voyager');
+                }).observe(document.documentElement, { attributeFilter: ['class'] });
+
+                this.markerCluster = L.markerClusterGroup({
+                    showCoverageOnHover: false,
+                    maxClusterRadius: 50
+                });
+                this.map.addLayer(this.markerCluster);
+                this.emergencyLayer = L.layerGroup().addTo(this.map);
+                this.guardLayer = L.layerGroup().addTo(this.map);
+
+                const escapeHTML = this.escapeHTML.bind(this);
+
+                const sceneMarkerConfig = (scene) => {
+                    const sceneKey = (scene || '').toLowerCase();
+                    const sceneMap = {
+                        house: {
+                            className: 'marker-house',
+                            svg: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5 10.5V20h14v-9.5"/><path d="M10 20v-5h4v5"/>',
+                        },
+                        apartment: {
+                            className: 'marker-apartment',
+                            svg: '<path d="M5 20V6l7-3 7 3v14"/><path d="M9 9h.01"/><path d="M15 9h.01"/><path d="M9 13h.01"/><path d="M15 13h.01"/><path d="M11 20v-3h2v3"/>',
+                        },
+                        villa: {
+                            className: 'marker-villa',
+                            svg: '<path d="M4 12 12 5l8 7"/><path d="M6 11v9h12v-9"/><path d="M9 20v-4h6v4"/><path d="M8 7h8"/>',
+                        },
+                        commercial: {
+                            className: 'marker-commercial',
+                            svg: '<path d="M4 9h16"/><path d="M6 9V6h12v3"/><path d="M5 9v10h14V9"/><path d="M9 19v-5h6v5"/>',
+                        },
+                        store: {
+                            className: 'marker-store',
+                            svg: '<path d="M4 8h16l-1 4H5l-1-4Z"/><path d="M6 12v8h12v-8"/><path d="M9 16h2"/><path d="M13 16h2"/>',
+                        },
+                        office: {
+                            className: 'marker-office',
+                            svg: '<path d="M5 20V5h14v15"/><path d="M9 9h.01"/><path d="M15 9h.01"/><path d="M9 13h.01"/><path d="M15 13h.01"/><path d="M11 20v-4h2v4"/>',
+                        },
+                        factory: {
+                            className: 'marker-factory',
+                            svg: '<path d="M4 20V9l5 3V9l5 3V5l5 3v12"/><path d="M4 20h16"/>',
+                        },
+                        hotel: {
+                            className: 'marker-hotel',
+                            svg: '<path d="M7 20V5"/><path d="M17 20V5"/><path d="M7 12h10"/><path d="M10 8v8"/><path d="M14 8v8"/>',
+                        },
+                        pharmacy: {
+                            className: 'marker-pharmacy',
+                            svg: '<path d="M12 6v12"/><path d="M6 12h12"/>',
+                        },
+                        restaurant: {
+                            className: 'marker-restaurant',
+                            svg: '<path d="M8 5v7"/><path d="M6 5v4"/><path d="M10 5v4"/><path d="M8 12v7"/><path d="M15 5v14"/><path d="M15 5c2 0 3 2 3 4s-1 4-3 4"/>',
+                        },
+                        community: {
+                            className: 'marker-community',
+                            svg: '<path d="M7 18v-1a3 3 0 0 1 3-3h4a3 3 0 0 1 3 3v1"/><path d="M9 9a3 3 0 1 0 0-.01"/><path d="M15 9a3 3 0 1 0 0-.01"/>',
+                        },
+                        school: {
+                            className: 'marker-school',
+                            svg: '<path d="m3 9 9-4 9 4-9 4-9-4Z"/><path d="M7 11v4c0 1.5 2.5 3 5 3s5-1.5 5-3v-4"/><path d="M21 10v5"/>',
+                        },
+                        other: {
+                            className: 'marker-offline',
+                            svg: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+                        },
+                    };
+                    const aliases = {
+                        residential: 'house',
+                        industrial: 'factory',
+                        infrastructure: 'community',
+                        phamacy: 'pharmacy',
+                    };
+                    return sceneMap[aliases[sceneKey] || sceneKey] || sceneMap.other;
+                };
+
+                this.sceneLegend = [
+                    'House',
+                    'Apartment',
+                    'Villa',
+                    'Commercial',
+                    'Store',
+                    'Office',
+                    'Factory',
+                    'Hotel',
+                    'Pharmacy',
+                    'Restaurant',
+                    'Community',
+                    'School',
+                    'Other',
+                ].map(label => {
+                    const config = sceneMarkerConfig(label);
+                    return {
+                        label,
+                        icon: `<div class="custom-marker ${config.className}" style="width:28px;height:28px;border-width:0;box-shadow:none;">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">${config.svg}</svg>
+                        </div>`,
+                    };
+                });
+
+                this.allMarkers = rawData.map(site => {
+                    const sceneConfig = sceneMarkerConfig(site.primary_industry);
+                    let markerClass = sceneConfig.className;
+                    if (!site.is_active) markerClass = 'marker-suspended';
+                    else if (!site.primary_industry && site.is_online) markerClass = 'marker-online';
+                    else if (!site.primary_industry && !site.is_online) markerClass = 'marker-offline';
+
+                    const zoneRingStyle = site.zone_color
+                        ? ` style="box-shadow: 0 0 0 3px ${site.zone_color}, 0 4px 12px rgba(15, 23, 42, 0.2);"`
+                        : '';
+
+                    const icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div class="custom-marker ${markerClass}"${zoneRingStyle}>
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">${sceneConfig.svg}</svg>
+                              </div>`,
+                        iconSize: [34, 34],
+                        iconAnchor: [17, 34],
+                        popupAnchor: [0, -34]
+                    });
+
+                    const marker = L.marker([site.lat, site.lng], { icon });
+                    marker.siteData = site;
+                    marker.bindPopup(this.buildSitePopupHTML(site), {
+                        className: 'map-site-popup',
+                        maxWidth: 260,
+                        minWidth: 220,
+                        autoPan: true,
+                        keepInView: true,
+                    });
+                    marker.on('click', (e) => {
+                        L.DomEvent.stopPropagation(e);
+                        this.selectSite(site);
+                    });
+
+                    return marker;
+                });
+
+                this.emergencyMarkers = emergencyData.map(item => {
+                    const icon = L.divIcon({
+                        className: 'custom-div-icon',
+                        html: `<div class="custom-marker marker-emergency">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
+                              </div>`,
+                        iconSize: [34, 34],
+                        iconAnchor: [17, 34],
+                        popupAnchor: [0, -34]
+                    });
+                    const marker = L.marker([item.lat, item.lng], { icon });
+                    const customer = escapeHTML(item.customer);
+                    const site = escapeHTML(item.site);
+                    const status = escapeHTML(item.status);
+                    const dispatchUrl = escapeHTML(item.url);
+                    const mapsUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(item.lat)},${encodeURIComponent(item.lng)}`;
+                    marker.bindPopup(`
+                        <div class="console-table-card overflow-hidden rounded-xl shadow-2xl border-red-200">
+                            <div class="bg-red-600 px-4 py-4 text-white">
+                                <h4 class="text-[14px] font-semibold tracking-tight leading-none m-0">Emergency Request</h4>
+                                <p class="mt-2 console-label text-red-100">${status}</p>
+                            </div>
+                            <div class="p-4 space-y-3 bg-white">
+                                <div>
+                                    <p class="text-[11px] font-semibold text-slate-900">${customer}</p>
+                                    <p class="text-[10px] font-bold text-slate-500">${site}</p>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <a href="${dispatchUrl}" class="flex-1 flex items-center justify-center py-2.5 bg-red-600 text-white rounded-lg console-label hover:bg-red-700">Dispatch</a>
+                                    <a href="${mapsUrl}" target="_blank" rel="noopener" class="btn-console-danger justify-center py-2.5 text-[10px]">Maps</a>
+                                </div>
+                            </div>
+                        </div>
+                    `);
+                    marker.addTo(this.emergencyLayer);
+                    return marker;
+                });
+
+                this.allGuardMarkers = rawGuards.map(guard => this.createGuardMarker(guard));
+
+                this.syncGuardLayer();
+                this.filterMarkers();
+                this.resetView();
+                this.startGuardPoll();
+
+                this.map.on('click', () => this.map.closePopup());
+            },
+
+            createGuardMarker(guard) {
+                let markerClass = 'marker-guard-ok';
+                if (guard.open_panic) markerClass = 'marker-guard-sos';
+                else if (guard.active_dispatch) markerClass = 'marker-guard-dispatch';
+
+                const icon = L.divIcon({
+                    className: 'custom-div-icon',
+                    html: `<div class="custom-marker ${markerClass}">
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
+                          </div>`,
+                    iconSize: [34, 34],
+                    iconAnchor: [17, 34],
+                    popupAnchor: [0, -34]
+                });
+
+                const marker = L.marker([guard.lat, guard.lng], { icon });
+                marker.guardData = guard;
+
+                const statusLabel = guard.open_panic ? 'SOS open' : (guard.active_dispatch ? 'On dispatch' : 'On post');
+                const statusClass = guard.open_panic ? 'text-red-600' : (guard.active_dispatch ? 'text-amber-600' : 'text-emerald-600');
+                marker.bindPopup(`
+                    <div class="console-table-card overflow-hidden rounded-xl shadow-2xl">
+                        <div class="bg-slate-900 px-4 py-4 text-white border-b border-slate-800">
+                            <h4 class="text-[14px] font-semibold tracking-tight leading-none m-0">${this.escapeHTML(guard.name)}</h4>
+                            <p class="mt-2 console-meta text-slate-300">${this.escapeHTML(guard.site)} · ${this.escapeHTML(guard.post)}</p>
+                        </div>
+                        <div class="p-4 space-y-3 bg-white">
+                            <p class="text-[11px] font-semibold ${statusClass}">${statusLabel}</p>
+                            ${guard.last_ping_label ? `<p class="console-meta">Last ping ${this.escapeHTML(guard.last_ping_label)}</p>` : ''}
+                            <a href="${this.escapeHTML(guard.dispatch_url)}" class="btn-console w-full justify-center py-2 text-[10px]">Dispatch desk</a>
+                        </div>
+                    </div>
+                `);
+                return marker;
+            },
+
+            rebuildGuardMarkers(rawGuards) {
+                this.allGuardMarkers = (rawGuards || []).map(guard => this.createGuardMarker(guard));
+                this.syncGuardLayer();
+            },
+
+            applyGuardPayload(data) {
+                const snapshot = data.snapshot || {};
+                this.guardStats = {
+                    on_duty: snapshot.on_duty_count || 0,
+                    on_map: snapshot.on_map_count || 0,
+                    open_panic: snapshot.open_panic_count || 0,
+                    active_dispatch: snapshot.active_dispatch_count || 0,
+                };
+                this.visibleGuards = data.guards || [];
+                this.rebuildGuardMarkers(data.guards || []);
+            },
+
+            startGuardPoll() {
+                if (this.guardPollHandle) return;
+                this.guardPollHandle = setInterval(() => this.refreshGuards(), this.guardPollMs);
+            },
+
+            async refreshGuards() {
+                if (this.guardRefreshing) return;
+                this.guardRefreshing = true;
+                try {
+                    const resp = await fetch(this.guardPollUrl, {
+                        credentials: 'same-origin',
+                        headers: { 'Accept': 'application/json' },
+                    });
+                    if (!resp.ok) return;
+                    this.applyGuardPayload(await resp.json());
+                } catch (_) {
+                    // Ignore transient poll failures
+                } finally {
+                    this.guardRefreshing = false;
+                }
+            },
+
+            syncGuardLayer() {
+                this.guardLayer.clearLayers();
+                if (!this.filters.showGuards) {
+                    return;
+                }
+                this.allGuardMarkers.forEach(marker => {
+                    if (this.guardMatchesSearch(marker.guardData) && this.guardMatchesZoneFilter(marker.guardData)) {
+                        marker.addTo(this.guardLayer);
+                    }
+                });
+            },
+
+            focusGuard(guard) {
+                const marker = this.allGuardMarkers.find(m => m.guardData.id === guard.id);
+                if (!marker) return;
+                this.map.setView(marker.getLatLng(), 16);
+                marker.openPopup();
+            },
+
+            setTheme(theme) {
+                this.theme = theme;
+                if (this.baseLayer) this.map.removeLayer(this.baseLayer);
+
+                const url = theme === 'dark'
+                    ? 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+                    : 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png';
+
+                this.baseLayer = L.tileLayer(url, { maxZoom: 20 }).addTo(this.map);
+            },
+
+            filterMarkers() {
+                this.markerCluster.clearLayers();
+                const query = this.searchQueryNormalized();
+
+                if (this.filters.showSites) {
+                    const filtered = this.allMarkers.filter(m => {
+                        const s = m.siteData;
+                        const matchesAdmin = (s.is_active && this.filters.operational) || (!s.is_active && this.filters.blocked);
+                        const matchesConnect = (s.is_online && this.filters.online) || (!s.is_online && this.filters.offline);
+                        const searchableFields = [
+                            s.name,
+                            s.address,
+                            s.city,
+                            s.state,
+                            s.zone_name,
+                        ].filter(Boolean).join(' ').toLowerCase();
+                        const matchesSearch = !query || searchableFields.includes(query);
+                        return matchesAdmin && matchesConnect && matchesSearch && this.siteMatchesZoneFilter(s);
+                    });
+
+                    this.visibleCount = filtered.length;
+                    this.markerCluster.addLayers(filtered);
+                } else {
+                    this.visibleCount = 0;
+                }
+
+                this.map.closePopup();
+            },
+
+            resetFilters() {
+                this.searchQuery = '';
+                this.activeZoneFilter = null;
+                this.map.closePopup();
+                this.filters.operational = true;
+                this.filters.blocked = true;
+                this.filters.online = true;
+                this.filters.offline = true;
+                this.filters.showSites = true;
+                this.filters.showGuards = true;
+                this.syncGuardLayer();
+                this.filterMarkers();
+                this.resetView();
+            },
+
+            resetView() {
+                const groups = [];
+                if (this.filters.showSites && this.markerCluster.getLayers().length > 0) {
+                    groups.push(this.markerCluster.getBounds());
+                }
+                if (this.emergencyMarkers.length > 0) {
+                    groups.push(L.featureGroup(this.emergencyMarkers).getBounds());
+                }
+                if (this.filters.showGuards) {
+                    const visibleGuards = this.allGuardMarkers.filter(m =>
+                        this.guardMatchesSearch(m.guardData) && this.guardMatchesZoneFilter(m.guardData)
+                    );
+                    if (visibleGuards.length > 0) {
+                        groups.push(L.featureGroup(visibleGuards).getBounds());
+                    }
+                }
+                if (groups.length > 0) {
+                    let bounds = groups[0];
+                    for (let i = 1; i < groups.length; i++) {
+                        bounds.extend(groups[i]);
+                    }
+                    this.map.fitBounds(bounds.pad(0.2));
+                } else {
+                    this.map.setView([0, 0], 2);
+                }
+            }
+        };
+    }
+</script>
+{% endblock %}

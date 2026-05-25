@@ -76,6 +76,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.dashboard.context_processors.global_dashboard_stats",
+                "apps.accounts.context_processors.console_rbac",
             ],
         },
     },
@@ -222,6 +223,10 @@ CELERY_BEAT_SCHEDULE = {
     "run-guarding-automation": {
         "task": "apps.guarding.tasks.run_guarding_automation",
         "schedule": 60.0,
+    },
+    "purge-guard-location-pings": {
+        "task": "apps.guarding.tasks.purge_old_guard_location_pings",
+        "schedule": 86400.0,
     },
 }
 

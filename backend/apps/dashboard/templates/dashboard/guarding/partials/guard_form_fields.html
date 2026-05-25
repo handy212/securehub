@@ -1,0 +1,144 @@
+{# Expects: guard (optional), statuses, gender_choices, marital_status_choices, users, supervisors #}
+<div class="guarding-form-fields space-y-4">
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="Identity & employment" subtitle="Employee ID, status, and reporting line." %}
+        <div class="grid gap-3 sm:grid-cols-3">
+            <div class="form-group">
+                <label>Employee number *</label>
+                <input name="employee_number" value="{% if guard %}{{ guard.employee_number }}{% endif %}" required {% if not guard %}data-modal-initial-focus{% endif %}>
+            </div>
+            <div class="form-group">
+                <label>First name *</label>
+                <input name="first_name" value="{% if guard %}{{ guard.first_name }}{% endif %}" required>
+            </div>
+            <div class="form-group">
+                <label>Last name *</label>
+                <input name="last_name" value="{% if guard %}{{ guard.last_name }}{% endif %}" required>
+            </div>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-3">
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status">{% for value,label in statuses %}<option value="{{ value }}" {% if guard %}{% if guard.status == value %}selected{% endif %}{% elif value == 'inactive' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+            <div class="form-group">
+                <label>Hire date</label>
+                <input name="hire_date" type="date" value="{% if guard and guard.hire_date %}{{ guard.hire_date|date:'Y-m-d' }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label>Termination date</label>
+                <input name="termination_date" type="date" value="{% if guard and guard.termination_date %}{{ guard.termination_date|date:'Y-m-d' }}{% endif %}">
+            </div>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-2">
+            <div class="form-group">
+                <label>Login user</label>
+                <select name="user_id"><option value="">No login user</option>{% for u in users %}<option value="{{ u.id }}" {% if guard and guard.user_id == u.id %}selected{% endif %}>{{ u.username }}</option>{% endfor %}</select>
+            </div>
+            <div class="form-group">
+                <label>Supervisor</label>
+                <select name="supervisor_id"><option value="">No supervisor</option>{% for u in supervisors %}<option value="{{ u.id }}" {% if guard and guard.supervisor_id == u.id %}selected{% endif %}>{{ u.username }}</option>{% endfor %}</select>
+            </div>
+        </div>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="Personal & contact" %}
+        <div class="grid gap-2 sm:grid-cols-2">
+            <div class="form-group">
+                <label>Phone</label>
+                <input name="phone_number" value="{% if guard %}{{ guard.phone_number }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label>Alternate phone</label>
+                <input name="alternate_phone" value="{% if guard and guard.metadata.alternate_phone %}{{ guard.metadata.alternate_phone }}{% endif %}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input name="email" type="email" value="{% if guard %}{{ guard.email }}{% endif %}">
+        </div>
+        <div class="grid gap-2 sm:grid-cols-3">
+            <div class="form-group">
+                <label>Date of birth</label>
+                <input name="date_of_birth" type="date" value="{% if guard and guard.metadata.date_of_birth %}{{ guard.metadata.date_of_birth }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label>Gender</label>
+                <select name="gender"><option value="">—</option>{% for value,label in gender_choices %}<option value="{{ value }}" {% if guard and guard.metadata.gender == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+            <div class="form-group">
+                <label>Marital status</label>
+                <select name="marital_status"><option value="">—</option>{% for value,label in marital_status_choices %}<option value="{{ value }}" {% if guard and guard.metadata.marital_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+        </div>
+        <div class="grid gap-2 sm:grid-cols-2">
+            <div class="form-group">
+                <label>Nationality</label>
+                <input name="nationality" value="{% if guard and guard.metadata.nationality %}{{ guard.metadata.nationality }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label>Ghana Card / National ID</label>
+                <input name="national_id" value="{% if guard and guard.metadata.national_id %}{{ guard.metadata.national_id }}{% endif %}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Home address</label>
+            <input name="home_address" value="{% if guard %}{{ guard.home_address }}{% endif %}" class="w-full">
+        </div>
+        <div class="grid gap-2 sm:grid-cols-3">
+            <div class="form-group">
+                <label>City</label>
+                <input name="city" value="{% if guard and guard.metadata.city %}{{ guard.metadata.city }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label>Country</label>
+                <input name="country" value="{% if guard and guard.metadata.country %}{{ guard.metadata.country }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label>GPS address</label>
+                <input name="gps_address" value="{% if guard and guard.metadata.gps_address %}{{ guard.metadata.gps_address }}{% endif %}">
+            </div>
+        </div>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="Emergency contact" %}
+        <div class="grid gap-2 sm:grid-cols-2">
+            <div class="form-group">
+                <label>Full name</label>
+                <input name="emergency_contact_name" value="{% if guard %}{{ guard.emergency_contact_name }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label>Relationship</label>
+                <input name="emergency_contact_relationship" value="{% if guard and guard.metadata.emergency_contact_relationship %}{{ guard.metadata.emergency_contact_relationship }}{% endif %}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Phone</label>
+            <input name="emergency_contact_phone" value="{% if guard %}{{ guard.emergency_contact_phone }}{% endif %}">
+        </div>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="HR details" %}
+        <div class="grid gap-2 sm:grid-cols-3">
+            <div class="form-group">
+                <label>Assigned branch</label>
+                <input name="assigned_branch" value="{% if guard and guard.metadata.assigned_branch %}{{ guard.metadata.assigned_branch }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label>Uniform size</label>
+                <input name="uniform_size" value="{% if guard and guard.metadata.uniform_size %}{{ guard.metadata.uniform_size }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label>Interview score</label>
+                <input name="interview_score" value="{% if guard and guard.metadata.interview_score %}{{ guard.metadata.interview_score }}{% endif %}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Salary expectation</label>
+            <input name="salary_expectation" value="{% if guard and guard.metadata.salary_expectation %}{{ guard.metadata.salary_expectation }}{% endif %}">
+        </div>
+        <div class="form-group">
+            <label>Internal notes</label>
+            <textarea name="notes" class="w-full">{% if guard %}{{ guard.notes }}{% endif %}</textarea>
+        </div>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+</div>

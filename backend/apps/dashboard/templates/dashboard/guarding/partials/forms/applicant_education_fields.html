@@ -1,0 +1,17 @@
+{# Pass edu= when editing #}
+<div class="form-group">
+    <label>Education level *</label>
+    <input name="education_level" required value="{% if edu %}{{ edu.education_level }}{% endif %}" {% if not edu %}data-modal-initial-focus{% endif %}>
+</div>
+<div class="form-group">
+    <label>Institution</label>
+    <input name="institution_name" value="{% if edu %}{{ edu.institution_name }}{% endif %}">
+</div>
+<div class="form-group">
+    <label>Year completed</label>
+    <input name="year_completed" type="number" value="{% if edu and edu.year_completed %}{{ edu.year_completed }}{% endif %}">
+</div>
+<div class="form-group">
+    <label>Certificates obtained</label>
+    <textarea name="certificates_obtained" class="w-full">{% if edu %}{{ edu.certificates_obtained }}{% endif %}</textarea>
+</div>

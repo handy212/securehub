@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/auth/auth_notifier.dart';
@@ -47,7 +46,7 @@ class AccountSuspendedScreen extends ConsumerWidget {
                   Text(
                     'SYSTEM ALERT',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w800,
                       color: AppTheme.error,
@@ -58,7 +57,7 @@ class AccountSuspendedScreen extends ConsumerWidget {
                   Text(
                     'Account Suspended',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.w800,
                       color: AppTheme.primary,
@@ -76,7 +75,7 @@ class AccountSuspendedScreen extends ConsumerWidget {
                     child: Text(
                       'Your security monitoring has been temporarily suspended due to an outstanding balance on your account.\n\nTo restore immediate protection and access to your sites, please contact your service provider to settle any overdue payments.',
                       textAlign: TextAlign.center,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: AppTheme.onSurfaceVariant,
                         fontSize: 15,
                         height: 1.6,
@@ -106,7 +105,7 @@ class AccountSuspendedScreen extends ConsumerWidget {
                   const SizedBox(height: 32),
                   Text(
                     'SECURE HUB',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 10,
                       fontWeight: FontWeight.w700,
                       color: AppTheme.outlineVariant,
@@ -151,7 +150,7 @@ class AccountSuspendedScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               Text(
                 'Restore Service',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                   color: AppTheme.primary,
@@ -160,7 +159,7 @@ class AccountSuspendedScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(
                 'Contact your provider or control center using the numbers below to settle the account and restore monitoring access.',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.onSurfaceVariant,
                   fontSize: 13,
                   height: 1.5,
@@ -215,7 +214,7 @@ class _SupportNumberTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   number,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: AppTheme.primary,
@@ -233,3 +232,4 @@ class _SupportNumberTile extends StatelessWidget {
     );
   }
 }
+

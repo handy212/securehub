@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'dart:math' as math;
 
 import '../../core/biometric/biometric_lock_service.dart';
@@ -106,7 +105,7 @@ class _LockScreenState extends ConsumerState<LockScreen> with SingleTickerProvid
                           const SizedBox(width: 8),
                           Text(
                             'SECURE HUB',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               color: AppTheme.primary,
                               fontSize: 16,
                               fontWeight: FontWeight.w900,
@@ -174,7 +173,7 @@ class _LockScreenState extends ConsumerState<LockScreen> with SingleTickerProvid
                       child: Text(
                         _failed ? 'IDENTITY NOT VERIFIED' : 'SECURE LOCK ACTIVE',
                         key: ValueKey(_failed),
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           color: _failed ? AppTheme.error : AppTheme.primary,
                           fontSize: 12,
                           fontWeight: FontWeight.w900,
@@ -192,7 +191,7 @@ class _LockScreenState extends ConsumerState<LockScreen> with SingleTickerProvid
                           ? 'Tap the icon to retry identity verification' 
                           : 'Biometric required to access your security telemetry',
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           color: AppTheme.onSurfaceVariant,
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
@@ -229,3 +228,4 @@ class _DotGridPainter extends CustomPainter {
   @override
   bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
+

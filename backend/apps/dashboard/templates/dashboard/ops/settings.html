@@ -1,0 +1,89 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Platform Status | SecureHub{% endblock %}
+{% block header_title %}Platform Status{% endblock %}
+
+{% block content %}
+<div class="space-y-3">
+    <div class="mb-3">
+        {% include "dashboard/partials/console/breadcrumbs.html" with breadcrumb_current="Platform status" %}
+        <div class="console-page-toolbar !mb-0 !pb-2">
+            <div class="flex min-w-0 items-center gap-3">
+                {% include "dashboard/partials/console/page_title_bar.html" with page_title="Platform status" %}
+                <span class="rounded-md bg-brand/10 px-2 py-0.5 text-[11px] font-medium text-brand">Live ops</span>
+            </div>
+            <div class="console-page-actions">
+                <a href="{% url 'dashboard:sites' %}" class="btn-console-secondary">Manage sites</a>
+                <a href="{% url 'dashboard:customer-list' %}" class="btn-console-secondary">Manage customers</a>
+                <a href="{% url 'dashboard:subscriptions' %}" class="btn-console-secondary">Manage billing</a>
+                <a href="{% url 'dashboard:broadcast' %}" class="btn-console-secondary">Manage messaging</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="console-dash-kpi-strip grid-cols-2 lg:grid-cols-4">
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Sites</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ ops_counts.sites }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Subscriptions</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ ops_counts.subscriptions }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Panels</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ ops_counts.devices }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Mobile users</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ ops_counts.mobile_users }}</p>
+        </div>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-4">
+        {% for group in settings_groups %}
+        <section class="console-table-card">
+            <div class="console-card-section-title">
+                <h2 class="console-label">{{ group.title }}</h2>
+            </div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for label, value in group.items %}
+                <div class="console-list-row flex items-center justify-between gap-4">
+                    <span class="console-label">{{ label }}</span>
+                    <span class="text-[11px] font-bold text-slate-800 dark:text-slate-200 text-right break-all">{{ value }}</span>
+                </div>
+                {% endfor %}
+            </div>
+        </section>
+        {% endfor %}
+    </div>
+
+    <section class="console-table-card p-5">
+        <h2 class="console-panel-title mb-4">What Lives Here</h2>
+        <div class="grid md:grid-cols-3 gap-3 text-[11px]">
+            <div class="rounded border border-slate-100 bg-slate-50/70 p-3">
+                <p class="console-label mb-1">Runtime Health</p>
+                <p class="font-medium text-slate-600">Debug state, docs exposure, database engine, and async worker mode.</p>
+            </div>
+            <div class="rounded border border-slate-100 bg-slate-50/70 p-3">
+                <p class="console-label mb-1">Integration Readiness</p>
+                <p class="font-medium text-slate-600">Hik delivery mode, webhook readiness, and messaging service availability.</p>
+            </div>
+            <div class="rounded border border-slate-100 bg-slate-50/70 p-3">
+                <p class="console-label mb-1">Protected Config</p>
+                <p class="font-medium text-slate-600">Secrets and env-backed settings stay outside CRUD so operators cannot accidentally break production from the UI.</p>
+            </div>
+        </div>
+    </section>
+
+    <section class="console-table-card p-5">
+        <h2 class="console-panel-title mb-4">Operator Checklist</h2>
+        <div class="grid md:grid-cols-2 gap-3 text-[11px] font-medium text-slate-700 dark:text-slate-300">
+            <div class="rounded border border-slate-100 bg-slate-50/70 p-3">Run migrations before every deploy.</div>
+            <div class="rounded border border-slate-100 bg-slate-50/70 p-3">Restart Django, Celery worker, and Celery beat after config changes.</div>
+            <div class="rounded border border-slate-100 bg-slate-50/70 p-3">Keep Hik webhook mode and Celery polling mode aligned.</div>
+            <div class="rounded border border-slate-100 bg-slate-50/70 p-3">Remove secrets and runtime artifacts from the repository before release.</div>
+        </div>
+    </section>
+</div>
+{% endblock %}

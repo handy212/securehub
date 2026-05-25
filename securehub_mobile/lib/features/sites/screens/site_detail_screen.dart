@@ -2,8 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:securehub_mobile/core/utils/zone_utils.dart';
+import 'package:sliver_tools/sliver_tools.dart';
 
 import '../../../core/api/exceptions.dart';
 import '../../../core/models/site.dart';
@@ -12,10 +12,14 @@ import '../../alarms/providers/alarm_control_provider.dart';
 import '../../emergency/widgets/emergency_action_card.dart';
 import '../providers/sites_provider.dart';
 import '../widgets/subsystem_card.dart';
-import 'package:sliver_tools/sliver_tools.dart';
 import '../widgets/zone_health_badge.dart';
 import '../../../shared/widgets/app_surfaces.dart';
 import '../../../shared/widgets/shimmer_loading.dart';
+
+// Split widgets
+import '../widgets/site_status_hero.dart';
+import '../widgets/bento_action_button.dart';
+import '../widgets/camera_preview_section.dart';
 
 class SiteDetailScreen extends ConsumerStatefulWidget {
   const SiteDetailScreen({super.key, required this.siteId});
@@ -28,11 +32,6 @@ class SiteDetailScreen extends ConsumerStatefulWidget {
 class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
   final ScrollController _scrollController = ScrollController();
   final GlobalKey _cameraKey = GlobalKey();
-
-  @override
-  void initState() {
-    super.initState();
-  }
 
   @override
   void dispose() {
@@ -94,7 +93,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
         (siteAsync is AsyncError && siteAsync.error is SuspensionException) ||
         (pollAsync is AsyncError && pollAsync.error is SuspensionException);
 
-    // Deduplicate and merge subsystems from Site and SitePoll
+    // Merge logic
     final Map<String, Subsystem> subsystemMap = {};
     if (site != null) {
       for (final s in site.subsystems) {
@@ -118,7 +117,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
     final allSubsystems = subsystemMap.values.toList();
     final allSubsystemIds = subsystemMap.keys.toList();
 
-    // Auto-scroll to cameras if requested via query param
     final verifyParam = GoRouterState.of(context).uri.queryParameters['verify'];
     if (verifyParam == 'true') {
       WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToCameras());
@@ -174,14 +172,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
     );
 
     return Scaffold(
-      backgroundColor:
-          Colors.transparent, // Let MainScaffold backdrop show through
+      backgroundColor: Colors.transparent,
       body: CustomScrollView(
         controller: _scrollController,
         physics: const BouncingScrollPhysics(),
         slivers: [
-          // ── Header Section ──────────────────────────────────────────────
-          // ── Command feedback banner ───────────────────────────────────────
           if (cmdState is CommandSuccess || cmdState is CommandFailed)
             SliverToBoxAdapter(
               child: _CommandBanner(
@@ -196,10 +191,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                     ref.read(alarmControlNotifierProvider.notifier).reset(),
               ),
             ),
-
           if (isSuspended) const SliverToBoxAdapter(child: _LockdownBanner()),
-
-          // ── Status Hero Section ──────────────────────────────────────────
           SliverToBoxAdapter(
             child: Padding(
               padding: EdgeInsets.fromLTRB(
@@ -210,7 +202,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
               ),
               child: Column(
                 children: [
-                  // Status card
                   Container(
                     width: double.infinity,
                     padding: EdgeInsets.all(statusCardPadding),
@@ -221,7 +212,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                     ),
                     child: Column(
                       children: [
-                        _StatusHero(
+                        SiteStatusHero(
                           isArmed: isArmed,
                           hasAlarm: hasAlarm,
                           isSuspended: isSuspended,
@@ -231,7 +222,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                         SizedBox(height: isCompactHeight ? 14 : 20),
                         Text(
                           statusTitle,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             fontSize: statusTitleSize,
                             fontWeight: FontWeight.w700,
                             color: AppTheme.primary,
@@ -241,7 +233,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                         Text(
                           statusSubtitle,
                           textAlign: TextAlign.center,
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
+                            fontFamily: AppTheme.fontFamily,
                             fontSize: statusBodySize,
                             height: 1.5,
                             fontWeight: FontWeight.w600,
@@ -256,13 +249,11 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                     EmergencyActionCard(site: site, triggerContext: 'on_site'),
                     SizedBox(height: isCompactHeight ? 8 : 12),
                   ],
-
-                  // Arm/Disarm bento grid
                   if (!isSuspended) ...[
                     Row(
                       children: [
                         Expanded(
-                          child: _BentoActionButton(
+                          child: BentoActionButton(
                             icon: Icons.exit_to_app_rounded,
                             label: 'Arm Away',
                             isPrimary: isArmedAway,
@@ -287,7 +278,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                         ),
                         SizedBox(width: isCompactWidth ? 8 : 12),
                         Expanded(
-                          child: _BentoActionButton(
+                          child: BentoActionButton(
                             icon: Icons.home_rounded,
                             label: 'Arm Stay',
                             isPrimary: isArmedStay,
@@ -315,7 +306,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                     SizedBox(height: isCompactHeight ? 8 : 12),
                     SizedBox(
                       width: double.infinity,
-                      child: _BentoActionButton(
+                      child: BentoActionButton(
                         icon: Icons.lock_open_rounded,
                         label: 'Disarm',
                         isPrimary: !isArmed,
@@ -338,7 +329,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                     ),
                   ],
                   SizedBox(height: isCompactHeight ? 8 : 12),
-                  _CameraPreviewSection(
+                  CameraPreviewSection(
                     siteId: widget.siteId,
                     key: _cameraKey,
                     videoDevices: site?.videoDevices ?? [],
@@ -349,7 +340,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                       alignment: Alignment.centerLeft,
                       child: Text(
                         '$cameraCount camera feed${cameraCount == 1 ? '' : 's'} available',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
+                          fontFamily: AppTheme.fontFamily,
                           fontSize: 12,
                           color: AppTheme.onSurfaceVariant,
                         ),
@@ -361,8 +353,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
               ),
             ),
           ),
-
-          // ── Areas section ────────────────────────────────────────────────
           siteAsync.when(
             loading: () => MultiSliver(
               children: [
@@ -423,10 +413,6 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                     );
                   },
                 ),
-                // _SliverZoneList(
-                //   allSubsystems: allSubsystems,
-                //   onCameraVerify: _scrollToCameras,
-                // ),
                 const SliverToBoxAdapter(child: SizedBox(height: 120)),
               ],
             ),
@@ -478,9 +464,9 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),
-          title: Text(
+          title: const Text(
             'Open Zones',
-            style: GoogleFonts.abel(
+            style: TextStyle(
               fontWeight: FontWeight.w800,
               color: Colors.red,
             ),
@@ -516,7 +502,7 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
                                   Expanded(
                                     child: Text(
                                       zoneName,
-                                      style: GoogleFonts.inter(
+                                      style: TextStyle(
                                         fontSize: 13,
                                         fontWeight: FontWeight.w600,
                                         color: AppTheme.primary,
@@ -569,12 +555,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
     required List<String> subsystemIds,
     required String action,
   }) async {
-    // Provide tactile feedback on action
     HapticFeedback.mediumImpact();
-
-    await ref
-        .read(alarmControlNotifierProvider.notifier)
-        .sendBulkCommand(
+    await ref.read(alarmControlNotifierProvider.notifier).sendBulkCommand(
           siteId: siteId,
           subsystemIds: subsystemIds,
           action: action,
@@ -582,173 +564,8 @@ class _SiteDetailScreenState extends ConsumerState<SiteDetailScreen> {
   }
 }
 
-// ── Status Hero Widget ────────────────────────────────────────────────────────
-
-class _StatusHero extends StatefulWidget {
-  const _StatusHero({
-    required this.isArmed,
-    required this.hasAlarm,
-    required this.isSuspended,
-    required this.tone,
-    this.compact = false,
-  });
-  final bool isArmed;
-  final bool hasAlarm;
-  final bool isSuspended;
-  final Color tone;
-  final bool compact;
-
-  @override
-  State<_StatusHero> createState() => _StatusHeroState();
-}
-
-class _StatusHeroState extends State<_StatusHero>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _controller;
-  late Animation<double> _animation;
-
-  @override
-  void initState() {
-    super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(seconds: 2),
-    )..repeat(reverse: true);
-    _animation = Tween<double>(
-      begin: 0.0,
-      end: 1.0,
-    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
-  }
-
-  @override
-  void dispose() {
-    _controller.dispose();
-    super.dispose();
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final Color glowColor = widget.tone;
-    final outerSize = widget.compact ? 138.0 : 180.0;
-    final ringSize = widget.compact ? 114.0 : 150.0;
-    final coreSize = widget.compact ? 88.0 : 120.0;
-    final logoPadding = widget.compact ? 16.0 : 22.0;
-    final badgeSize = widget.compact ? 20.0 : 24.0;
-    final badgeInset = widget.compact ? 8.0 : 12.0;
-    final badgeIconSize = widget.compact ? 10.0 : 12.0;
-
-    final IconData statusIcon = widget.isSuspended
-        ? Icons.lock_clock_rounded
-        : (widget.hasAlarm
-              ? Icons.priority_high_rounded
-              : (widget.isArmed
-                    ? Icons.shield_rounded
-                    : Icons.shield_outlined));
-
-    return Stack(
-      alignment: Alignment.center,
-      children: [
-        AnimatedBuilder(
-          animation: _animation,
-          builder: (context, child) {
-            return Container(
-              width: outerSize,
-              height: outerSize,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: glowColor.withValues(alpha: 0.15 * _animation.value),
-                    blurRadius:
-                        (widget.compact ? 28 : 40) +
-                        ((widget.compact ? 12 : 20) * _animation.value),
-                    spreadRadius:
-                        (widget.compact ? 6 : 10) +
-                        ((widget.compact ? 6 : 10) * _animation.value),
-                  ),
-                ],
-              ),
-            );
-          },
-        ),
-        Container(
-          width: ringSize,
-          height: ringSize,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            border: Border.all(
-              color: glowColor.withValues(alpha: 0.1),
-              width: 1,
-            ),
-          ),
-        ),
-        Container(
-          width: coreSize,
-          height: coreSize,
-          decoration: BoxDecoration(
-            color: Colors.white,
-            shape: BoxShape.circle,
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
-              ),
-            ],
-          ),
-          child: ClipOval(
-            child: Stack(
-              children: [
-                Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(logoPadding),
-                    child: Image.asset(
-                      'assets/images/Logo-WhiteBG.png',
-                      fit: BoxFit.contain,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  bottom: badgeInset,
-                  right: badgeInset,
-                  child: Container(
-                    width: badgeSize,
-                    height: badgeSize,
-                    decoration: BoxDecoration(
-                      color: glowColor,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.white,
-                        width: widget.compact ? 2 : 3,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: glowColor.withValues(alpha: 0.4),
-                          blurRadius: 8,
-                        ),
-                      ],
-                    ),
-                    child: Icon(
-                      statusIcon,
-                      color: Colors.white,
-                      size: badgeIconSize,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-// ── Bento Action Button ────────────────────────────────────────────────────────
-
 class _AreasSectionHeader extends StatelessWidget {
   const _AreasSectionHeader({this.count});
-
   final int? count;
 
   @override
@@ -760,7 +577,8 @@ class _AreasSectionHeader extends StatelessWidget {
         children: [
           Text(
             'Areas',
-            style: GoogleFonts.inter(
+            style: TextStyle(
+              fontFamily: AppTheme.fontFamily,
               fontSize: 16,
               fontWeight: FontWeight.w800,
               letterSpacing: -0.6,
@@ -777,7 +595,7 @@ class _AreasSectionHeader extends StatelessWidget {
               ),
               child: Text(
                 count.toString(),
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w900,
                   color: AppTheme.primary,
@@ -786,147 +604,6 @@ class _AreasSectionHeader extends StatelessWidget {
             ),
           ],
         ],
-      ),
-    );
-  }
-}
-
-class _BentoActionButton extends StatefulWidget {
-  const _BentoActionButton({
-    required this.icon,
-    required this.label,
-    required this.isPrimary,
-    required this.onTap,
-    this.isActive = false,
-    this.isFullWidth = false,
-    this.compact = false,
-  });
-  final IconData icon;
-  final String label;
-  final bool isPrimary;
-  final bool isActive;
-  final bool isFullWidth;
-  final bool compact;
-  final VoidCallback? onTap;
-
-  @override
-  State<_BentoActionButton> createState() => _BentoActionButtonState();
-}
-
-class _BentoActionButtonState extends State<_BentoActionButton> {
-  bool _isPressed = false;
-
-  @override
-  Widget build(BuildContext context) {
-    final bool useBrandColor = widget.isActive;
-    final bool isDisarm = widget.label.toLowerCase().contains('disarm');
-
-    final Color activeBg = isDisarm ? AppTheme.secondary : AppTheme.primary;
-    Color activeFg = Colors.white;
-    final buttonHeight = widget.isFullWidth
-        ? (widget.compact ? 54.0 : 64.0)
-        : (widget.compact ? 96.0 : 120.0);
-    final buttonPadding = widget.compact ? 16.0 : 20.0;
-    final iconSize = widget.isFullWidth
-        ? (widget.compact ? 20.0 : 22.0)
-        : (widget.compact ? 24.0 : 28.0);
-    final labelSize = widget.compact ? 13.0 : 15.0;
-
-    return GestureDetector(
-      onTapDown: (_) => setState(() => _isPressed = true),
-      onTapUp: (_) => setState(() => _isPressed = false),
-      onTapCancel: () => setState(() => _isPressed = false),
-      onTap: widget.onTap,
-      child: AnimatedScale(
-        scale: _isPressed ? 0.96 : 1.0,
-        duration: const Duration(milliseconds: 100),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 300),
-          height: buttonHeight,
-          padding: EdgeInsets.all(buttonPadding),
-          decoration: BoxDecoration(
-            gradient: useBrandColor
-                ? LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [activeBg, activeBg.withValues(alpha: 0.8)],
-                  )
-                : (widget.isPrimary
-                      ? const LinearGradient(
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                          colors: [AppTheme.primary, AppTheme.primaryContainer],
-                        )
-                      : null),
-            color: (useBrandColor || widget.isPrimary)
-                ? null
-                : AppTheme.surfaceContainerLowest,
-            borderRadius: BorderRadius.circular(20),
-            boxShadow: _isPressed ? [] : AppTheme.cardShadow,
-            border: Border.all(
-              color: useBrandColor
-                  ? activeBg.withValues(alpha: 0.2)
-                  : (widget.isPrimary
-                        ? Colors.transparent
-                        : AppTheme.outlineVariant.withValues(alpha: 0.1)),
-              width: 1,
-            ),
-          ),
-          child: widget.isFullWidth
-              ? Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Icon(
-                      widget.icon,
-                      color: (useBrandColor || widget.isPrimary)
-                          ? activeFg
-                          : AppTheme.secondary,
-                      size: iconSize,
-                    ),
-                    SizedBox(width: widget.compact ? 8 : 12),
-                    Text(
-                      widget.label,
-                      style: GoogleFonts.inter(
-                        fontWeight: FontWeight.w700,
-                        fontSize: labelSize,
-                        color: (useBrandColor || widget.isPrimary)
-                            ? activeFg
-                            : AppTheme.onSurface,
-                      ),
-                    ),
-                  ],
-                )
-              : Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Icon(
-                      widget.icon,
-                      color: (useBrandColor || widget.isPrimary)
-                          ? activeFg
-                          : AppTheme.secondary,
-                      size: iconSize,
-                    ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.label,
-                          style: GoogleFonts.inter(
-                            fontWeight: FontWeight.w700,
-                            fontSize: labelSize,
-                            color: (useBrandColor || widget.isPrimary)
-                                ? activeFg
-                                : AppTheme.onSurface,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-
-          // ── Sliver Site Body ──────────────────────────────────────────────────────────
-        ),
       ),
     );
   }
@@ -1017,7 +694,8 @@ class _SliverSiteBody extends StatelessWidget {
             ),
             Text(
               'AREA CONTROL',
-              style: GoogleFonts.inter(
+              style: TextStyle(
+                fontFamily: AppTheme.fontFamily,
                 fontSize: 10,
                 fontWeight: FontWeight.w900,
                 letterSpacing: 2,
@@ -1028,7 +706,7 @@ class _SliverSiteBody extends StatelessWidget {
             Text(
               subsystem.name,
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
                 color: AppTheme.primary,
@@ -1110,7 +788,7 @@ class _AreaOptionTile extends StatelessWidget {
             const SizedBox(width: 16),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 14,
                 color: AppTheme.onSurface,
@@ -1128,215 +806,6 @@ class _AreaOptionTile extends StatelessWidget {
     );
   }
 }
-
-// ── Zone List ─────────────────────────────────────────────────────────────────
-
-// ignore: unused_element
-class _SliverZoneList extends StatelessWidget {
-  const _SliverZoneList({
-    required this.allSubsystems,
-    required this.onCameraVerify,
-  });
-  final List<Subsystem> allSubsystems;
-  final VoidCallback onCameraVerify;
-
-  @override
-  Widget build(BuildContext context) {
-    return MultiSliver(
-      children: [
-        for (final sub in allSubsystems) ...[
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 16, 20, 8),
-              child: Text(
-                sub.name.toUpperCase(),
-                style: GoogleFonts.inter(
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 1.5,
-                  color: AppTheme.onSurfaceVariant,
-                ),
-              ),
-            ),
-          ),
-          SliverPadding(
-            padding: const EdgeInsets.symmetric(horizontal: 20),
-            sliver: SliverList(
-              delegate: SliverChildBuilderDelegate((context, i) {
-                final zone = sub.zones[i];
-                final isMotion =
-                    zone.name.toLowerCase().contains('motion') ||
-                    zone.name.toLowerCase().contains('pir');
-
-                return _ZoneTile(
-                  zone: zone,
-                  subsystemName: sub.name,
-                  onCameraLink: isMotion ? onCameraVerify : null,
-                );
-              }, childCount: sub.zones.length),
-            ),
-          ),
-        ],
-      ],
-    );
-  }
-}
-
-class _ZoneTile extends StatelessWidget {
-  const _ZoneTile({
-    required this.zone,
-    required this.subsystemName,
-    this.onCameraLink,
-  });
-  final Zone zone;
-  final String subsystemName;
-  final VoidCallback? onCameraLink;
-
-  @override
-  Widget build(BuildContext context) {
-    final isAlarm = zone.state == 'alarm' || zone.tamper;
-    final isOpen = zone.state == 'open' && !zone.tamper;
-
-    final Color barColor = isAlarm
-        ? AppTheme.error
-        : (isOpen ? AppTheme.onTertiaryContainer : AppTheme.secondary);
-
-    return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: AppTheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          // 4px tonal bar accent
-          Container(
-            width: 4,
-            height: 72,
-            decoration: BoxDecoration(
-              color: barColor,
-              borderRadius: const BorderRadius.horizontal(
-                left: Radius.circular(16),
-              ),
-            ),
-          ),
-          const SizedBox(width: 16),
-          Container(
-            width: 44,
-            height: 44,
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: AppTheme.onSurface.withValues(alpha: 0.05),
-              shape: BoxShape.circle,
-            ),
-            child: Image.asset(
-              ZoneUtils.getDeviceImage(zone.detectorType, zone.name),
-              fit: BoxFit.contain,
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  zone.name,
-                  style: GoogleFonts.inter(
-                    fontWeight: FontWeight.w600,
-                    fontSize: 14,
-                    color: AppTheme.primary,
-                  ),
-                ),
-                const SizedBox(height: 2),
-                Row(
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isAlarm
-                            ? AppTheme.errorContainer
-                            : (isOpen
-                                  ? AppTheme.tertiaryFixed
-                                  : AppTheme.secondaryContainer),
-                        borderRadius: BorderRadius.circular(100),
-                      ),
-                      child: Text(
-                        zone.state.toUpperCase(),
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.5,
-                          color: isAlarm
-                              ? AppTheme.onErrorContainer
-                              : (isOpen
-                                    ? AppTheme.onTertiaryContainer
-                                    : AppTheme.onSecondaryContainer),
-                        ),
-                      ),
-                    ),
-                    if (onCameraLink != null) ...[
-                      const SizedBox(width: 8),
-                      Text(
-                        'Camera available',
-                        style: GoogleFonts.inter(
-                          fontSize: 10,
-                          color: AppTheme.onSurfaceVariant,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ],
-                ),
-              ],
-            ),
-          ),
-          if (onCameraLink != null)
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: IconButton(
-                onPressed: () {
-                  HapticFeedback.lightImpact();
-                  onCameraLink?.call();
-                },
-                icon: const Icon(
-                  Icons.videocam_rounded,
-                  size: 20,
-                  color: AppTheme.primary,
-                ),
-                tooltip: 'Verify with Camera',
-              ),
-            )
-          else
-            Padding(
-              padding: const EdgeInsets.only(right: 12),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Icon(
-                    zone.lowBattery
-                        ? Icons.battery_alert_rounded
-                        : Icons.battery_full_rounded,
-                    size: 16,
-                    color: zone.lowBattery
-                        ? AppTheme.error
-                        : AppTheme.onSurfaceVariant,
-                  ),
-                  const SizedBox(height: 4),
-                  ZoneHealthBadge(zone: zone),
-                ],
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-// ── Command Banner ────────────────────────────────────────────────────────────
 
 class _CommandBanner extends StatelessWidget {
   const _CommandBanner({
@@ -1376,7 +845,7 @@ class _CommandBanner extends StatelessWidget {
               children: [
                 Text(
                   message,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: fg,
                     fontSize: 11,
                     fontWeight: FontWeight.w700,
@@ -1392,7 +861,8 @@ class _CommandBanner extends StatelessWidget {
                     ),
                     child: Text(
                       'Check sensors',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
+                        fontFamily: AppTheme.fontFamily,
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
                         color: fg,
@@ -1412,8 +882,6 @@ class _CommandBanner extends StatelessWidget {
   }
 }
 
-// ── Error Body ────────────────────────────────────────────────────────────────
-
 class _ErrorBody extends StatelessWidget {
   const _ErrorBody({required this.message, required this.onRetry});
   final String message;
@@ -1431,8 +899,6 @@ class _ErrorBody extends StatelessWidget {
     );
   }
 }
-
-// ── Lockdown Banner ───────────────────────────────────────────────────────────
 
 class _LockdownBanner extends StatefulWidget {
   const _LockdownBanner();
@@ -1490,7 +956,7 @@ class _LockdownBannerState extends State<_LockdownBanner>
                   children: [
                     Text(
                       'SERVICE SUSPENDED',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 12,
                         fontWeight: FontWeight.w800,
@@ -1499,7 +965,7 @@ class _LockdownBannerState extends State<_LockdownBanner>
                     ),
                     Text(
                       'Contact your dealer to restore monitoring.',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         color: Colors.white,
                         fontSize: 10,
                         fontWeight: FontWeight.w600,
@@ -1515,239 +981,6 @@ class _LockdownBannerState extends State<_LockdownBanner>
     );
   }
 }
-// ── Camera Section ────────────────────────────────────────────────────────────
 
-class _CameraPreviewSection extends StatelessWidget {
-  const _CameraPreviewSection({
-    super.key,
-    required this.siteId,
-    required this.videoDevices,
-  });
-  final String siteId;
-  final List<VideoDevice> videoDevices;
 
-  @override
-  Widget build(BuildContext context) {
-    if (videoDevices.isEmpty) return const SizedBox.shrink();
 
-    final channels = videoDevices.expand((d) => d.channels).toList();
-    if (channels.isEmpty) return const SizedBox.shrink();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Padding(
-          padding: const EdgeInsets.only(left: 4, bottom: 12),
-          child: Text(
-            'LIVE CAMERAS',
-            style: GoogleFonts.inter(
-              fontSize: 10,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.5,
-              color: AppTheme.onSurfaceVariant,
-            ),
-          ),
-        ),
-        SizedBox(
-          height: 160,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: channels.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 12),
-            itemBuilder: (context, i) =>
-                _CameraCard(siteId: siteId, channel: channels[i]),
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _CameraCard extends StatelessWidget {
-  const _CameraCard({required this.siteId, required this.channel});
-  final String siteId;
-  final VideoChannel channel;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: channel.isOnline
-          ? () {
-              HapticFeedback.lightImpact();
-              context.push(
-                '/camera/$siteId/${channel.id}/${Uri.encodeComponent(channel.name)}',
-              );
-            }
-          : null,
-      child: Container(
-        width: 240,
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceContainerLow,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: AppTheme.cardShadow,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: Stack(
-          children: [
-            // Background / Static Placeholder
-            Positioned.fill(
-              child: Container(
-                color: Colors.black,
-                child: Opacity(
-                  opacity: channel.isOnline ? 0.3 : 0.6,
-                  child: Container(
-                    color: Colors.grey[900],
-                    child: Center(
-                      child: Icon(
-                        Icons.camera_alt_rounded,
-                        color: Colors.white.withValues(alpha: 0.1),
-                        size: 48,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-            if (!channel.isOnline)
-              Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.05),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.videocam_off_rounded,
-                        color: Colors.white54,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'SIGNAL LOST',
-                      style: GoogleFonts.inter(
-                        color: Colors.white.withValues(alpha: 0.4),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 2.0,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      'RECONNECTING...',
-                      style: GoogleFonts.inter(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        fontSize: 8,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 1.0,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            Positioned.fill(
-              child: Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.black.withValues(alpha: 0.1),
-                      Colors.transparent,
-                      Colors.black.withValues(alpha: 0.6),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            // Status Badge
-            Positioned(
-              top: 12,
-              left: 12,
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
-                decoration: BoxDecoration(
-                  color: channel.isOnline
-                      ? AppTheme.error
-                      : Colors.grey.shade800,
-                  borderRadius: BorderRadius.circular(4),
-                ),
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (channel.isOnline)
-                      Container(
-                        width: 5,
-                        height: 5,
-                        decoration: const BoxDecoration(
-                          color: Colors.white,
-                          shape: BoxShape.circle,
-                        ),
-                      ),
-                    if (channel.isOnline) const SizedBox(width: 4),
-                    Text(
-                      channel.isOnline ? 'LIVE' : 'OFFLINE',
-                      style: GoogleFonts.inter(
-                        fontSize: 8,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-            Positioned(
-              bottom: 12,
-              left: 12,
-              right: 12,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    channel.name.toUpperCase(),
-                    style: GoogleFonts.inter(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                    ),
-                  ),
-                  if (channel.isOnline)
-                    Text(
-                      'Tap to open live view',
-                      style: GoogleFonts.inter(
-                        color: Colors.white.withValues(alpha: 0.72),
-                        fontSize: 10,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                ],
-              ),
-            ),
-            if (channel.isOnline)
-              Center(
-                child: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.15),
-                    shape: BoxShape.circle,
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.2),
-                    ),
-                  ),
-                  child: const Icon(
-                    Icons.play_arrow_rounded,
-                    color: Colors.white,
-                    size: 24,
-                  ),
-                ),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}

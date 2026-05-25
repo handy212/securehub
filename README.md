@@ -11,6 +11,22 @@ The workspace now includes:
 - [backend/README.md](/home/dev/SecureHub/backend/README.md) with backend setup notes
 - [mobile/README.md](/home/dev/SecureHub/mobile/README.md) with mobile integration notes
 
+## Documentation
+
+Product and user guides (features, personas, workflows) live in **[docs/README.md](/home/dev/SecureHub/docs/README.md)**:
+
+- [System overview](/home/dev/SecureHub/docs/system-overview.md) — mental model and how modules connect
+- [Feature guide](/home/dev/SecureHub/docs/feature-guide.md) — capability catalog by module
+- [Staff console user guide](/home/dev/SecureHub/docs/user-guide-staff-console.md)
+- [Guarding operations](/home/dev/SecureHub/docs/user-guide-guarding-ops.md)
+- [Field guard (mobile)](/home/dev/SecureHub/docs/user-guide-guard-mobile.md)
+- [Alarm customer (mobile)](/home/dev/SecureHub/docs/user-guide-alarm-customer.md)
+- [Guarding client portal](/home/dev/SecureHub/docs/user-guide-guarding-client.md)
+
+In the running app, staff can read the same guides under **Help** in the console sidebar (`/console/help/`).
+
+Technical references: [operator RBAC](/home/dev/SecureHub/docs/operator-rbac.md), [guard mobile API](/home/dev/SecureHub/docs/guard-mobile-api.md), [emergency runbook](/home/dev/SecureHub/docs/emergency-addon-runbook.md).
+
 ## Product Goal
 
 Build an alarm management platform for intruder alarm systems where:

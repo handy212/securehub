@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/auth/auth_notifier.dart';
 import '../../../core/biometric/biometric_lock_service.dart';
@@ -23,7 +22,7 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           'Profile',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 17,
             letterSpacing: -0.5,
@@ -60,7 +59,7 @@ class ProfileScreen extends ConsumerWidget {
                         profile?.user.lastName,
                         profile?.user.username,
                       ),
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 32,
                         color: AppTheme.onPrimary,
                         fontWeight: FontWeight.w800,
@@ -77,7 +76,7 @@ class ProfileScreen extends ConsumerWidget {
                         ? '${profile.user.firstName} ${profile.user.lastName}'
                               .trim()
                         : profile.user.username,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
@@ -87,7 +86,7 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     '@${profile.user.username}',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       color: AppTheme.onSurfaceVariant,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -118,7 +117,7 @@ class ProfileScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Text(
                           'MONITORED ACCOUNT',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
@@ -195,7 +194,7 @@ class ProfileScreen extends ConsumerWidget {
                 ),
                 title: Text(
                   'Sign out of session',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     color: AppTheme.error,
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
@@ -226,7 +225,7 @@ class ProfileScreen extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         title: Text(
           'Sign Out',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
             color: AppTheme.primary,
             letterSpacing: -0.5,
@@ -234,7 +233,7 @@ class ProfileScreen extends ConsumerWidget {
         ),
         content: Text(
           'Are you sure you want to sign out on this device?',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: AppTheme.onSurfaceVariant,
             fontSize: 14,
             height: 1.4,
@@ -245,7 +244,7 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
               'CANCEL',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
               ),
@@ -350,7 +349,7 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
             'APP SECURITY',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.5,
@@ -378,7 +377,7 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
             ),
             title: Text(
               'Identity verification',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
               ),
@@ -387,7 +386,7 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
               _available
                   ? 'Require Face ID or fingerprint to reopen the app'
                   : 'Require Face ID or fingerprint to reopen the app.',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.onSurfaceVariant,
               ),
@@ -432,7 +431,7 @@ class _SiteSection extends ConsumerWidget {
               padding: const EdgeInsets.only(left: 4, bottom: 12),
               child: Text(
                 'ACTIVE SITE',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
@@ -464,7 +463,7 @@ class _SiteSection extends ConsumerWidget {
                 ),
                 title: Text(
                   selectedSite.name,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),
@@ -473,7 +472,7 @@ class _SiteSection extends ConsumerWidget {
                   selectedSite.city.isNotEmpty
                       ? selectedSite.city
                       : 'Authorized Hub',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppTheme.onSurfaceVariant,
                   ),
@@ -533,7 +532,7 @@ class _SiteSection extends ConsumerWidget {
               const SizedBox(height: 32),
               Text(
                 'SWITCH ACTIVE SITE',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
@@ -572,7 +571,7 @@ class _SiteSection extends ConsumerWidget {
                           ),
                           title: Text(
                             site.name,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontWeight: isSelected
                                   ? FontWeight.w700
                                   : FontWeight.w500,
@@ -622,7 +621,7 @@ class _ProfileSection extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
             title.toUpperCase(),
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.5,
@@ -667,7 +666,7 @@ class _InfoTile extends StatelessWidget {
       ),
       title: Text(
         label,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 11,
           fontWeight: FontWeight.w600,
           color: AppTheme.onSurfaceVariant,
@@ -676,7 +675,7 @@ class _InfoTile extends StatelessWidget {
       ),
       subtitle: Text(
         value,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w700,
           color: AppTheme.primary,
@@ -686,3 +685,4 @@ class _InfoTile extends StatelessWidget {
     );
   }
 }
+

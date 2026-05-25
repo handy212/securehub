@@ -1,67 +1,123 @@
+from django.db import models
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import filters, permissions, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.generics import ListCreateAPIView
+from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
+
+from apps.sites.models import Site
 
 from .models import (
     Checkpoint,
     CheckpointScan,
     ClockEvent,
+    ClientPortalAccess,
     DispatchTask,
     FieldReport,
+    FieldReportAcknowledgement,
     GuardApplicant,
+    GuardApplicantDocument,
+    GuardApplicantEducation,
+    GuardApplicantEmployment,
+    GuardApplicantProfile,
+    GuardApplicantReference,
+    GuardAvailability,
+    GuardContract,
     GuardCredential,
     GuardDocument,
+    GuardEquipmentIssue,
+    GuardInvoice,
+    GuardInvoiceLine,
+    GuardOffboardingChecklist,
+    GuardTimesheet,
+    GuardTrainingRecord,
     GuardingEventLog,
     GuardLocationPing,
     GuardPanicAlert,
     GuardPost,
     GuardProfile,
+    LeaveRequest,
     PatrolRoute,
     PatrolRound,
     PatrolRouteCheckpoint,
     PostOrder,
+    ReportTemplate,
     Shift,
     ShiftAssignment,
+    ShiftSwapRequest,
+    ShiftTemplate,
     WelfareCheck,
 )
 from .serializers import (
     CheckpointScanSerializer,
     CheckpointSerializer,
     ClockEventSerializer,
+    ClientPortalAccessSerializer,
     DispatchTaskSerializer,
+    FieldReportAcknowledgementSerializer,
     FieldReportSerializer,
     GuardApplicantSerializer,
+    GuardApplicantDocumentSerializer,
+    GuardApplicantEducationSerializer,
+    GuardApplicantEmploymentSerializer,
+    GuardApplicantProfileSerializer,
+    GuardApplicantReferenceSerializer,
+    GuardAvailabilitySerializer,
+    GuardContractSerializer,
     GuardCredentialSerializer,
     GuardDocumentSerializer,
+    GuardEquipmentIssueSerializer,
+    GuardInvoiceLineSerializer,
+    GuardInvoiceSerializer,
+    GuardOffboardingChecklistSerializer,
+    GuardTimesheetSerializer,
+    GuardTrainingRecordSerializer,
     GuardingEventLogSerializer,
     GuardLocationPingSerializer,
     GuardPanicAlertSerializer,
     GuardPostSerializer,
     GuardProfileSerializer,
+    LeaveRequestSerializer,
     PatrolRouteSerializer,
+    PatrolRoundMobileSerializer,
     PatrolRoundSerializer,
     PostOrderSerializer,
+    ReportTemplateSerializer,
     ShiftAssignmentSerializer,
     ShiftSerializer,
+    ShiftSwapRequestSerializer,
+    WelfareCheckMobileSerializer,
     WelfareCheckSerializer,
+    ShiftTemplateSerializer,
     PatrolRouteCheckpointSerializer,
 )
 from .services import (
     accept_assignment,
+    acknowledge_field_report,
     acknowledge_panic_alert,
+    assign_dispatch_task,
+    build_checkpoint_scan_response,
+    build_command_center_snapshot,
     complete_patrol_round,
+    create_shift_swap_request,
     decline_assignment,
+    generate_guard_invoice,
+    guard_qualification_gaps,
     hire_applicant,
     mark_assignment_no_show,
+    record_checkpoint_scan,
     respond_to_welfare_check,
     resolve_panic_alert,
+    review_leave_request,
+    review_shift_swap_request,
+    review_timesheet,
     review_field_report,
+    suggest_nearest_guards,
+    transition_guard_invoice,
     transition_dispatch_task,
     transition_patrol_round,
     transition_shift,
@@ -104,9 +160,12 @@ class StaffGuardingViewSet(viewsets.ModelViewSet):
 
 
 class GuardApplicantViewSet(StaffGuardingViewSet):
-    queryset = GuardApplicant.objects.select_related("created_by", "hired_guard")
+    queryset = (
+        GuardApplicant.objects.select_related("created_by", "hired_guard", "profile")
+        .prefetch_related("documents", "education_records", "employment_records", "references")
+    )
     serializer_class = GuardApplicantSerializer
-    search_fields = ["first_name", "last_name", "email", "phone_number", "source"]
+    search_fields = ["first_name", "last_name", "email", "phone_number", "source", "national_id"]
     ordering_fields = ["created_at", "updated_at", "first_name", "last_name", "status"]
     ordering = ["-created_at"]
     query_param_filters = {"status": "status"}
@@ -127,6 +186,48 @@ class GuardApplicantViewSet(StaffGuardingViewSet):
             actor=request.user,
         )
         return Response(GuardProfileSerializer(guard).data, status=status.HTTP_201_CREATED)
+
+
+class GuardApplicantDocumentViewSet(StaffGuardingViewSet):
+    queryset = GuardApplicantDocument.objects.select_related("applicant", "uploaded_by")
+    serializer_class = GuardApplicantDocumentSerializer
+    search_fields = ["title", "reference_number"]
+    ordering = ["-created_at"]
+    query_param_filters = {"applicant": "applicant_id"}
+
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
+
+
+class GuardApplicantEducationViewSet(StaffGuardingViewSet):
+    queryset = GuardApplicantEducation.objects.select_related("applicant")
+    serializer_class = GuardApplicantEducationSerializer
+    search_fields = ["education_level", "institution_name"]
+    ordering = ["-year_completed"]
+    query_param_filters = {"applicant": "applicant_id"}
+
+
+class GuardApplicantEmploymentViewSet(StaffGuardingViewSet):
+    queryset = GuardApplicantEmployment.objects.select_related("applicant")
+    serializer_class = GuardApplicantEmploymentSerializer
+    search_fields = ["company_name", "position"]
+    ordering = ["-started_on"]
+    query_param_filters = {"applicant": "applicant_id"}
+
+
+class GuardApplicantReferenceViewSet(StaffGuardingViewSet):
+    queryset = GuardApplicantReference.objects.select_related("applicant")
+    serializer_class = GuardApplicantReferenceSerializer
+    search_fields = ["full_name", "company", "phone_number"]
+    ordering = ["full_name"]
+    query_param_filters = {"applicant": "applicant_id"}
+
+
+class GuardApplicantProfileViewSet(StaffGuardingViewSet):
+    queryset = GuardApplicantProfile.objects.select_related("applicant")
+    serializer_class = GuardApplicantProfileSerializer
+    ordering = ["-updated_at"]
+    query_param_filters = {"applicant": "applicant_id"}
 
 
 class GuardingEventLogViewSet(viewsets.ReadOnlyModelViewSet):
@@ -155,6 +256,20 @@ class GuardProfileViewSet(StaffGuardingViewSet):
     ordering = ["last_name", "first_name"]
     query_param_filters = {"status": "status", "supervisor": "supervisor_id"}
 
+    @action(detail=True, methods=["get"])
+    def qualification(self, request, pk=None):
+        guard = self.get_object()
+        post = get_object_or_404(GuardPost, pk=request.query_params.get("post"))
+        gaps = guard_qualification_gaps(guard, post)
+        return Response(
+            {
+                "guard": str(guard.id),
+                "post": str(post.id),
+                "qualified": not gaps,
+                "missing": gaps,
+            }
+        )
+
 
 class GuardCredentialViewSet(StaffGuardingViewSet):
     queryset = GuardCredential.objects.select_related("guard")
@@ -177,6 +292,58 @@ class GuardDocumentViewSet(StaffGuardingViewSet):
         serializer.save(uploaded_by=self.request.user)
 
 
+class GuardTrainingRecordViewSet(StaffGuardingViewSet):
+    queryset = GuardTrainingRecord.objects.select_related("guard")
+    serializer_class = GuardTrainingRecordSerializer
+    search_fields = ["name", "provider", "certificate_number", "guard__first_name", "guard__last_name"]
+    ordering_fields = ["expires_on", "completed_on", "status", "name", "created_at"]
+    ordering = ["expires_on", "name"]
+    query_param_filters = {"guard": "guard_id", "status": "status"}
+
+
+class GuardEquipmentIssueViewSet(StaffGuardingViewSet):
+    queryset = GuardEquipmentIssue.objects.select_related("guard", "issued_by")
+    serializer_class = GuardEquipmentIssueSerializer
+    search_fields = ["item_name", "item_code", "guard__first_name", "guard__last_name", "guard__employee_number"]
+    ordering_fields = ["issued_at", "returned_at", "status", "item_name"]
+    ordering = ["-issued_at"]
+    query_param_filters = {"guard": "guard_id", "status": "status"}
+
+    def perform_create(self, serializer):
+        serializer.save(issued_by=self.request.user)
+
+
+class GuardOffboardingChecklistViewSet(StaffGuardingViewSet):
+    queryset = GuardOffboardingChecklist.objects.select_related("guard", "completed_by")
+    serializer_class = GuardOffboardingChecklistSerializer
+    search_fields = ["guard__first_name", "guard__last_name", "guard__employee_number", "exit_notes"]
+    ordering_fields = ["created_at", "updated_at", "completed_at"]
+    ordering = ["-created_at"]
+    query_param_filters = {"guard": "guard_id"}
+
+    @action(detail=True, methods=["post"])
+    def complete(self, request, pk=None):
+        checklist = self.get_object()
+        checklist.equipment_returned = True
+        checklist.documents_archived = True
+        checklist.access_revoked = True
+        checklist.final_timesheet_approved = True
+        checklist.completed_by = request.user
+        checklist.completed_at = timezone.now()
+        checklist.save(
+            update_fields=[
+                "equipment_returned",
+                "documents_archived",
+                "access_revoked",
+                "final_timesheet_approved",
+                "completed_by",
+                "completed_at",
+                "updated_at",
+            ]
+        )
+        return Response(self.get_serializer(checklist).data)
+
+
 class GuardPostViewSet(StaffGuardingViewSet):
     queryset = GuardPost.objects.select_related("site", "supervisor")
     serializer_class = GuardPostSerializer
@@ -184,6 +351,15 @@ class GuardPostViewSet(StaffGuardingViewSet):
     ordering_fields = ["name", "site__name", "created_at", "is_active"]
     ordering = ["site__name", "name"]
     query_param_filters = {"site": "site_id", "is_active": "is_active", "supervisor": "supervisor_id"}
+
+
+class GuardContractViewSet(StaffGuardingViewSet):
+    queryset = GuardContract.objects.select_related("site", "post")
+    serializer_class = GuardContractSerializer
+    search_fields = ["name", "site__name", "post__name", "notes"]
+    ordering_fields = ["starts_on", "ends_on", "status", "bill_rate", "pay_rate", "created_at"]
+    ordering = ["site__name", "name"]
+    query_param_filters = {"site": "site_id", "post": "post_id", "status": "status"}
 
 
 class PostOrderViewSet(StaffGuardingViewSet):
@@ -247,6 +423,109 @@ class ShiftAssignmentViewSet(StaffGuardingViewSet):
         return Response(self.get_serializer(assignment).data)
 
 
+class ShiftSwapRequestViewSet(StaffGuardingViewSet):
+    queryset = ShiftSwapRequest.objects.select_related(
+        "assignment",
+        "assignment__shift",
+        "assignment__shift__post",
+        "assignment__shift__post__site",
+        "requested_by",
+        "target_guard",
+        "reviewed_by",
+    )
+    serializer_class = ShiftSwapRequestSerializer
+    search_fields = [
+        "requested_by__employee_number",
+        "requested_by__first_name",
+        "requested_by__last_name",
+        "target_guard__employee_number",
+        "target_guard__first_name",
+        "target_guard__last_name",
+        "assignment__shift__post__name",
+    ]
+    ordering_fields = ["created_at", "reviewed_at", "status"]
+    ordering = ["-created_at"]
+    query_param_filters = {"status": "status", "requested_by": "requested_by_id", "target_guard": "target_guard_id"}
+
+    def perform_create(self, serializer):
+        assignment = serializer.validated_data["assignment"]
+        swap = create_shift_swap_request(
+            assignment,
+            requested_by=assignment.guard,
+            target_guard=serializer.validated_data.get("target_guard"),
+            reason=serializer.validated_data.get("reason", ""),
+        )
+        serializer.instance = swap
+
+    @action(detail=True, methods=["post"])
+    def review(self, request, pk=None):
+        class SwapReviewSerializer(serializers.Serializer):
+            status = serializers.ChoiceField(
+                choices=[
+                    ShiftSwapRequest.Status.APPROVED,
+                    ShiftSwapRequest.Status.REJECTED,
+                    ShiftSwapRequest.Status.CANCELLED,
+                ]
+            )
+            note = serializers.CharField(required=False, allow_blank=True)
+
+        serializer = SwapReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        swap = review_shift_swap_request(
+            self.get_object(),
+            actor=request.user,
+            status=serializer.validated_data["status"],
+            note=serializer.validated_data.get("note", ""),
+        )
+        return Response(self.get_serializer(swap).data)
+
+
+class GuardAvailabilityViewSet(StaffGuardingViewSet):
+    queryset = GuardAvailability.objects.select_related("guard", "created_by")
+    serializer_class = GuardAvailabilitySerializer
+    search_fields = ["guard__employee_number", "guard__first_name", "guard__last_name", "reason"]
+    ordering_fields = ["starts_at", "ends_at", "availability_type", "created_at"]
+    ordering = ["starts_at"]
+    query_param_filters = {"guard": "guard_id", "availability_type": "availability_type"}
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
+class LeaveRequestViewSet(StaffGuardingViewSet):
+    queryset = LeaveRequest.objects.select_related("guard", "reviewed_by")
+    serializer_class = LeaveRequestSerializer
+    search_fields = ["guard__employee_number", "guard__first_name", "guard__last_name", "reason", "review_note"]
+    ordering_fields = ["starts_at", "ends_at", "status", "created_at"]
+    ordering = ["-starts_at"]
+    query_param_filters = {"guard": "guard_id", "status": "status"}
+
+    @action(detail=True, methods=["post"])
+    def review(self, request, pk=None):
+        class LeaveReviewSerializer(serializers.Serializer):
+            status = serializers.ChoiceField(choices=[LeaveRequest.Status.APPROVED, LeaveRequest.Status.REJECTED, LeaveRequest.Status.CANCELLED])
+            note = serializers.CharField(required=False, allow_blank=True)
+
+        serializer = LeaveReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        leave_request = review_leave_request(
+            self.get_object(),
+            actor=request.user,
+            status=serializer.validated_data["status"],
+            note=serializer.validated_data.get("note", ""),
+        )
+        return Response(self.get_serializer(leave_request).data)
+
+
+class ShiftTemplateViewSet(StaffGuardingViewSet):
+    queryset = ShiftTemplate.objects.select_related("post", "post__site")
+    serializer_class = ShiftTemplateSerializer
+    search_fields = ["name", "post__name", "post__site__name", "notes"]
+    ordering_fields = ["name", "start_time", "end_time", "required_guards", "is_active"]
+    ordering = ["post", "name"]
+    query_param_filters = {"post": "post_id", "site": "post__site_id", "is_active": "is_active"}
+
+
 class ClockEventViewSet(StaffGuardingViewSet):
     queryset = ClockEvent.objects.select_related("assignment", "assignment__guard", "assignment__shift")
     serializer_class = ClockEventSerializer
@@ -307,7 +586,7 @@ class CheckpointScanViewSet(StaffGuardingViewSet):
 
 
 class FieldReportViewSet(StaffGuardingViewSet):
-    queryset = FieldReport.objects.select_related("site", "post", "assignment", "guard", "reviewed_by").prefetch_related("attachments")
+    queryset = FieldReport.objects.select_related("site", "post", "assignment", "guard", "reviewed_by").prefetch_related("attachments", "client_acknowledgements")
     serializer_class = FieldReportSerializer
     search_fields = ["title", "body", "site__name", "post__name", "guard__first_name", "guard__last_name", "guard__employee_number"]
     ordering_fields = ["submitted_at", "created_at", "status", "report_type", "visible_to_client"]
@@ -331,6 +610,36 @@ class FieldReportViewSet(StaffGuardingViewSet):
         return Response(self.get_serializer(report).data)
 
 
+class FieldReportAcknowledgementViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = FieldReportAcknowledgementSerializer
+    queryset = FieldReportAcknowledgement.objects.select_related("report", "report__site", "user")
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["report__title", "report__site__name", "user__username", "comment"]
+    ordering_fields = ["acknowledged_at"]
+    ordering = ["-acknowledged_at"]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        for param, field_name in {"report": "report_id", "user": "user_id", "site": "report__site_id"}.items():
+            value = self.request.query_params.get(param)
+            if value not in (None, ""):
+                queryset = queryset.filter(**{field_name: value})
+        return queryset
+
+
+class ReportTemplateViewSet(StaffGuardingViewSet):
+    queryset = ReportTemplate.objects.select_related("site", "created_by")
+    serializer_class = ReportTemplateSerializer
+    search_fields = ["name", "site__name"]
+    ordering_fields = ["name", "report_type", "is_active", "created_at"]
+    ordering = ["report_type", "name"]
+    query_param_filters = {"site": "site_id", "report_type": "report_type", "is_active": "is_active"}
+
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user)
+
+
 class GuardLocationPingViewSet(StaffGuardingViewSet):
     queryset = GuardLocationPing.objects.select_related("guard", "assignment")
     serializer_class = GuardLocationPingSerializer
@@ -338,6 +647,96 @@ class GuardLocationPingViewSet(StaffGuardingViewSet):
     ordering_fields = ["created_at", "device_timestamp"]
     ordering = ["-created_at"]
     query_param_filters = {"guard": "guard_id", "assignment": "assignment_id"}
+
+
+class GuardTimesheetViewSet(StaffGuardingViewSet):
+    queryset = GuardTimesheet.objects.select_related("assignment", "guard", "site", "post", "approved_by")
+    serializer_class = GuardTimesheetSerializer
+    search_fields = ["guard__employee_number", "guard__first_name", "guard__last_name", "site__name", "post__name"]
+    ordering_fields = ["period_start", "period_end", "status", "regular_minutes", "overtime_minutes", "pay_amount", "bill_amount"]
+    ordering = ["-period_start"]
+    query_param_filters = {"guard": "guard_id", "site": "site_id", "post": "post_id", "status": "status"}
+
+    @action(detail=True, methods=["post"])
+    def review(self, request, pk=None):
+        class TimesheetReviewSerializer(serializers.Serializer):
+            status = serializers.ChoiceField(choices=GuardTimesheet.Status.choices)
+            note = serializers.CharField(required=False, allow_blank=True)
+
+        serializer = TimesheetReviewSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        timesheet = review_timesheet(
+            self.get_object(),
+            actor=request.user,
+            status=serializer.validated_data["status"],
+            note=serializer.validated_data.get("note", ""),
+        )
+        return Response(self.get_serializer(timesheet).data)
+
+
+class GuardInvoiceViewSet(StaffGuardingViewSet):
+    queryset = GuardInvoice.objects.select_related("site", "contract", "generated_by").prefetch_related("lines", "lines__timesheet")
+    serializer_class = GuardInvoiceSerializer
+    search_fields = ["invoice_number", "site__name", "contract__name", "notes"]
+    ordering_fields = ["period_start", "period_end", "status", "subtotal", "total", "created_at"]
+    ordering = ["-period_start", "-created_at"]
+    query_param_filters = {"site": "site_id", "contract": "contract_id", "status": "status"}
+
+    @action(detail=False, methods=["post"])
+    def generate(self, request):
+        class InvoiceGenerateSerializer(serializers.Serializer):
+            site = serializers.UUIDField()
+            contract = serializers.UUIDField(required=False)
+            period_start = serializers.DateField()
+            period_end = serializers.DateField()
+
+        serializer = InvoiceGenerateSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        site = get_object_or_404(Site, pk=serializer.validated_data["site"])
+        contract = None
+        if serializer.validated_data.get("contract"):
+            contract = get_object_or_404(GuardContract, pk=serializer.validated_data["contract"], site=site)
+        invoice = generate_guard_invoice(
+            site=site,
+            contract=contract,
+            period_start=serializer.validated_data["period_start"],
+            period_end=serializer.validated_data["period_end"],
+            actor=request.user,
+        )
+        return Response(self.get_serializer(invoice).data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=["post"])
+    def transition(self, request, pk=None):
+        class InvoiceTransitionSerializer(serializers.Serializer):
+            status = serializers.ChoiceField(choices=GuardInvoice.Status.choices)
+
+        serializer = InvoiceTransitionSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        invoice = transition_guard_invoice(
+            self.get_object(),
+            status=serializer.validated_data["status"],
+            actor=request.user,
+        )
+        return Response(self.get_serializer(invoice).data)
+
+
+class GuardInvoiceLineViewSet(viewsets.ReadOnlyModelViewSet):
+    permission_classes = [permissions.IsAdminUser]
+    serializer_class = GuardInvoiceLineSerializer
+    queryset = GuardInvoiceLine.objects.select_related("invoice", "timesheet", "timesheet__guard")
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["invoice__invoice_number", "description", "timesheet__guard__first_name", "timesheet__guard__last_name"]
+    ordering_fields = ["created_at", "amount", "quantity_hours"]
+    ordering = ["created_at"]
+
+
+class ClientPortalAccessViewSet(StaffGuardingViewSet):
+    queryset = ClientPortalAccess.objects.select_related("user", "site")
+    serializer_class = ClientPortalAccessSerializer
+    search_fields = ["user__username", "user__email", "site__name"]
+    ordering_fields = ["created_at", "role", "site__name", "user__username"]
+    ordering = ["site__name", "user__username"]
+    query_param_filters = {"user": "user_id", "site": "site_id", "role": "role"}
 
 
 class WelfareCheckViewSet(StaffGuardingViewSet):
@@ -413,16 +812,187 @@ class DispatchTaskViewSet(StaffGuardingViewSet):
         return Response(self.get_serializer(task).data)
 
 
+class CommandCenterSnapshotView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @extend_schema(responses={200: dict})
+    def get(self, request):
+        return Response(build_command_center_snapshot())
+
+
+class DispatchSuggestGuardsView(APIView):
+    permission_classes = [permissions.IsAdminUser]
+
+    @extend_schema(responses={200: list})
+    def get(self, request, task_id):
+        task = get_object_or_404(DispatchTask.objects.select_related("site"), id=task_id)
+        if task.target_latitude is None or task.target_longitude is None:
+            return Response([])
+        suggestions = suggest_nearest_guards(
+            task.site,
+            float(task.target_latitude),
+            float(task.target_longitude),
+            limit=int(request.query_params.get("limit", 5)),
+        )
+        return Response(
+            [
+                {
+                    "guard_id": str(item["guard"].id),
+                    "guard_name": item["guard"].full_name,
+                    "distance_km": item["distance_km"],
+                    "assignment_id": str(item["assignment"].id),
+                }
+                for item in suggestions
+            ]
+        )
+
+
+class PatrolRoundPdfView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, patrol_round_id):
+        patrol_round = get_object_or_404(
+            PatrolRound.objects.select_related(
+                "route",
+                "route__post",
+                "route__post__site",
+                "assignment",
+                "assignment__guard",
+            ).prefetch_related("scans__checkpoint"),
+            id=patrol_round_id,
+        )
+        if not request.user.is_staff:
+            guard = get_guard_for_user(request.user)
+            if patrol_round.assignment_id is None or patrol_round.assignment.guard_id != guard.id:
+                raise PermissionDenied("You cannot access this patrol report.")
+        from django.http import HttpResponse
+
+        from .reports.pdf import render_patrol_round_pdf
+
+        pdf_bytes = render_patrol_round_pdf(patrol_round)
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="patrol-{patrol_round_id}.pdf"'
+        return response
+
+
+class MyPatrolRoundListView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PatrolRoundMobileSerializer
+    http_method_names = ["get"]
+    pagination_class = None
+
+    def get_queryset(self):
+        guard = get_guard_for_user(self.request.user)
+        return (
+            PatrolRound.objects.select_related("route", "route__post", "route__post__site", "assignment")
+            .prefetch_related("route__patrolroutecheckpoint_set__checkpoint", "scans__checkpoint")
+            .filter(assignment__guard=guard)
+            .order_by("-scheduled_start")
+        )
+
+
 class MyShiftAssignmentListView(ListCreateAPIView):
     permission_classes = [permissions.IsAuthenticated]
     serializer_class = ShiftAssignmentSerializer
     http_method_names = ["get"]
+    pagination_class = None
 
     def get_queryset(self):
         guard = get_guard_for_user(self.request.user)
         return ShiftAssignment.objects.select_related("shift", "shift__post", "shift__post__site", "guard").filter(
             guard=guard
         )
+
+
+class MyPostOrderListView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = PostOrderSerializer
+    http_method_names = ["get"]
+
+    def get_queryset(self):
+        guard = get_guard_for_user(self.request.user)
+        post_ids = ShiftAssignment.objects.filter(guard=guard).values_list("shift__post_id", flat=True)
+        return PostOrder.objects.select_related("post", "post__site").filter(post_id__in=post_ids, is_active=True)
+
+
+class MyReportTemplateListView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ReportTemplateSerializer
+    http_method_names = ["get"]
+
+    def get_queryset(self):
+        guard = get_guard_for_user(self.request.user)
+        site_ids = ShiftAssignment.objects.filter(guard=guard).values_list("shift__post__site_id", flat=True)
+        return ReportTemplate.objects.select_related("site").filter(is_active=True).filter(
+            models.Q(site__isnull=True) | models.Q(site_id__in=site_ids)
+        )
+
+
+class MyAvailabilityListCreateView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GuardAvailabilitySerializer
+
+    def get_queryset(self):
+        guard = get_guard_for_user(self.request.user)
+        return GuardAvailability.objects.filter(guard=guard).order_by("starts_at")
+
+    def perform_create(self, serializer):
+        guard = get_guard_for_user(self.request.user)
+        serializer.save(guard=guard, created_by=self.request.user)
+
+
+class MyLeaveRequestListCreateView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = LeaveRequestSerializer
+
+    def get_queryset(self):
+        guard = get_guard_for_user(self.request.user)
+        return LeaveRequest.objects.filter(guard=guard).order_by("-starts_at")
+
+    def perform_create(self, serializer):
+        guard = get_guard_for_user(self.request.user)
+        serializer.save(guard=guard)
+
+
+class MyShiftSwapRequestListCreateView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = ShiftSwapRequestSerializer
+
+    def get_queryset(self):
+        guard = get_guard_for_user(self.request.user)
+        return (
+            ShiftSwapRequest.objects.select_related(
+                "assignment",
+                "assignment__shift",
+                "assignment__shift__post",
+                "assignment__shift__post__site",
+                "requested_by",
+                "target_guard",
+                "reviewed_by",
+            )
+            .filter(models.Q(requested_by=guard) | models.Q(target_guard=guard))
+            .order_by("-created_at")
+        )
+
+    def perform_create(self, serializer):
+        guard = get_guard_for_user(self.request.user)
+        swap = create_shift_swap_request(
+            serializer.validated_data["assignment"],
+            requested_by=guard,
+            target_guard=serializer.validated_data.get("target_guard"),
+            reason=serializer.validated_data.get("reason", ""),
+        )
+        serializer.instance = swap
+
+
+class MyTimesheetListView(ListCreateAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = GuardTimesheetSerializer
+    http_method_names = ["get"]
+
+    def get_queryset(self):
+        guard = get_guard_for_user(self.request.user)
+        return GuardTimesheet.objects.select_related("assignment", "site", "post").filter(guard=guard)
 
 
 class MyShiftAssignmentActionView(APIView):
@@ -477,10 +1047,23 @@ class MyCheckpointScanCreateView(APIView):
         checkpoint = serializer.validated_data["checkpoint"]
         if checkpoint.post_id != patrol_round.route.post_id:
             raise ValidationError({"checkpoint": "Checkpoint does not belong to this patrol route post."})
-        scan = serializer.save(guard=guard)
+        scan = record_checkpoint_scan(
+            patrol_round=patrol_round,
+            checkpoint=checkpoint,
+            guard=guard,
+            latitude=serializer.validated_data.get("latitude"),
+            longitude=serializer.validated_data.get("longitude"),
+            accuracy_m=serializer.validated_data.get("accuracy_m"),
+            within_geofence=serializer.validated_data.get("within_geofence", False),
+            offline_created_at=serializer.validated_data.get("offline_created_at"),
+            client_scan_id=str(request.data.get("client_scan_id", "") or ""),
+            metadata=serializer.validated_data.get("metadata"),
+        )
         if patrol_round.status == PatrolRound.Status.SCHEDULED:
             transition_patrol_round(patrol_round, PatrolRound.Status.IN_PROGRESS)
-        return Response(CheckpointScanSerializer(scan).data, status=status.HTTP_201_CREATED)
+        payload = CheckpointScanSerializer(scan).data
+        payload.update(build_checkpoint_scan_response(scan))
+        return Response(payload, status=status.HTTP_201_CREATED)
 
 
 class MyPatrolRoundCompleteView(APIView):
@@ -517,6 +1100,22 @@ class MyFieldReportListCreateView(ListCreateAPIView):
             serializer.save(guard=guard)
 
 
+class ClientFieldReportAcknowledgeView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        request=inline_serializer(
+            name="ClientReportAcknowledgeRequest",
+            fields={"comment": serializers.CharField(required=False, allow_blank=True)},
+        ),
+        responses=FieldReportAcknowledgementSerializer,
+    )
+    def post(self, request, report_id):
+        report = get_object_or_404(FieldReport, id=report_id)
+        acknowledgement = acknowledge_field_report(report, user=request.user, comment=request.data.get("comment", ""))
+        return Response(FieldReportAcknowledgementSerializer(acknowledgement).data)
+
+
 class MyLocationPingCreateView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
@@ -528,7 +1127,15 @@ class MyLocationPingCreateView(APIView):
         assignment = serializer.validated_data.get("assignment")
         if assignment is not None and assignment.guard_id != guard.id:
             raise ValidationError({"assignment": "Assignment does not belong to the current guard."})
-        ping = serializer.save(guard=guard)
+        if assignment is None:
+            assignment = (
+                ShiftAssignment.objects.filter(guard=guard, status=ShiftAssignment.Status.CLOCKED_IN)
+                .order_by("-clocked_in_at")
+                .first()
+            )
+        if assignment is None or assignment.status != ShiftAssignment.Status.CLOCKED_IN:
+            raise ValidationError({"assignment": "Location pings require an active clocked-in shift."})
+        ping = serializer.save(guard=guard, assignment=assignment)
         return Response(GuardLocationPingSerializer(ping).data, status=status.HTTP_201_CREATED)
 
 
@@ -548,6 +1155,37 @@ class MyPanicAlertCreateView(APIView):
             site = assignment.shift.post.site
         alert = serializer.save(guard=guard, site=site)
         return Response(GuardPanicAlertSerializer(alert).data, status=status.HTTP_201_CREATED)
+
+
+class MyWelfareCheckListView(ListAPIView):
+    permission_classes = [permissions.IsAuthenticated]
+    serializer_class = WelfareCheckMobileSerializer
+    pagination_class = None
+
+    @extend_schema(responses=WelfareCheckMobileSerializer(many=True))
+    def get(self, request, *args, **kwargs):
+        return super().get(request, *args, **kwargs)
+
+    def get_queryset(self):
+        guard = get_guard_for_user(self.request.user)
+        cutoff = timezone.now() - timezone.timedelta(hours=24)
+        return (
+            WelfareCheck.objects.select_related(
+                "assignment",
+                "assignment__shift",
+                "assignment__shift__post",
+                "assignment__shift__post__site",
+            )
+            .filter(assignment__guard=guard)
+            .filter(
+                models.Q(status=WelfareCheck.Status.PENDING)
+                | models.Q(
+                    status=WelfareCheck.Status.MISSED,
+                    due_at__gte=cutoff,
+                )
+            )
+            .order_by("due_at")
+        )
 
 
 class MyWelfareCheckConfirmView(APIView):

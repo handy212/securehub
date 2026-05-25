@@ -133,6 +133,16 @@ class _ResponseAppState extends ConsumerState<ResponseApp>
       }
     });
 
+    // Deep-link guard ops screens from push notifications.
+    ref.listen(guardRouteNavProvider, (_, route) {
+      if (route != null && route.isNotEmpty) {
+        Future.microtask(() {
+          router.go(route);
+          ref.read(guardRouteNavProvider.notifier).state = null;
+        });
+      }
+    });
+
     ref.listen(forceLogoutProvider, (_, shouldLogout) {
       if (shouldLogout) {
         ref.read(forceLogoutProvider.notifier).reset();

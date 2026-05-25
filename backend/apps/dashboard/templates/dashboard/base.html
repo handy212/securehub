@@ -10,7 +10,7 @@
     </script>
     <link rel="stylesheet" href="{% static 'dashboard/css/console.css' %}">
     <link rel="icon" href="{% static 'dashboard/logo.png' %}">
-    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.14.3/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     {% block extra_css %}{% endblock %}
@@ -36,13 +36,14 @@
                   x-transition:leave="transition-opacity duration-75"
                   x-transition:leave-start="opacity-100"
                   x-transition:leave-end="opacity-0"
-                  class="font-black text-xs tracking-widest text-white uppercase whitespace-nowrap overflow-hidden">SecureHub</span>
-            <button class="ml-auto rounded-lg p-1 text-slate-500 transition-all hover:bg-white/5 hover:text-white lg:hidden" @click="mobileNavOpen = false" aria-label="Close navigation">
+                  class="console-shell-brand whitespace-nowrap overflow-hidden">SecureHub</span>
+            <button class="ml-auto rounded-lg p-1 text-slate-500 transition-all hover:bg-slate-50 dark:hover:bg-slate-800/5 hover:text-white lg:hidden" @click="mobileNavOpen = false" aria-label="Close navigation">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
             </button>
         </div>
 
-        <nav class="p-2.5 space-y-1 mt-2">
+        <nav class="flex-1 overflow-y-auto p-2.5 space-y-1 mt-2 min-h-0">
+            {% if console_perm.VIEW_DASHBOARD in console_permissions %}
             <a href="{% url 'dashboard:home' %}" title="Dashboard" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'home' %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="7" height="7" x="3" y="3" rx="1"/><rect width="7" height="7" x="14" y="3" rx="1"/><rect width="7" height="7" x="14" y="14" rx="1"/><rect width="7" height="7" x="3" y="14" rx="1"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -54,6 +55,8 @@
       x-transition:leave-end="opacity-0"
       class="text-xs whitespace-nowrap overflow-hidden">Dashboard</span>
             </a>
+            {% endif %}
+            {% if console_perm.VIEW_SITES in console_permissions %}
             <a href="{% url 'dashboard:site-map' %}" title="Client Map" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'site-map' %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -63,8 +66,23 @@
       x-transition:leave="transition-opacity duration-75"
       x-transition:leave-start="opacity-100"
       x-transition:leave-end="opacity-0"
-      class="text-xs whitespace-nowrap overflow-hidden">Client Map</span>
+      class="text-xs whitespace-nowrap overflow-hidden">Global Map</span>
             </a>
+            {% if console_perm.MANAGE_SITES in console_permissions %}
+            <a href="{% url 'dashboard:map-zones' %}" title="Map zones" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'map-zones' or request.resolver_match.url_name == 'map-zone-update' or request.resolver_match.url_name == 'map-zone-delete' %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 12h8"/><path d="M12 8v8"/></svg>
+                <span x-show="$store.sidebar.open"
+      x-transition:enter="transition-opacity duration-150 delay-100"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition-opacity duration-75"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="text-xs whitespace-nowrap overflow-hidden">Map zones</span>
+            </a>
+            {% endif %}
+            {% endif %}
+            {% if console_perm.VIEW_EMERGENCY in console_permissions %}
             <a href="{% url 'dashboard:emergency' %}" title="Emergency" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'emergency' or 'emergency-' in request.resolver_match.url_name %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4"/><path d="M12 17h.01"/><path d="M10.29 3.86 1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0Z"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -76,6 +94,8 @@
       x-transition:leave-end="opacity-0"
       class="text-xs whitespace-nowrap overflow-hidden">Emergency</span>
             </a>
+            {% endif %}
+            {% if console_perm.VIEW_GUARDING in console_permissions %}
             <a href="{% url 'dashboard:guarding-overview' %}" title="Guarding" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if 'guarding-' in request.resolver_match.url_name %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="m9 12 2 2 4-4"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -87,6 +107,8 @@
       x-transition:leave-end="opacity-0"
       class="text-xs whitespace-nowrap overflow-hidden">Guarding</span>
             </a>
+            {% endif %}
+            {% if console_perm.VIEW_SITES in console_permissions %}
             <a href="{% url 'dashboard:sites' %}" title="Sites" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'sites' %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -98,6 +120,8 @@
       x-transition:leave-end="opacity-0"
       class="text-xs whitespace-nowrap overflow-hidden">Sites</span>
             </a>
+            {% endif %}
+            {% if console_perm.VIEW_LOGS in console_permissions %}
             <a href="{% url 'dashboard:logs' %}" title="Audit Logs" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'logs' %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14.5 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7.5L14.5 2z"/><polyline points="14 2 14 8 20 8"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -109,6 +133,8 @@
       x-transition:leave-end="opacity-0"
       class="text-xs whitespace-nowrap overflow-hidden">Audit Logs</span>
             </a>
+            {% endif %}
+            {% if console_perm.VIEW_BILLING in console_permissions %}
             <a href="{% url 'dashboard:subscriptions' %}" title="Billing" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if 'subscription' in request.resolver_match.url_name or 'package' in request.resolver_match.url_name %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -120,6 +146,8 @@
       x-transition:leave-end="opacity-0"
       class="text-xs whitespace-nowrap overflow-hidden">Billing</span>
             </a>
+            {% endif %}
+            {% if console_perm.MANAGE_STAFF in console_permissions %}
             <a href="{% url 'dashboard:user-list' %}" title="Staff Users" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'user-list' %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -131,6 +159,8 @@
       x-transition:leave-end="opacity-0"
       class="text-xs whitespace-nowrap overflow-hidden">Staff Users</span>
             </a>
+            {% endif %}
+            {% if console_perm.VIEW_CUSTOMERS in console_permissions %}
             <a href="{% url 'dashboard:customer-list' %}" title="Customers" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'customer-list' %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -142,6 +172,8 @@
       x-transition:leave-end="opacity-0"
       class="text-xs whitespace-nowrap overflow-hidden">Customers</span>
             </a>
+            {% endif %}
+            {% if console_perm.MANAGE_BROADCAST in console_permissions %}
             <a href="{% url 'dashboard:broadcast' %}" title="Messaging" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'broadcast' %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m3 21 1.9-5.7a8.5 8.5 0 1 1 3.8 3.8z"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -153,6 +185,8 @@
       x-transition:leave-end="opacity-0"
       class="text-xs whitespace-nowrap overflow-hidden">Messaging</span>
             </a>
+            {% endif %}
+            {% if console_perm.MANAGE_SETTINGS in console_permissions %}
             <a href="{% url 'dashboard:settings' %}" title="Platform Settings" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'settings' %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V19a2 2 0 0 0 2 2h0a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V5a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
                 <span x-show="$store.sidebar.open"
@@ -164,8 +198,23 @@
       x-transition:leave-end="opacity-0"
       class="text-xs whitespace-nowrap overflow-hidden">Platform</span>
             </a>
-  
+            {% endif %}
         </nav>
+        {% if console_perm.ACCESS in console_permissions %}
+        <div class="mt-auto flex-shrink-0 border-t border-slate-800 p-2.5">
+            <a href="{% url 'dashboard:help-index' %}" title="Help" class="flex items-center gap-3 px-3 py-1.5 rounded transition-all {% if request.resolver_match.url_name == 'help-index' or request.resolver_match.url_name == 'help-page' %}bg-brand text-white font-bold{% else %}text-slate-400 hover:text-white hover:bg-white/5{% endif %}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                <span x-show="$store.sidebar.open"
+      x-transition:enter="transition-opacity duration-150 delay-100"
+      x-transition:enter-start="opacity-0"
+      x-transition:enter-end="opacity-100"
+      x-transition:leave="transition-opacity duration-75"
+      x-transition:leave-start="opacity-100"
+      x-transition:leave-end="opacity-0"
+      class="text-xs whitespace-nowrap overflow-hidden">Help</span>
+            </a>
+        </div>
+        {% endif %}
     </aside>
 
     <!-- Main Content -->
@@ -177,7 +226,7 @@
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" x2="21" y1="6" y2="6"/><line x1="3" x2="21" y1="12" y2="12"/><line x1="3" x2="21" y1="18" y2="18"/></svg>
                 </button>
                 <div class="hidden h-4 w-px bg-slate-200 dark:bg-slate-700 sm:block"></div>
-                <h1 class="truncate text-[10px] sm:text-xs font-black tracking-widest text-slate-400 uppercase">{% block header_title %}Console{% endblock %}</h1>
+                <h1 class="console-header-context">{% block header_title %}Console{% endblock %}</h1>
             </div>
             <div class="flex items-center gap-2 sm:gap-3">
                 <!-- Dark mode toggle -->
@@ -189,7 +238,7 @@
                 </button>
                 <div class="flex items-center gap-2 py-1 px-2 border border-slate-100 dark:border-slate-700 rounded bg-slate-50/50 dark:bg-slate-800/50">
                     <img src="https://ui-avatars.com/api/?name={{ user.username }}&background=dc2626&color=fff&size=20" class="w-4 h-4 rounded shadow-sm" alt="User">
-                    <span class="hidden sm:inline text-[10px] font-black text-slate-700 dark:text-slate-300 uppercase tracking-tight">{{ user.username }}</span>
+                    <span class="hidden sm:inline console-label text-slate-700 dark:text-slate-300">{{ user.username }}</span>
                 </div>
                 <form method="post" action="{% url 'dashboard:logout' %}">
                     {% csrf_token %}
@@ -231,15 +280,11 @@
                 x-transition:leave="transition ease-in duration-200"
                 x-transition:leave-start="opacity-100"
                 x-transition:leave-end="opacity-0"
-                :class="{
-                    'bg-slate-900 border-brand/50 text-white': n.type === 'info',
-                    'bg-emerald-950/90 border-emerald-500/50 text-emerald-100': n.type === 'success',
-                    'bg-red-950/90 border-red-500/50 text-red-100': n.type === 'error'
-                }"
+                :class="{ 'bg-slate-900 border-brand/50 text-white': n.type === 'info', 'bg-emerald-950/90 border-emerald-500/50 text-emerald-100': n.type === 'success', 'bg-red-950/90 border-red-500/50 text-red-100': n.type === 'error' }"
                 class="px-4 py-3 rounded-lg border shadow-2xl flex items-start gap-3 backdrop-blur-md"
             >
                 <div class="flex-1">
-                    <p class="text-[11px] font-bold uppercase tracking-widest opacity-50" x-text="n.type"></p>
+                    <p class="console-label capitalize opacity-50" x-text="n.type"></p>
                     <p class="text-xs font-medium leading-relaxed" x-text="n.msg"></p>
                 </div>
                 <button @click="remove(n.id)" class="text-slate-500 hover:text-white mt-1">
@@ -283,14 +328,14 @@
                        class="w-full pl-12 pr-4 py-4 text-slate-900 dark:text-slate-100 dark:bg-slate-900 font-bold placeholder:text-slate-300 dark:placeholder:text-slate-600 focus:outline-none border-none ring-0 text-sm"
                        placeholder="Find site, action, or navigate..."
                        x-ref="searchInput">
-                <div class="absolute right-4 top-4 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700 text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">ESC TO CLOSE</div>
+                <div class="absolute right-4 top-4 console-palette-hint rounded border border-slate-200 px-1.5 py-0.5 dark:border-slate-700">ESC TO CLOSE</div>
             </div>
 
             <div class="max-h-[380px] overflow-y-auto border-t border-slate-100 dark:border-slate-800">
                 <!-- Dynamic Results -->
                 <div x-show="filteredSites.length > 0">
                     <div class="px-4 py-2 bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-50 dark:border-slate-800">
-                        <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Infrastructure Hub</span>
+                        <span class="console-label">Infrastructure Hub</span>
                     </div>
                     <template x-for="site in filteredSites" :key="site.id">
                         <a :href="'/console/sites/' + site.id + '/'"
@@ -299,8 +344,8 @@
                                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
                             </div>
                             <div class="flex-1">
-                                <p class="text-[11px] font-black text-slate-900 dark:text-slate-100 uppercase tracking-tight" x-text="site.name"></p>
-                                <p class="text-[9px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest" x-text="site.hik_site_id || 'LOCAL-SYNC'"></p>
+                                <p class="console-row-title" x-text="site.name"></p>
+                                <p class="console-meta" x-text="site.hik_site_id || 'LOCAL-SYNC'"></p>
                             </div>
                             <span class="text-xs text-slate-300 dark:text-slate-600 group-hover:text-slate-400 dark:group-hover:text-slate-400">&rarr;</span>
                         </a>
@@ -310,31 +355,37 @@
                 <!-- Navigation Actions -->
                 <div x-show="search === ''">
                     <div class="px-4 py-2 bg-slate-50/50 dark:bg-slate-800/50 border-b border-slate-50 dark:border-slate-800">
-                        <span class="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">Quick Navigation</span>
+                        <span class="console-label">Quick Navigation</span>
                     </div>
                     <div class="grid grid-cols-2">
                         <a href="{% url 'dashboard:site-map' %}" class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 border-r border-b border-slate-50 dark:border-slate-800 flex items-center gap-3">
                             <span class="p-1.5 rounded bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg></span>
-                            <span class="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Global Map</span>
+                            <span class="console-label">Global Map</span>
                         </a>
                         <a href="{% url 'dashboard:subscriptions' %}" class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-50 dark:border-slate-800 flex items-center gap-3">
                             <span class="p-1.5 rounded bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><rect width="20" height="14" x="2" y="5" rx="2"/><line x1="2" x2="22" y1="10" y2="10"/></svg></span>
-                            <span class="text-[10px] font-black text-slate-800 dark:text-slate-200 uppercase tracking-widest">Billing Desk</span>
+                            <span class="console-label">Billing Desk</span>
                         </a>
+                        {% if console_perm.ACCESS in console_permissions %}
+                        <a href="{% url 'dashboard:help-index' %}" class="px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 border-b border-slate-50 dark:border-slate-800 flex items-center gap-3">
+                            <span class="p-1.5 rounded bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg></span>
+                            <span class="console-label">Help &amp; docs</span>
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
 
-                <div x-show="filteredSites.length === 0 && search !== ''" class="p-12 text-center text-slate-300 dark:text-slate-600 uppercase tracking-widest font-black text-[10px]">
+                <div x-show="filteredSites.length === 0 && search !== ''" class="console-empty-state p-12 text-center text-slate-300 dark:text-slate-600">
                     No matching infrastructure records.
                 </div>
             </div>
 
             <div class="px-4 py-2 bg-slate-50 dark:bg-slate-800/50 flex items-center justify-between border-t border-slate-100 dark:border-slate-800">
                    <div class="flex items-center gap-4">
-                       <span class="text-[8px] font-black text-slate-400 dark:text-slate-500"><kbd class="px-1 border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 mr-1 opacity-60">ENTER</kbd> SELECT</span>
-                       <span class="text-[8px] font-black text-slate-400 dark:text-slate-500"><kbd class="px-1 border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 mr-1 opacity-60">ESC</kbd> CLOSE</span>
+                       <span class="console-palette-hint"><kbd class="px-1 border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 mr-1 opacity-60">ENTER</kbd> SELECT</span>
+                       <span class="console-palette-hint"><kbd class="px-1 border border-slate-200 dark:border-slate-700 rounded bg-white dark:bg-slate-800 mr-1 opacity-60">ESC</kbd> CLOSE</span>
                    </div>
-                       <span class="text-[8px] font-black text-slate-300 dark:text-slate-600 uppercase italic hidden sm:inline">Spotlight Search</span>
+                       <span class="console-palette-hint hidden sm:inline italic">Spotlight Search</span>
             </div>
         </div>
     </div>

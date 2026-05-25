@@ -57,18 +57,27 @@ class EmergencyRepository {
     String? contactPhone,
     String? note,
   }) async {
+    final trimmedContactPhone = _trimmedNonEmpty(contactPhone);
+    final trimmedNote = _trimmedNonEmpty(note);
+    final data = {
+      'trigger_context': triggerContext,
+      'metadata': {'source': 'mobile_app'},
+      ...position.toJson(),
+    };
+    if (siteId != null) {
+      data['site_id'] = siteId;
+    }
+    if (trimmedContactPhone != null) {
+      data['contact_phone'] = trimmedContactPhone;
+    }
+    if (trimmedNote != null) {
+      data['note'] = trimmedNote;
+    }
+
     try {
       final response = await _dio.post(
         ApiEndpoints.emergencyRequests,
-        data: {
-          if (siteId != null) 'site_id': siteId,
-          'trigger_context': triggerContext,
-          if (contactPhone != null && contactPhone.trim().isNotEmpty)
-            'contact_phone': contactPhone.trim(),
-          if (note != null && note.trim().isNotEmpty) 'note': note.trim(),
-          'metadata': {'source': 'mobile_app'},
-          ...position.toJson(),
-        },
+        data: data,
       );
       return EmergencyRequest.fromJson(response.data as Map<String, dynamic>);
     } on DioException catch (e) {
@@ -98,6 +107,11 @@ class EmergencyRepository {
       throwAppException(e);
     }
   }
+}
+
+String? _trimmedNonEmpty(String? value) {
+  final trimmed = value?.trim();
+  return trimmed == null || trimmed.isEmpty ? null : trimmed;
 }
 
 class EmergencyLocationService {

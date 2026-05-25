@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -167,7 +166,7 @@ class _MessageCard extends ConsumerWidget {
                             message.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 14,
                               color: AppTheme.onSurface,
@@ -186,7 +185,7 @@ class _MessageCard extends ConsumerWidget {
                           ),
                           child: Text(
                             config.label,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 9,
                               fontWeight: FontWeight.w800,
                               letterSpacing: 1,
@@ -207,7 +206,7 @@ class _MessageCard extends ConsumerWidget {
                         const SizedBox(width: 4),
                         Text(
                           _formatDate(message.createdAt),
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 11,
                             color: AppTheme.outline,
                             fontWeight: FontWeight.w500,
@@ -216,7 +215,7 @@ class _MessageCard extends ConsumerWidget {
                         const Spacer(),
                         Text(
                           'Open Message',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 11,
                             color: config.barColor,
                             fontWeight: FontWeight.w700,
@@ -278,7 +277,7 @@ class _MessageCard extends ConsumerWidget {
                   Text(
                     message.title,
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontWeight: FontWeight.w800,
                       fontSize: 18,
                       color: AppTheme.onSurface,
@@ -296,7 +295,7 @@ class _MessageCard extends ConsumerWidget {
                     ),
                     child: Text(
                       config.label,
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w800,
                         color: config.barColor,
@@ -323,7 +322,7 @@ class _MessageCard extends ConsumerWidget {
               children: [
                 Text(
                   message.body,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 15,
                     height: 1.6,
                     color: AppTheme.onSurfaceVariant,
@@ -340,7 +339,7 @@ class _MessageCard extends ConsumerWidget {
                     const SizedBox(width: 8),
                     Text(
                       _formatDate(message.createdAt),
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 12,
                         color: AppTheme.outline,
                         fontWeight: FontWeight.w600,
@@ -357,7 +356,7 @@ class _MessageCard extends ConsumerWidget {
             onPressed: () => Navigator.pop(context),
             child: Text(
               'Close',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
                 color: AppTheme.primary,
               ),
@@ -411,3 +410,4 @@ class _TypeConfig {
   final Color barColor;
   final String label;
 }
+

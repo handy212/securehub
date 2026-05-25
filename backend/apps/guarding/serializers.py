@@ -5,23 +5,42 @@ from .models import (
     Checkpoint,
     CheckpointScan,
     ClockEvent,
+    ClientPortalAccess,
     DispatchTask,
     FieldReport,
+    FieldReportAcknowledgement,
     FieldReportAttachment,
     GuardApplicant,
+    GuardApplicantDocument,
+    GuardApplicantEducation,
+    GuardApplicantEmployment,
+    GuardApplicantProfile,
+    GuardApplicantReference,
+    GuardAvailability,
+    GuardContract,
     GuardCredential,
     GuardDocument,
+    GuardEquipmentIssue,
+    GuardInvoice,
+    GuardInvoiceLine,
+    GuardOffboardingChecklist,
+    GuardTimesheet,
+    GuardTrainingRecord,
     GuardingEventLog,
     GuardLocationPing,
     GuardPanicAlert,
     GuardPost,
     GuardProfile,
+    LeaveRequest,
     PatrolRoute,
     PatrolRouteCheckpoint,
     PatrolRound,
     PostOrder,
+    ReportTemplate,
     Shift,
     ShiftAssignment,
+    ShiftSwapRequest,
+    ShiftTemplate,
     WelfareCheck,
 )
 from .services import (
@@ -29,6 +48,9 @@ from .services import (
     ensure_assignment_matches_route,
     ensure_assignment_status_transition,
     ensure_dispatch_status_transition,
+    ensure_guard_available_for_shift,
+    ensure_guard_compliance_ready,
+    ensure_guard_qualified_for_post,
     ensure_guard_status_transition,
     ensure_panic_alert_status_transition,
     ensure_patrol_round_status_transition,
@@ -39,8 +61,48 @@ from .services import (
 )
 
 
+class GuardApplicantDocumentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GuardApplicantDocument
+        fields = "__all__"
+        read_only_fields = ("id", "uploaded_by", "created_at")
+
+
+class GuardApplicantEducationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GuardApplicantEducation
+        fields = "__all__"
+        read_only_fields = ("id", "created_at")
+
+
+class GuardApplicantEmploymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GuardApplicantEmployment
+        fields = "__all__"
+        read_only_fields = ("id", "created_at")
+
+
+class GuardApplicantReferenceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GuardApplicantReference
+        fields = "__all__"
+        read_only_fields = ("id", "created_at")
+
+
+class GuardApplicantProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GuardApplicantProfile
+        fields = "__all__"
+        read_only_fields = ("id", "created_at", "updated_at")
+
+
 class GuardApplicantSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
+    documents = GuardApplicantDocumentSerializer(many=True, read_only=True)
+    education_records = GuardApplicantEducationSerializer(many=True, read_only=True)
+    employment_records = GuardApplicantEmploymentSerializer(many=True, read_only=True)
+    references = GuardApplicantReferenceSerializer(many=True, read_only=True)
+    profile = GuardApplicantProfileSerializer(read_only=True)
 
     class Meta:
         model = GuardApplicant
@@ -93,10 +155,40 @@ class GuardDocumentSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "uploaded_by", "created_at")
 
 
+class GuardTrainingRecordSerializer(serializers.ModelSerializer):
+    guard_name = serializers.CharField(source="guard.full_name", read_only=True)
+
+    class Meta:
+        model = GuardTrainingRecord
+        fields = "__all__"
+        read_only_fields = ("id", "guard_name", "created_at", "updated_at")
+
+
+class GuardEquipmentIssueSerializer(serializers.ModelSerializer):
+    guard_name = serializers.CharField(source="guard.full_name", read_only=True)
+
+    class Meta:
+        model = GuardEquipmentIssue
+        fields = "__all__"
+        read_only_fields = ("id", "guard_name", "issued_by", "created_at", "updated_at")
+
+
+class GuardOffboardingChecklistSerializer(serializers.ModelSerializer):
+    guard_name = serializers.CharField(source="guard.full_name", read_only=True)
+    is_complete = serializers.BooleanField(read_only=True)
+
+    class Meta:
+        model = GuardOffboardingChecklist
+        fields = "__all__"
+        read_only_fields = ("id", "guard_name", "is_complete", "completed_by", "completed_at", "created_at", "updated_at")
+
+
 class GuardProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(read_only=True)
     credentials = GuardCredentialSerializer(many=True, read_only=True)
     documents = GuardDocumentSerializer(many=True, read_only=True)
+    training_records = GuardTrainingRecordSerializer(many=True, read_only=True)
+    equipment_issues = GuardEquipmentIssueSerializer(many=True, read_only=True)
 
     class Meta:
         model = GuardProfile
@@ -110,6 +202,20 @@ class GuardProfileSerializer(serializers.ModelSerializer):
         termination_date = attrs.get("termination_date", getattr(self.instance, "termination_date", None))
         if status_value == GuardProfile.Status.TERMINATED and termination_date is None:
             attrs["termination_date"] = timezone.localdate()
+        if status_value == GuardProfile.Status.ACTIVE:
+            current_status = getattr(self.instance, "status", None)
+            if not self.instance or current_status != GuardProfile.Status.ACTIVE:
+                guard_check = self.instance or GuardProfile()
+                for field in (
+                    "emergency_contact_name",
+                    "emergency_contact_phone",
+                    "employee_number",
+                    "first_name",
+                    "last_name",
+                ):
+                    if field in attrs:
+                        setattr(guard_check, field, attrs[field])
+                ensure_guard_compliance_ready(guard_check)
         return attrs
 
 
@@ -127,6 +233,27 @@ class GuardPostSerializer(serializers.ModelSerializer):
         model = GuardPost
         fields = "__all__"
         read_only_fields = ("id", "site_name", "created_at", "updated_at")
+
+
+class GuardContractSerializer(serializers.ModelSerializer):
+    site_name = serializers.CharField(source="site.name", read_only=True)
+    post_name = serializers.CharField(source="post.name", read_only=True)
+
+    class Meta:
+        model = GuardContract
+        fields = "__all__"
+        read_only_fields = ("id", "site_name", "post_name", "created_at", "updated_at")
+
+    def validate(self, attrs):
+        starts_on = attrs.get("starts_on", getattr(self.instance, "starts_on", None))
+        ends_on = attrs.get("ends_on", getattr(self.instance, "ends_on", None))
+        if starts_on and ends_on and ends_on < starts_on:
+            raise serializers.ValidationError({"ends_on": "Contract end date must be after the start date."})
+        site = attrs.get("site", getattr(self.instance, "site", None))
+        post = attrs.get("post", getattr(self.instance, "post", None))
+        if site and post and post.site_id != site.id:
+            raise serializers.ValidationError({"post": "Contract post must belong to the contract site."})
+        return attrs
 
 
 class ShiftAssignmentSerializer(serializers.ModelSerializer):
@@ -153,11 +280,91 @@ class ShiftAssignmentSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         guard = attrs.get("guard", getattr(self.instance, "guard", None))
+        shift = attrs.get("shift", getattr(self.instance, "shift", None))
         if guard and guard.status != GuardProfile.Status.ACTIVE:
             raise serializers.ValidationError({"guard": "Only active guards can be assigned to shifts."})
+        if guard and (not self.instance or getattr(self.instance, "guard_id", None) != guard.pk):
+            ensure_guard_compliance_ready(guard)
+        if guard and shift:
+            ensure_guard_available_for_shift(guard, shift, assignment=self.instance)
+            ensure_guard_qualified_for_post(guard, shift.post)
         if self.instance and "status" in attrs:
             ensure_assignment_status_transition(self.instance, attrs["status"])
         return attrs
+
+
+class ShiftSwapRequestSerializer(serializers.ModelSerializer):
+    requested_by_name = serializers.CharField(source="requested_by.full_name", read_only=True)
+    target_guard_name = serializers.CharField(source="target_guard.full_name", read_only=True)
+    site_name = serializers.CharField(source="assignment.shift.post.site.name", read_only=True)
+    post_name = serializers.CharField(source="assignment.shift.post.name", read_only=True)
+
+    class Meta:
+        model = ShiftSwapRequest
+        fields = "__all__"
+        read_only_fields = (
+            "id",
+            "requested_by_name",
+            "requested_by",
+            "target_guard_name",
+            "site_name",
+            "post_name",
+            "reviewed_by",
+            "reviewed_at",
+            "created_at",
+            "updated_at",
+        )
+
+    def validate(self, attrs):
+        assignment = attrs.get("assignment", getattr(self.instance, "assignment", None))
+        requested_by = attrs.get("requested_by", getattr(self.instance, "requested_by", None))
+        target_guard = attrs.get("target_guard", getattr(self.instance, "target_guard", None))
+        if assignment and requested_by and assignment.guard_id != requested_by.id:
+            raise serializers.ValidationError({"requested_by": "The requesting guard must own the assignment."})
+        if target_guard and assignment:
+            ensure_guard_available_for_shift(target_guard, assignment.shift)
+            ensure_guard_qualified_for_post(target_guard, assignment.shift.post)
+        return attrs
+
+
+class GuardAvailabilitySerializer(serializers.ModelSerializer):
+    guard_name = serializers.CharField(source="guard.full_name", read_only=True)
+
+    class Meta:
+        model = GuardAvailability
+        fields = "__all__"
+        read_only_fields = ("id", "guard_name", "created_by", "created_at")
+
+    def validate(self, attrs):
+        starts_at = attrs.get("starts_at", getattr(self.instance, "starts_at", None))
+        ends_at = attrs.get("ends_at", getattr(self.instance, "ends_at", None))
+        ensure_shift_time_order(starts_at, ends_at)
+        return attrs
+
+
+class LeaveRequestSerializer(serializers.ModelSerializer):
+    guard_name = serializers.CharField(source="guard.full_name", read_only=True)
+
+    class Meta:
+        model = LeaveRequest
+        fields = "__all__"
+        read_only_fields = ("id", "guard_name", "reviewed_by", "reviewed_at", "created_at", "updated_at")
+
+    def validate(self, attrs):
+        starts_at = attrs.get("starts_at", getattr(self.instance, "starts_at", None))
+        ends_at = attrs.get("ends_at", getattr(self.instance, "ends_at", None))
+        ensure_shift_time_order(starts_at, ends_at)
+        return attrs
+
+
+class ShiftTemplateSerializer(serializers.ModelSerializer):
+    post_name = serializers.CharField(source="post.name", read_only=True)
+    site_name = serializers.CharField(source="post.site.name", read_only=True)
+
+    class Meta:
+        model = ShiftTemplate
+        fields = "__all__"
+        read_only_fields = ("id", "post_name", "site_name", "created_at", "updated_at")
 
 
 class ShiftSerializer(serializers.ModelSerializer):
@@ -221,10 +428,12 @@ class CheckpointSerializer(serializers.ModelSerializer):
 
 class PatrolRouteCheckpointSerializer(serializers.ModelSerializer):
     checkpoint_name = serializers.CharField(source="checkpoint.name", read_only=True)
+    checkpoint_code = serializers.CharField(source="checkpoint.code", read_only=True)
 
     class Meta:
         model = PatrolRouteCheckpoint
         fields = "__all__"
+        read_only_fields = ("checkpoint_name", "checkpoint_code")
 
     def validate(self, attrs):
         route = attrs.get("route", getattr(self.instance, "route", None))
@@ -265,9 +474,23 @@ class PatrolRoundSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class PatrolRoundMobileSerializer(PatrolRoundSerializer):
+    route = PatrolRouteSerializer(read_only=True)
+    site_name = serializers.CharField(source="route.post.site.name", read_only=True)
+    post_name = serializers.CharField(source="route.post.name", read_only=True)
+
+    class Meta(PatrolRoundSerializer.Meta):
+        read_only_fields = PatrolRoundSerializer.Meta.read_only_fields + (
+            "route",
+            "site_name",
+            "post_name",
+        )
+
+
 class CheckpointScanSerializer(serializers.ModelSerializer):
     checkpoint_name = serializers.CharField(source="checkpoint.name", read_only=True)
     guard_name = serializers.CharField(source="guard.full_name", read_only=True)
+    client_scan_id = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     class Meta:
         model = CheckpointScan
@@ -283,6 +506,14 @@ class CheckpointScanSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError({"checkpoint": "Checkpoint is not part of this patrol route."})
         return attrs
 
+    def create(self, validated_data):
+        client_scan_id = validated_data.pop("client_scan_id", "")
+        metadata = dict(validated_data.get("metadata") or {})
+        if client_scan_id:
+            metadata["client_scan_id"] = client_scan_id
+        validated_data["metadata"] = metadata
+        return super().create(validated_data)
+
 
 class FieldReportAttachmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -291,11 +522,31 @@ class FieldReportAttachmentSerializer(serializers.ModelSerializer):
         read_only_fields = ("id", "uploaded_at")
 
 
+class FieldReportAcknowledgementSerializer(serializers.ModelSerializer):
+    username = serializers.CharField(source="user.username", read_only=True)
+    report_title = serializers.CharField(source="report.title", read_only=True)
+
+    class Meta:
+        model = FieldReportAcknowledgement
+        fields = "__all__"
+        read_only_fields = ("id", "username", "report_title", "acknowledged_at")
+
+
+class ReportTemplateSerializer(serializers.ModelSerializer):
+    site_name = serializers.CharField(source="site.name", read_only=True)
+
+    class Meta:
+        model = ReportTemplate
+        fields = "__all__"
+        read_only_fields = ("id", "site_name", "created_by", "created_at", "updated_at")
+
+
 class FieldReportSerializer(serializers.ModelSerializer):
     guard_name = serializers.CharField(source="guard.full_name", read_only=True)
     site_name = serializers.CharField(source="site.name", read_only=True)
     post_name = serializers.CharField(source="post.name", read_only=True)
     attachments = FieldReportAttachmentSerializer(many=True, read_only=True)
+    client_acknowledgements = FieldReportAcknowledgementSerializer(many=True, read_only=True)
 
     class Meta:
         model = FieldReport
@@ -306,14 +557,26 @@ class FieldReportSerializer(serializers.ModelSerializer):
             "site_name",
             "post_name",
             "attachments",
+            "client_acknowledgements",
             "reviewed_by",
             "reviewed_at",
             "created_at",
             "updated_at",
         )
+        extra_kwargs = {
+            "site": {"required": False},
+            "post": {"required": False},
+            "guard": {"required": False},
+        }
 
     def validate(self, attrs):
         assignment = attrs.get("assignment", getattr(self.instance, "assignment", None))
+        if assignment and not attrs.get("site"):
+            attrs["site"] = assignment.shift.post.site
+        if assignment and not attrs.get("post"):
+            attrs["post"] = assignment.shift.post
+        if not attrs.get("site") and not getattr(self.instance, "site_id", None):
+            raise serializers.ValidationError({"site": "Site is required when no assignment is provided."})
         site = attrs.get("site", getattr(self.instance, "site", None))
         post = attrs.get("post", getattr(self.instance, "post", None))
         if assignment:
@@ -342,11 +605,105 @@ class GuardLocationPingSerializer(serializers.ModelSerializer):
         return attrs
 
 
+class GuardTimesheetSerializer(serializers.ModelSerializer):
+    guard_name = serializers.CharField(source="guard.full_name", read_only=True)
+    site_name = serializers.CharField(source="site.name", read_only=True)
+    post_name = serializers.CharField(source="post.name", read_only=True)
+    total_minutes = serializers.IntegerField(read_only=True)
+
+    class Meta:
+        model = GuardTimesheet
+        fields = "__all__"
+        read_only_fields = (
+            "id",
+            "guard_name",
+            "site_name",
+            "post_name",
+            "total_minutes",
+            "approved_by",
+            "approved_at",
+            "created_at",
+            "updated_at",
+        )
+
+
+class GuardInvoiceLineSerializer(serializers.ModelSerializer):
+    timesheet_guard_name = serializers.CharField(source="timesheet.guard.full_name", read_only=True)
+
+    class Meta:
+        model = GuardInvoiceLine
+        fields = "__all__"
+        read_only_fields = ("id", "timesheet_guard_name", "created_at")
+
+
+class GuardInvoiceSerializer(serializers.ModelSerializer):
+    site_name = serializers.CharField(source="site.name", read_only=True)
+    contract_name = serializers.CharField(source="contract.name", read_only=True)
+    lines = GuardInvoiceLineSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = GuardInvoice
+        fields = "__all__"
+        read_only_fields = (
+            "id",
+            "site_name",
+            "contract_name",
+            "invoice_number",
+            "subtotal",
+            "total",
+            "generated_by",
+            "issued_at",
+            "paid_at",
+            "created_at",
+            "updated_at",
+            "lines",
+        )
+
+
+class ClientPortalAccessSerializer(serializers.ModelSerializer):
+    site_name = serializers.CharField(source="site.name", read_only=True)
+    username = serializers.CharField(source="user.username", read_only=True)
+
+    class Meta:
+        model = ClientPortalAccess
+        fields = "__all__"
+        read_only_fields = ("id", "site_name", "username", "created_at")
+
+
 class WelfareCheckSerializer(serializers.ModelSerializer):
     class Meta:
         model = WelfareCheck
         fields = "__all__"
         read_only_fields = ("id", "created_at", "updated_at")
+
+
+class WelfareCheckMobileSerializer(serializers.ModelSerializer):
+    site_name = serializers.CharField(source="assignment.shift.post.site.name", read_only=True)
+    post_name = serializers.CharField(source="assignment.shift.post.name", read_only=True)
+    assignment_id = serializers.UUIDField(source="assignment.id", read_only=True)
+    is_overdue = serializers.SerializerMethodField()
+
+    class Meta:
+        model = WelfareCheck
+        fields = (
+            "id",
+            "assignment_id",
+            "due_at",
+            "responded_at",
+            "status",
+            "response_note",
+            "site_name",
+            "post_name",
+            "is_overdue",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = fields
+
+    def get_is_overdue(self, obj):
+        from django.utils import timezone
+
+        return obj.status == WelfareCheck.Status.PENDING and obj.due_at <= timezone.now()
 
 
 class GuardPanicAlertSerializer(serializers.ModelSerializer):

@@ -60,6 +60,7 @@ class BroadcastMessage(models.Model):
         choices=STATUS_CHOICES,
         default=STATUS_PENDING,
     )
+    push_data = models.JSONField(default=dict, blank=True)
     created_at = models.DateTimeField(auto_now_add=True)
     sent_at = models.DateTimeField(null=True, blank=True)
 

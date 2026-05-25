@@ -1,0 +1,35 @@
+{% comment %}Requires `counts` from GuardingOverviewMixin.{% endcomment %}
+{% if counts %}
+<div class="console-dash-kpi-strip lg:grid-cols-3 xl:grid-cols-7">
+    <a href="{% url 'dashboard:guarding-dispatch' %}" class="console-kpi-tile transition-colors hover:border-brand/25 {% if counts.open_panic %}border-red-200 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/25{% endif %}">
+        <p class="console-stat-label text-red-500">SOS open</p>
+        <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.open_panic }}</p>
+    </a>
+    <a href="{% url 'dashboard:guarding-dispatch' %}" class="console-kpi-tile transition-colors hover:border-brand/25 {% if counts.open_dispatch %}border-amber-200 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/25{% endif %}">
+        <p class="console-stat-label text-amber-600">Dispatch</p>
+        <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.open_dispatch }}</p>
+    </a>
+    <a href="{% url 'dashboard:guarding-shifts' %}" class="console-kpi-tile transition-colors hover:border-brand/25 {% if counts.welfare_due %}border-sky-200 bg-sky-50/60 dark:border-sky-900/40 dark:bg-sky-950/25{% endif %}">
+        <p class="console-stat-label text-sky-600">Welfare</p>
+        <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.welfare_due }}</p>
+    </a>
+    <a href="{% url 'dashboard:guarding-guards' %}" class="console-kpi-tile transition-colors hover:border-brand/25 {% if counts.non_compliant_guards %}border-amber-200 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/25{% endif %}">
+        <p class="console-stat-label">Guards</p>
+        <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.guards }}</p>
+        {% if counts.non_compliant_guards %}<p class="console-meta text-amber-600">{{ counts.non_compliant_guards }} incomplete</p>{% endif %}
+    </a>
+    <a href="{% url 'dashboard:guarding-posts' %}" class="console-kpi-tile transition-colors hover:border-brand/25">
+        <p class="console-stat-label">Posts</p>
+        <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.posts }}</p>
+    </a>
+    <a href="{% url 'dashboard:guarding-applicants' %}" class="console-kpi-tile transition-colors hover:border-brand/25">
+        <p class="console-stat-label">Applicants</p>
+        <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.applicants }}</p>
+    </a>
+    <a href="{% url 'dashboard:guarding-assets' %}" class="console-kpi-tile transition-colors hover:border-brand/25 {% if counts.open_manifests %}border-violet-200 bg-violet-50/60 dark:border-violet-900/40 dark:bg-violet-950/25{% endif %}">
+        <p class="console-stat-label">Assets</p>
+        <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.open_manifests|default:0 }}</p>
+        {% if counts.overdue_asset_returns %}<p class="console-meta text-amber-600">{{ counts.overdue_asset_returns }} overdue</p>{% endif %}
+    </a>
+</div>
+{% endif %}

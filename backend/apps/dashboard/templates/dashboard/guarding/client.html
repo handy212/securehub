@@ -1,0 +1,89 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guarding Activity | SecureHub</title>
+    <link rel="stylesheet" href="{% static 'dashboard/css/console.css' %}">
+    <link rel="icon" href="{% static 'dashboard/logo.png' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body class="min-h-screen bg-surface-200 font-sans text-sm text-slate-600 dark:bg-slate-950 dark:text-slate-300">
+    <main class="mx-auto max-w-7xl space-y-3 px-4 py-5 sm:px-6">
+        <header class="console-page-toolbar !mb-0 !pb-2">
+            <div>
+                <p class="console-label text-brand">SecureHub Guarding</p>
+                <h1 class="console-page-title">Client activity</h1>
+                <p class="console-page-subtitle">Approved reports, patrol proof, and attendance for your sites</p>
+            </div>
+            <div class="console-page-actions">
+                {% if can_export_reports %}<a href="{% url 'dashboard:client-guarding-reports-export' %}" class="btn-console-secondary !min-h-0 py-2">Export reports</a>{% endif %}
+                <a href="{% url 'dashboard:logout' %}" class="btn-console !min-h-0 py-2">Sign out</a>
+            </div>
+        </header>
+
+        <section class="console-dash-kpi-strip sm:grid-cols-2 lg:grid-cols-4">
+            <div class="console-kpi-tile"><p class="console-stat-label">Sites</p><p class="console-stat-value-xs mt-0.5 tabular-nums">{{ client_counts.sites }}</p></div>
+            <div class="console-kpi-tile"><p class="console-stat-label">Approved reports</p><p class="console-stat-value-xs mt-0.5 tabular-nums">{{ client_counts.reports }}</p></div>
+            <div class="console-kpi-tile"><p class="console-stat-label">Patrol rounds</p><p class="console-stat-value-xs mt-0.5 tabular-nums">{{ client_counts.patrols }}</p></div>
+            <div class="console-kpi-tile"><p class="console-stat-label">Attendance rows</p><p class="console-stat-value-xs mt-0.5 tabular-nums">{{ client_counts.assignments }}</p></div>
+        </section>
+
+        <section class="grid gap-4 xl:grid-cols-[1.2fr_0.8fr]">
+            <div class="console-table-card">
+                <div class="console-card-section-title">Approved reports</div>
+                <div class="console-table-wrap console-table-wrap--scroll">
+                <table class="console-table min-w-[960px]">
+                    <thead class="console-thead"><tr><th scope="col" class="console-th">Report</th><th scope="col" class="console-th">Site/Post</th><th scope="col" class="console-th">Guard</th><th scope="col" class="console-th">Submitted</th><th scope="col" class="console-th text-right">Acknowledge</th></tr></thead>
+                    <tbody class="console-tbody">
+                        {% for report in reports %}
+                        <tr><td class="console-td"><div class="font-semibold text-slate-900 dark:text-slate-100">{{ report.title }}</div><div class="console-meta">{{ report.get_report_type_display }} — {{ report.body|truncatechars:90 }}</div></td><td class="console-td">{{ report.site.name }}<div class="console-meta">{{ report.post.name|default:"No post" }}</div></td><td class="console-td">{{ report.guard.full_name|default:"-" }}</td><td class="console-td whitespace-nowrap">{{ report.submitted_at|date:"Y-m-d H:i" }}</td><td class="console-td text-right">{% if report.site_id in acknowledge_site_ids %}<form method="post" action="{% url 'dashboard:client-guarding-report-acknowledge' report.id %}" class="flex flex-wrap justify-end gap-2">{% csrf_token %}<input name="comment" placeholder="Comment" class="h-8 w-36 max-w-full console-inline-input min-w-0 flex-1"><button type="submit" class="btn-console shrink-0 text-xs">Ack</button></form>{% else %}<span class="text-xs font-semibold text-slate-400">{{ report.client_acknowledgements.count }} ack</span>{% endif %}</td></tr>
+                        {% empty %}<tr><td colspan="5" class="console-td console-empty-state">No approved client-visible reports.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <div class="console-table-card">
+                <div class="console-card-section-title">Sites</div>
+                <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                    {% for access in access_records %}
+                    <div class="console-list-row"><div class="font-semibold text-slate-900 dark:text-slate-100">{{ access.site.name }}</div><div class="mt-1 flex flex-wrap gap-1 console-label">{% if access.can_view_reports %}<span class="badge-console badge-console-slate">Reports</span>{% endif %}{% if access.can_view_patrols %}<span class="badge-console badge-console-slate">Patrols</span>{% endif %}{% if access.can_view_attendance %}<span class="badge-console badge-console-slate">Attendance</span>{% endif %}</div></div>
+                    {% empty %}<p class="console-empty-state">No site access.</p>{% endfor %}
+                </div>
+            </div>
+        </section>
+
+        <section class="grid gap-4 xl:grid-cols-2">
+            <div class="console-table-card">
+                <div class="console-card-section-title">Patrol proof</div>
+                <div class="console-table-wrap console-table-wrap--scroll">
+                <table class="console-table min-w-[720px]">
+                    <thead class="console-thead"><tr><th scope="col" class="console-th">Route</th><th scope="col" class="console-th">Guard</th><th scope="col" class="console-th">Status</th><th scope="col" class="console-th">Scans</th><th scope="col" class="console-th">Scheduled</th></tr></thead>
+                    <tbody class="console-tbody">
+                        {% for round in patrol_rounds %}
+                        <tr><td class="console-td"><div class="font-semibold text-slate-900 dark:text-slate-100">{{ round.route.name }}</div><div class="console-meta">{{ round.route.post.site.name }} — {{ round.route.post.name }}</div></td><td class="console-td">{{ round.assignment.guard.full_name|default:"-" }}</td><td class="console-td">{{ round.get_status_display }}</td><td class="console-td tabular-nums">{{ round.scans.count }}</td><td class="console-td whitespace-nowrap">{{ round.scheduled_start|date:"Y-m-d H:i" }}</td></tr>
+                        {% empty %}<tr><td colspan="5" class="console-td console-empty-state">No patrol rounds visible.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+
+            <div class="console-table-card">
+                <div class="console-card-section-title">Attendance</div>
+                <div class="console-table-wrap console-table-wrap--scroll">
+                <table class="console-table min-w-[720px]">
+                    <thead class="console-thead"><tr><th scope="col" class="console-th">Guard</th><th scope="col" class="console-th">Post</th><th scope="col" class="console-th">Status</th><th scope="col" class="console-th">Shift</th></tr></thead>
+                    <tbody class="console-tbody">
+                        {% for assignment in assignments %}
+                        <tr><td class="console-td font-semibold text-slate-900 dark:text-slate-100">{{ assignment.guard.full_name }}</td><td class="console-td">{{ assignment.shift.post.site.name }}<div class="console-meta">{{ assignment.shift.post.name }}</div></td><td class="console-td">{{ assignment.get_status_display }}</td><td class="console-td whitespace-nowrap">{{ assignment.shift.starts_at|date:"Y-m-d H:i" }} — {{ assignment.shift.ends_at|date:"H:i" }}</td></tr>
+                        {% empty %}<tr><td colspan="4" class="console-td console-empty-state">No attendance visible.</td></tr>{% endfor %}
+                    </tbody>
+                </table>
+                </div>
+            </div>
+        </section>
+    </main>
+</body>
+</html>

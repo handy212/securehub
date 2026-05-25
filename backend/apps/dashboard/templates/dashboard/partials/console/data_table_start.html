@@ -1,0 +1,14 @@
+{% comment %}
+Opens a console table card + scroll wrapper + <table>. Close with data_table_end.html.
+
+Optional `with`:
+  table_card_title       — If set, shows a section title bar above the table
+  table_min_width_class  — e.g. min-w-[1100px] appended to .console-table
+  table_scrollable       — If true, caps table body height for sticky headers
+{% endcomment %}
+<div class="console-table-card">
+    {% if table_card_title %}
+    <div class="console-card-section-title">{{ table_card_title }}</div>
+    {% endif %}
+    <div class="console-table-wrap{% if table_scrollable %} console-table-wrap--scroll{% endif %}">
+        <table class="console-table{% if table_min_width_class %} {{ table_min_width_class }}{% endif %}">

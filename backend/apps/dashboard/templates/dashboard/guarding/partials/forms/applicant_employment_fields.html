@@ -1,0 +1,41 @@
+{# Pass emp= when editing #}
+<div class="form-group">
+    <label>Company *</label>
+    <input name="company_name" required value="{% if emp %}{{ emp.company_name }}{% endif %}" {% if not emp %}data-modal-initial-focus{% endif %}>
+</div>
+<div class="form-group">
+    <label>Position</label>
+    <input name="position" value="{% if emp %}{{ emp.position }}{% endif %}">
+</div>
+<div class="form-group">
+    <label>Duties</label>
+    <textarea name="duties" class="w-full">{% if emp %}{{ emp.duties }}{% endif %}</textarea>
+</div>
+<div class="grid gap-3 sm:grid-cols-2">
+    <div class="form-group">
+        <label>Supervisor name</label>
+        <input name="supervisor_name" value="{% if emp %}{{ emp.supervisor_name }}{% endif %}">
+    </div>
+    <div class="form-group">
+        <label>Supervisor contact</label>
+        <input name="supervisor_contact" value="{% if emp %}{{ emp.supervisor_contact }}{% endif %}">
+    </div>
+</div>
+<div class="grid gap-3 sm:grid-cols-2">
+    <div class="form-group">
+        <label>Started on</label>
+        <input name="started_on" type="date" value="{% if emp and emp.started_on %}{{ emp.started_on|date:'Y-m-d' }}{% endif %}">
+    </div>
+    <div class="form-group">
+        <label>Ended on</label>
+        <input name="ended_on" type="date" value="{% if emp and emp.ended_on %}{{ emp.ended_on|date:'Y-m-d' }}{% endif %}">
+    </div>
+</div>
+<div class="form-group">
+    <label>Years of experience</label>
+    <input name="years_experience" value="{% if emp and emp.years_experience %}{{ emp.years_experience }}{% endif %}">
+</div>
+<div class="form-group">
+    <label>Reason for leaving</label>
+    <textarea name="reason_for_leaving" class="w-full">{% if emp %}{{ emp.reason_for_leaving }}{% endif %}</textarea>
+</div>

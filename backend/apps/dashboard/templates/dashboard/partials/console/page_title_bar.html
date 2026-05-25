@@ -1,0 +1,16 @@
+{% comment %}
+Title + optional count chip. Wrap parent row in `console-page-toolbar` with actions in `console-page-actions`.
+
+Required `with`:
+  page_title
+
+Optional:
+  count — numeric or string shown in chip
+  count_suffix — e.g. "Members" → "12 Members"
+{% endcomment %}
+<div class="flex min-w-0 items-center gap-3">
+    <h1 class="console-page-title leading-none">{{ page_title }}</h1>
+    {% if count is not None %}
+    <span class="console-count-chip">{% if count_suffix %}{{ count }} {{ count_suffix }}{% else %}{{ count }}{% endif %}</span>
+    {% endif %}
+</div>

@@ -1,0 +1,224 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Guard Reports | SecureHub{% endblock %}
+{% block header_title %}Guard Reports{% endblock %}
+{% block content %}
+{% include "dashboard/guarding/_nav.html" %}
+<div class="space-y-3" x-data="{ createModal: false, attachmentModal: false, editReportId: null, editAttachmentId: null }">
+    <div class="console-page-toolbar !mb-0 !pb-2">
+    {% include "dashboard/guarding/_kpi_strip.html" %}
+
+        <div class="min-w-0 flex-1">
+            {% include "dashboard/partials/console/page_header.html" with page_title="Reports" page_subtitle="Daily activity, incidents, maintenance, visitor logs, and evidence" %}
+        </div>
+        <div class="console-page-actions">
+            <a href="{% url 'dashboard:guarding-reports-export' %}" class="btn-console-secondary">Export</a>
+            <button type="button" @click="attachmentModal = true" class="btn-console-secondary">Attachment</button>
+            <button type="button" @click="createModal = true" class="btn-console">New Report</button>
+        </div>
+    </div>
+
+    {% include "dashboard/partials/console/data_table_start.html" with table_scrollable=True table_min_width_class="min-w-[1100px]" %}
+            <thead class="console-thead">
+                <tr>
+                    <th scope="col" class="console-th">Report</th>
+                    <th scope="col" class="console-th">Site / Post</th>
+                    <th scope="col" class="console-th">Guard</th>
+                    <th scope="col" class="console-th">Status</th>
+                    <th scope="col" class="console-th">Submitted</th>
+                    <th scope="col" class="console-th text-right">Review / Manage</th>
+                </tr>
+            </thead>
+            <tbody class="console-tbody">
+                {% for report in reports %}
+                <tr>
+                    <td class="console-td">
+                        <div class="font-semibold text-slate-900 dark:text-slate-100">{{ report.title }}</div>
+                        <div class="console-meta">{{ report.get_report_type_display }} · {{ report.body|truncatechars:80 }}</div>
+                    </td>
+                    <td class="console-td">
+                        <div>{{ report.site.name }}</div>
+                        <div class="console-meta">{{ report.post.name|default:"No post" }}</div>
+                    </td>
+                    <td class="console-td">{{ report.guard.full_name|default:"-" }}</td>
+                    <td class="console-td">
+                        {% if report.status == 'approved' %}
+                        <span class="badge-console badge-console-emerald">{{ report.get_status_display }}</span>
+                        {% elif report.status == 'rejected' %}
+                        <span class="badge-console badge-console-red">{{ report.get_status_display }}</span>
+                        {% else %}
+                        <span class="badge-console badge-console-amber">{{ report.get_status_display }}</span>
+                        {% endif %}
+                    </td>
+                    <td class="console-td whitespace-nowrap text-slate-600 dark:text-slate-300">{{ report.submitted_at|date:"Y-m-d H:i" }}</td>
+                    <td class="console-td text-right">
+                        <form method="post" action="{% url 'dashboard:guarding-report-review' report.id %}" class="flex flex-wrap items-center justify-end gap-2">
+                            {% csrf_token %}
+                            <input name="note" placeholder="Review note" class="h-8 w-full min-w-0 max-w-[14rem] console-inline-input min-w-0 flex-1">
+                            <button type="submit" name="status" value="approved" class="btn-console-approve shrink-0">Approve</button>
+                            <button type="submit" name="status" value="rejected" class="btn-console-reject shrink-0">Reject</button>
+                        </form>
+                        <button type="button" class="btn-console-secondary mt-2" @click="editReportId = '{{ report.id }}'">Edit report</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="console-td console-empty-state">No reports yet.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+    {% include "dashboard/partials/console/data_table_end.html" %}
+
+    <div class="console-table-card">
+        <div class="console-card-section-title">Report attachments</div>
+        <div class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for attachment in attachments %}
+            <div class="console-list-row">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div class="min-w-0">
+                        <div class="font-semibold text-slate-900 dark:text-slate-100">{{ attachment.caption|default:attachment.file.name }}</div>
+                        <div class="console-meta">{{ attachment.report.title }} · {{ attachment.report.site.name }}</div>
+                        <div class="console-meta mt-1">{{ attachment.uploaded_at|date:"Y-m-d H:i" }} · {{ attachment.content_type|default:"file" }}</div>
+                    </div>
+                    <div class="flex shrink-0 justify-end">
+                        <button type="button" class="btn-console-secondary" @click="editAttachmentId = '{{ attachment.id }}'">Edit</button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="console-empty-state">No report attachments.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% for report in reports %}
+    <template x-if="editReportId === '{{ report.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit field report" modal_subtitle=report.title modal_close="editReportId = null" modal_max_width="max-w-3xl" modal_title_id="report-edit-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_report">
+            <input type="hidden" name="report_id" value="{{ report.id }}">
+            <div class="grid gap-3 sm:grid-cols-3">
+                <select name="site_id" required data-modal-initial-focus>{% for site in sites %}<option value="{{ site.id }}" {% if report.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}</select>
+                <select name="post_id">
+                    <option value="">No post</option>
+                    {% for post in posts %}<option value="{{ post.id }}" {% if report.post_id == post.id %}selected{% endif %}>{{ post.site.name }} · {{ post.name }}</option>{% endfor %}
+                </select>
+                <select name="guard_id">
+                    <option value="">No guard</option>
+                    {% for guard in guards %}<option value="{{ guard.id }}" {% if report.guard_id == guard.id %}selected{% endif %}>{{ guard.full_name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-3">
+                <select name="assignment_id">
+                    <option value="">No assignment</option>
+                    {% for assignment in assignments %}<option value="{{ assignment.id }}" {% if report.assignment_id == assignment.id %}selected{% endif %}>{{ assignment.guard.full_name }} · {{ assignment.shift.post.name }}</option>{% endfor %}
+                </select>
+                <select name="report_type">{% for value,label in report_types %}<option value="{{ value }}" {% if report.report_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+                <select name="status">{% for value,label in report_statuses %}<option value="{{ value }}" {% if report.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+            <input name="title" value="{{ report.title }}" required placeholder="Report title">
+            <textarea name="body" class="w-full" placeholder="Report body">{{ report.body }}</textarea>
+            <label class="flex items-center gap-2 console-label text-slate-500">
+                <input name="hidden_from_client" type="checkbox" {% if not report.visible_to_client %}checked{% endif %}> Hide from client
+            </label>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-2 rounded-b-lg border-t border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-slate-800 dark:bg-slate-800/30">
+                <button type="button" class="btn-console-secondary" @click="editReportId = null">Cancel</button>
+                <button type="submit" class="btn-console">Save changes</button>
+            </div>
+        </form>
+        <form method="post" class="mt-2 px-5 pb-5">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_report">
+            <input type="hidden" name="report_id" value="{{ report.id }}">
+            <button type="submit" class="btn-console-danger" onclick="return confirm('Delete this report?');">Delete report</button>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for attachment in attachments %}
+    <template x-if="editAttachmentId === '{{ attachment.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit attachment" modal_subtitle=attachment.caption|default:attachment.file.name modal_close="editAttachmentId = null" modal_max_width="max-w-lg" modal_title_id="attachment-edit-modal-title" %}
+        <form method="post" enctype="multipart/form-data" class="form-perfex space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_attachment">
+            <input type="hidden" name="attachment_id" value="{{ attachment.id }}">
+            <select name="report_id" required data-modal-initial-focus>{% for report in reports %}<option value="{{ report.id }}" {% if attachment.report_id == report.id %}selected{% endif %}>{{ report.title }} · {{ report.site.name }}</option>{% endfor %}</select>
+            <input name="caption" value="{{ attachment.caption }}" placeholder="Caption">
+            <input name="file" type="file">
+            <div class="console-modal-footer -mx-5 -mb-5 mt-2 rounded-b-lg border-t border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-slate-800 dark:bg-slate-800/30">
+                <button type="button" class="btn-console-secondary" @click="editAttachmentId = null">Cancel</button>
+                <button type="submit" class="btn-console">Save</button>
+            </div>
+        </form>
+        <form method="post" class="mt-2 px-5 pb-5">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="delete_attachment">
+            <input type="hidden" name="attachment_id" value="{{ attachment.id }}">
+            <button type="submit" class="text-xs font-semibold text-red-500 hover:text-red-600" onclick="return confirm('Delete this attachment?');">Delete attachment</button>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    <template x-if="createModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Create field report" modal_close="createModal = false" modal_max_width="max-w-3xl" modal_title_id="report-create-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="report">
+            <div class="grid gap-3 sm:grid-cols-3">
+                <select name="site_id" required data-modal-initial-focus>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select>
+                <select name="post_id">
+                    <option value="">No post</option>
+                    {% for post in posts %}<option value="{{ post.id }}">{{ post.site.name }} · {{ post.name }}</option>{% endfor %}
+                </select>
+                <select name="guard_id">
+                    <option value="">No guard</option>
+                    {% for guard in guards %}<option value="{{ guard.id }}">{{ guard.full_name }}</option>{% endfor %}
+                </select>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-3">
+                <select name="assignment_id">
+                    <option value="">No assignment</option>
+                    {% for assignment in assignments %}<option value="{{ assignment.id }}">{{ assignment.guard.full_name }} · {{ assignment.shift.post.name }}</option>{% endfor %}
+                </select>
+                <select name="report_type">{% for value,label in report_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+                <select name="status">{% for value,label in report_statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-[1fr_14rem]">
+                <input name="title" required placeholder="Report title">
+                <input name="submitted_at" type="datetime-local">
+            </div>
+            <textarea name="body" placeholder="Report body" class="w-full"></textarea>
+            <label class="flex items-center gap-2 console-label text-slate-500">
+                <input name="hidden_from_client" type="checkbox"> Hide from client
+            </label>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-2 rounded-b-lg border-t border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-slate-800 dark:bg-slate-800/30">
+                <button type="button" class="btn-console-secondary" @click="createModal = false">Cancel</button>
+                <button type="submit" class="btn-console">Create</button>
+            </div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="attachmentModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Upload report attachment" modal_close="attachmentModal = false" modal_max_width="max-w-2xl" modal_title_id="attachment-upload-modal-title" %}
+        <form method="post" enctype="multipart/form-data" class="form-perfex space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="attachment">
+            <select name="report_id" required data-modal-initial-focus>{% for report in reports %}<option value="{{ report.id }}">{{ report.title }} · {{ report.site.name }}</option>{% endfor %}</select>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <input name="caption" placeholder="Caption">
+                <input name="file" type="file" required>
+            </div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-2 rounded-b-lg border-t border-slate-100 bg-slate-50/50 px-5 py-3 dark:border-slate-800 dark:bg-slate-800/30">
+                <button type="button" class="btn-console-secondary" @click="attachmentModal = false">Cancel</button>
+                <button type="submit" class="btn-console">Upload</button>
+            </div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+</div>
+</div>
+</div>
+{% endblock %}

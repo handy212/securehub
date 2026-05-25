@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 
@@ -56,7 +55,7 @@ class AppSectionHeader extends StatelessWidget {
               if (eyebrow != null && eyebrow!.isNotEmpty) ...[
                 Text(
                   eyebrow!.toUpperCase(),
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.w800,
                     letterSpacing: 1.4,
@@ -67,7 +66,7 @@ class AppSectionHeader extends StatelessWidget {
               ],
               Text(
                 title,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 24,
                   fontWeight: FontWeight.w800,
                   letterSpacing: -0.7,
@@ -78,7 +77,7 @@ class AppSectionHeader extends StatelessWidget {
                 const SizedBox(height: 6),
                 Text(
                   subtitle!,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 13,
                     height: 1.45,
                     color: AppTheme.onSurfaceVariant,
@@ -123,7 +122,7 @@ class AppMetricChip extends StatelessWidget {
         children: [
           Text(
             value,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
               color: tone,
@@ -132,7 +131,7 @@ class AppMetricChip extends StatelessWidget {
           const SizedBox(height: 2),
           Text(
             label.toUpperCase(),
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 9,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.0,
@@ -162,46 +161,49 @@ class AppEmptyState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: AppPanel(
-        padding: const EdgeInsets.all(28),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppTheme.secondaryContainer.withValues(alpha: 0.35),
-                shape: BoxShape.circle,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: AppPanel(
+          padding: const EdgeInsets.all(28),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppTheme.secondaryContainer.withValues(alpha: 0.35),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 32, color: AppTheme.secondary),
               ),
-              child: Icon(icon, size: 32, color: AppTheme.secondary),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.primary,
-              ),
-            ),
-            if (message != null && message!.isNotEmpty) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 18),
               Text(
-                message!,
+                title,
                 textAlign: TextAlign.center,
-                style: GoogleFonts.inter(
-                  fontSize: 13,
-                  height: 1.5,
-                  color: AppTheme.onSurfaceVariant,
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.primary,
                 ),
               ),
+              if (message != null && message!.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                Text(
+                  message!,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 13,
+                    height: 1.45,
+                    color: AppTheme.onSurfaceVariant,
+                  ),
+                ),
+              ],
+              if (action != null) ...[
+                const SizedBox(height: 18),
+                action!,
+              ],
             ],
-            if (action != null) ...[
-              const SizedBox(height: 18),
-              action!,
-            ],
-          ],
+          ),
         ),
       ),
     );
@@ -223,51 +225,55 @@ class AppErrorState extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Center(
-      child: AppPanel(
-        padding: const EdgeInsets.all(28),
-        backgroundColor: AppTheme.surfaceContainerLowest,
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(18),
-              decoration: BoxDecoration(
-                color: AppTheme.errorContainer.withValues(alpha: 0.75),
-                shape: BoxShape.circle,
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: AppPanel(
+          padding: const EdgeInsets.all(28),
+          backgroundColor: AppTheme.surfaceContainerLowest,
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: AppTheme.errorContainer.withValues(alpha: 0.75),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.cloud_off_rounded,
+                  size: 32,
+                  color: AppTheme.error,
+                ),
               ),
-              child: const Icon(
-                Icons.cloud_off_rounded,
-                size: 32,
-                color: AppTheme.error,
-              ),
-            ),
-            const SizedBox(height: 18),
-            Text(
-              title,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 19,
-                fontWeight: FontWeight.w800,
-                color: AppTheme.primary,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
-                fontSize: 13,
-                height: 1.5,
-                color: AppTheme.onSurfaceVariant,
-              ),
-            ),
-            if (action != null) ...[
               const SizedBox(height: 18),
-              action!,
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
+                  color: AppTheme.primary,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.45,
+                  color: AppTheme.onSurfaceVariant,
+                ),
+              ),
+              if (action != null) ...[
+                const SizedBox(height: 18),
+                action!,
+              ],
             ],
-          ],
+          ),
         ),
       ),
     );
   }
 }
+

@@ -154,8 +154,8 @@ class PasswordResetRequestSerializer(serializers.Serializer):
             form.save(
                 request=self.context.get("request"),
                 use_https=self.context.get("request").is_secure() if self.context.get("request") else False,
-                email_template_name="dashboard/password_reset_email.txt",
-                subject_template_name="dashboard/password_reset_subject.txt",
+                email_template_name="dashboard/auth/password_reset_email.txt",
+                subject_template_name="dashboard/auth/password_reset_subject.txt",
                 **kwargs,
             )
 

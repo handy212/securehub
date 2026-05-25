@@ -83,6 +83,7 @@ urlpatterns = [
     path("api/v1/communication/", include("apps.communication.urls")),
     path("api/v1/emergency/", include("apps.emergency.urls")),
     path("api/v1/guarding/", include("apps.guarding.urls")),
+    path("apply/guard/", include("apps.guarding.urls_public")),
     path("console/", include("apps.dashboard.urls")),
 ]
 

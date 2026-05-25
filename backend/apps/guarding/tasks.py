@@ -7,11 +7,24 @@ from django.utils import timezone
 from apps.communication.models import BroadcastMessage
 from apps.communication.tasks import send_broadcast_push_notifications
 
-from .models import DispatchTask, GuardingEventLog, PatrolRound, WelfareCheck
-from .services import transition_patrol_round
+from .models import (
+    DispatchTask,
+    GuardCredential,
+    GuardDocument,
+    GuardTimesheet,
+    GuardTrainingRecord,
+    GuardingEventLog,
+    PatrolRound,
+    ShiftAssignment,
+    WelfareCheck,
+)
+from .services import build_timesheet_for_assignment, mark_assignment_no_show, transition_patrol_round
 
 
 WELFARE_WARNING_MINUTES = 10
+LATE_CLOCK_IN_MINUTES = 10
+NO_SHOW_MINUTES = 30
+EXPIRY_WARNING_DAYS = 30
 DISPATCH_ASSIGNMENT_SLA_MINUTES = 5
 DISPATCH_ACCEPTED_SLA_MINUTES = 10
 DISPATCH_EN_ROUTE_SLA_MINUTES = 30
@@ -59,10 +72,25 @@ def _create_event(
     return event if created else None
 
 
-def _notify_guard(guard, *, title, body, event=None):
+def _notify_guard(guard, *, title, body, event=None, push_data=None):
     user = getattr(guard, "user", None)
     if user is None:
         return None
+    payload = dict(push_data or {})
+    if event is not None:
+        payload.setdefault("event_type", event.event_type)
+        payload.setdefault("object_id", event.object_id)
+        payload.setdefault("severity", event.severity)
+        route = "guard/home"
+        if event.event_type.startswith("dispatch_"):
+            route = "guard/dispatch"
+        elif event.event_type.startswith("welfare_"):
+            route = "guard/welfare"
+        elif event.event_type.startswith("patrol_"):
+            route = "guard/patrol"
+        elif event.event_type.startswith("panic"):
+            route = "guard/panic"
+        payload.setdefault("route", route)
     message = BroadcastMessage.objects.create(
         title=title,
         body=body,
@@ -72,6 +100,7 @@ def _notify_guard(guard, *, title, body, event=None):
         send_sms=False,
         recipient=user,
         status=BroadcastMessage.STATUS_PENDING,
+        push_data=payload,
     )
     if event is not None:
         event.metadata = {**event.metadata, "broadcast_message_id": str(message.id)}
@@ -258,10 +287,214 @@ def escalate_dispatch_sla_breaches():
 
 
 @shared_task
+def warn_expiring_guard_records():
+    today = timezone.localdate()
+    cutoff = today + timedelta(days=EXPIRY_WARNING_DAYS)
+    created_count = 0
+
+    credentials = (
+        GuardCredential.objects.select_related("guard", "guard__user")
+        .filter(expires_on__isnull=False, expires_on__gte=today, expires_on__lte=cutoff)
+        .order_by("expires_on")[:200]
+    )
+    for credential in credentials:
+        event = _create_event(
+            event_type="credential_expiring",
+            severity=GuardingEventLog.Severity.WARNING,
+            title="Credential expiring",
+            message=f"{credential.name} for {credential.guard.full_name} expires on {credential.expires_on:%Y-%m-%d}.",
+            obj=credential,
+            guard=credential.guard,
+            unique_key=f"credential_expiring:{credential.pk}:{credential.expires_on}",
+            metadata={"expires_on": credential.expires_on.isoformat()},
+        )
+        if event:
+            created_count += 1
+            _notify_guard(
+                credential.guard,
+                title="Credential expiring",
+                body=f"{credential.name} expires on {credential.expires_on:%Y-%m-%d}.",
+                event=event,
+            )
+
+    documents = (
+        GuardDocument.objects.select_related("guard", "guard__user")
+        .filter(expires_on__isnull=False, expires_on__gte=today, expires_on__lte=cutoff)
+        .order_by("expires_on")[:200]
+    )
+    for document in documents:
+        event = _create_event(
+            event_type="document_expiring",
+            severity=GuardingEventLog.Severity.WARNING,
+            title="Document expiring",
+            message=f"{document.title} for {document.guard.full_name} expires on {document.expires_on:%Y-%m-%d}.",
+            obj=document,
+            guard=document.guard,
+            unique_key=f"document_expiring:{document.pk}:{document.expires_on}",
+            metadata={"expires_on": document.expires_on.isoformat()},
+        )
+        if event:
+            created_count += 1
+            _notify_guard(
+                document.guard,
+                title="Document expiring",
+                body=f"{document.title} expires on {document.expires_on:%Y-%m-%d}.",
+                event=event,
+            )
+
+    training_records = (
+        GuardTrainingRecord.objects.select_related("guard", "guard__user")
+        .filter(expires_on__isnull=False, expires_on__gte=today, expires_on__lte=cutoff)
+        .order_by("expires_on")[:200]
+    )
+    for record in training_records:
+        event = _create_event(
+            event_type="training_expiring",
+            severity=GuardingEventLog.Severity.WARNING,
+            title="Training expiring",
+            message=f"{record.name} for {record.guard.full_name} expires on {record.expires_on:%Y-%m-%d}.",
+            obj=record,
+            guard=record.guard,
+            unique_key=f"training_expiring:{record.pk}:{record.expires_on}",
+            metadata={"expires_on": record.expires_on.isoformat()},
+        )
+        if event:
+            created_count += 1
+            _notify_guard(
+                record.guard,
+                title="Training expiring",
+                body=f"{record.name} expires on {record.expires_on:%Y-%m-%d}.",
+                event=event,
+            )
+    return created_count
+
+
+@shared_task
+def flag_late_and_no_show_assignments():
+    now = timezone.now()
+    late_cutoff = now - timedelta(minutes=LATE_CLOCK_IN_MINUTES)
+    no_show_cutoff = now - timedelta(minutes=NO_SHOW_MINUTES)
+    assignments = (
+        ShiftAssignment.objects.select_related("guard", "guard__user", "shift", "shift__post", "shift__post__site")
+        .filter(
+            status__in=[ShiftAssignment.Status.ASSIGNED, ShiftAssignment.Status.ACCEPTED],
+            shift__starts_at__lt=late_cutoff,
+            clocked_in_at__isnull=True,
+        )
+        .order_by("shift__starts_at")[:300]
+    )
+    created_count = 0
+    for assignment in assignments:
+        if assignment.shift.starts_at < no_show_cutoff:
+            if assignment.status != ShiftAssignment.Status.NO_SHOW:
+                mark_assignment_no_show(assignment, note="Automatically marked no-show after missed clock-in.")
+            event_type = "assignment_no_show"
+            title = "No-show detected"
+            severity = GuardingEventLog.Severity.CRITICAL
+            unique_key = f"assignment_no_show:{assignment.pk}"
+        else:
+            event_type = "assignment_late_clock_in"
+            title = "Late clock-in"
+            severity = GuardingEventLog.Severity.WARNING
+            unique_key = f"assignment_late_clock_in:{assignment.pk}"
+        event = _create_event(
+            event_type=event_type,
+            severity=severity,
+            title=title,
+            message=f"{assignment.guard.full_name} has not clocked in for {assignment.shift.post.name}.",
+            obj=assignment,
+            guard=assignment.guard,
+            site=assignment.shift.post.site,
+            unique_key=unique_key,
+            metadata={"shift_start": assignment.shift.starts_at.isoformat()},
+        )
+        if event:
+            created_count += 1
+            _notify_guard(
+                assignment.guard,
+                title=title,
+                body=f"Shift at {assignment.shift.post.name} started at {assignment.shift.starts_at:%H:%M}.",
+                event=event,
+            )
+    return created_count
+
+
+@shared_task
+def generate_ready_timesheets():
+    assignments = (
+        ShiftAssignment.objects.select_related("guard", "shift", "shift__post", "shift__post__site")
+        .filter(
+            status=ShiftAssignment.Status.CLOCKED_OUT,
+            clocked_in_at__isnull=False,
+            clocked_out_at__isnull=False,
+            timesheet__isnull=True,
+        )
+        .order_by("clocked_out_at")[:300]
+    )
+    created_count = 0
+    for assignment in assignments:
+        timesheet = build_timesheet_for_assignment(assignment)
+        if timesheet:
+            created_count += 1
+    return created_count
+
+
+@shared_task
+def purge_old_guard_location_pings():
+    from .services import purge_old_location_pings
+
+    return purge_old_location_pings()
+
+
+@shared_task
+def flag_overdue_asset_returns():
+    from datetime import timedelta
+
+    from .asset_models import ShiftAssetManifest
+
+    cutoff = timezone.now() - timedelta(hours=24)
+    manifests = ShiftAssetManifest.objects.select_related(
+        "assignment__guard",
+        "assignment__shift__post",
+        "assignment__shift__post__site",
+    ).filter(
+        status__in=[
+            ShiftAssetManifest.Status.ISSUED,
+            ShiftAssetManifest.Status.PARTIAL_RETURN,
+        ],
+        assignment__clocked_out_at__isnull=False,
+        assignment__clocked_out_at__lt=cutoff,
+    )[:200]
+    created_count = 0
+    for manifest in manifests:
+        unique_key = f"asset_overdue_return:{manifest.pk}"
+        event = _create_event(
+            event_type="asset_return_overdue",
+            severity=GuardingEventLog.Severity.WARNING,
+            title="Asset return overdue",
+            message=(
+                f"{manifest.assignment.guard.full_name} clocked out but assets "
+                f"for {manifest.assignment.shift.post.name} are not fully returned."
+            ),
+            obj=manifest,
+            guard=manifest.assignment.guard,
+            site=manifest.assignment.shift.post.site,
+            unique_key=unique_key,
+        )
+        if event:
+            created_count += 1
+    return created_count
+
+
+@shared_task
 def run_guarding_automation():
     return {
         "welfare_due_soon": warn_due_welfare_checks(),
         "welfare_missed": mark_overdue_welfare_checks(),
         "patrol_rounds_missed": mark_overdue_patrol_rounds(),
         "dispatch_sla": escalate_dispatch_sla_breaches(),
+        "expiring_records": warn_expiring_guard_records(),
+        "late_no_show_assignments": flag_late_and_no_show_assignments(),
+        "timesheets_generated": generate_ready_timesheets(),
+        "asset_returns_overdue": flag_overdue_asset_returns(),
     }

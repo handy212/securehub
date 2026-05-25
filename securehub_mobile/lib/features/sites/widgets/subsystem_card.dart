@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../core/models/site.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -127,7 +126,7 @@ class SubsystemCard extends StatelessWidget {
                             subsystem.name,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: isHero ? 18 : 12,
                               color: AppTheme.primary,
@@ -266,7 +265,7 @@ class _TagPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 8,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.35,
@@ -301,7 +300,7 @@ class _StatusPill extends StatelessWidget {
       ),
       child: Text(
         '$count ${label.toUpperCase()}',
-        style: GoogleFonts.inter(
+        style: TextStyle(
           color: isError ? AppTheme.error : AppTheme.onTertiaryContainer,
           fontSize: 8,
           fontWeight: FontWeight.w800,
@@ -311,3 +310,4 @@ class _StatusPill extends StatelessWidget {
     );
   }
 }
+

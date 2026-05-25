@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/sites_provider.dart';
 import '../../../core/api/api_client.dart';
@@ -72,7 +71,7 @@ class CameraLiveScreen extends ConsumerWidget {
                       const SizedBox(height: 16),
                       Text(
                         'STREAM ERROR',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           color: Colors.white,
                           fontWeight: FontWeight.w800,
                         ),
@@ -81,7 +80,7 @@ class CameraLiveScreen extends ConsumerWidget {
                       Text(
                         err.toString(),
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           color: Colors.white54,
                           fontSize: 11,
                         ),
@@ -126,7 +125,7 @@ class CameraLiveScreen extends ConsumerWidget {
                       children: [
                         Text(
                           channelName.toUpperCase(),
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
@@ -145,7 +144,7 @@ class CameraLiveScreen extends ConsumerWidget {
                             const SizedBox(width: 6),
                             Text(
                               'LIVE MONITORING',
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
@@ -230,7 +229,7 @@ class _ControlIcon extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: Colors.white54,
             fontSize: 9,
             fontWeight: FontWeight.w800,
@@ -255,7 +254,7 @@ class _ErrorIndicator extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           message,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: Colors.white24,
             fontSize: 12,
             fontWeight: FontWeight.w900,
@@ -266,3 +265,4 @@ class _ErrorIndicator extends StatelessWidget {
     );
   }
 }
+

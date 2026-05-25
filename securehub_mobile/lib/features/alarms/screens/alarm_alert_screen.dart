@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
@@ -153,7 +152,7 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                   const SizedBox(width: 12),
                   Text(
                     'SecureHub',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
                       color: AppTheme.alarmRed,
@@ -162,7 +161,7 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                   const Spacer(),
                   Text(
                     'System Live',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.alarmRed.withValues(alpha: 0.6),
@@ -205,7 +204,7 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                         ? 'ALARM TRIGGERED: ${headline.toUpperCase()}'
                         : 'ALARM TRIGGERED',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
                       color: AppTheme.alarmRed,
@@ -216,7 +215,7 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                   const SizedBox(height: 12),
                   Text(
                     'IMMEDIATE ACTION REQUIRED',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                       color: AppTheme.alarmRed.withValues(alpha: 0.8),
@@ -285,7 +284,7 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                       icon: const Icon(Icons.emergency_share_rounded, size: 28),
                       label: Text(
                         'EMERGENCY CALL',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0.5,
@@ -296,7 +295,7 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                   const SizedBox(height: 16),
                   Text(
                     'Monitoring center has been notified and is on standby.',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
                       color: AppTheme.alarmRed.withValues(alpha: 0.5),
@@ -329,7 +328,7 @@ class _AlertFallback extends StatelessWidget {
         const SizedBox(height: 12),
         Text(
           message,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w700,
             color: AppTheme.alarmRed.withValues(alpha: 0.4),
@@ -443,7 +442,7 @@ class _MediaPreview extends ConsumerWidget {
             ],
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -668,7 +667,7 @@ class _VerifyingBadge extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             'Verifying Source...',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: Colors.white,
@@ -718,7 +717,7 @@ class _AlertActionButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1,
@@ -730,3 +729,4 @@ class _AlertActionButton extends StatelessWidget {
     );
   }
 }
+

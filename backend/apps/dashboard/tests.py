@@ -14,7 +14,20 @@ from apps.alarms.models import AlarmEvent
 from apps.communication.models import BroadcastMessage
 from apps.dashboard.views import CONSOLE_LOGIN_ATTEMPT_LIMIT
 from apps.hik_adapter.exceptions import HikPartnerError
-from apps.sites.models import AlarmOutput, AlarmPanelDevice, AlarmPeripheral, CustomerSiteAccess, Site, Subscription, SubscriptionPayment, Subsystem, Zone
+from apps.accounts.models import StaffOperatorProfile
+from apps.accounts.rbac import OperatorRole
+from apps.sites.models import (
+    AlarmOutput,
+    AlarmPanelDevice,
+    AlarmPeripheral,
+    CustomerSiteAccess,
+    OperationsZone,
+    Site,
+    Subscription,
+    SubscriptionPayment,
+    Subsystem,
+    Zone,
+)
 
 
 class DashboardFlowTests(TestCase):
@@ -1406,3 +1419,146 @@ class DashboardFlowTests(TestCase):
         self.assertEqual(resend_response.status_code, 302)
         self.assertEqual(BroadcastMessage.objects.filter(title="Updated Maintenance").count(), 2)
         mock_delay.assert_called_once()
+
+
+class OperationsZoneTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(
+            username="ops-zone-staff",
+            email="ops-zone@example.com",
+            password="Secret123!",
+            is_staff=True,
+        )
+        self.auditor = User.objects.create_user(
+            username="ops-zone-auditor",
+            email="ops-auditor@example.com",
+            password="Secret123!",
+            is_staff=True,
+        )
+        StaffOperatorProfile.objects.create(user=self.auditor, role=OperatorRole.AUDITOR)
+        self.site = Site.objects.create(
+            name="Zone Test Site",
+            hik_site_id="hik-zone-1",
+            latitude="5.603700",
+            longitude="-0.187000",
+        )
+
+    def test_site_map_includes_zone_metadata(self):
+        zone = OperationsZone.objects.create(name="Accra Central", color="#10b981", sort_order=1)
+        self.site.operations_zone = zone
+        self.site.save(update_fields=["operations_zone"])
+
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("dashboard:site-map"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Accra Central")
+        self.assertContains(response, "zones-data")
+
+    def test_map_zone_create_and_assign_site(self):
+        self.client.force_login(self.staff)
+        create_response = self.client.post(
+            reverse("dashboard:map-zones"),
+            {
+                "name": "East Legon",
+                "color": "#6366f1",
+                "description": "East coverage",
+                "sort_order": "2",
+            },
+        )
+        self.assertEqual(create_response.status_code, 302)
+        zone = OperationsZone.objects.get(name="East Legon")
+        self.assertEqual(zone.color, "#6366f1")
+
+        update_response = self.client.post(
+            reverse("dashboard:update-site", args=[self.site.pk]),
+            {
+                "name": self.site.name,
+                "hik_site_id": self.site.hik_site_id,
+                "operations_zone": str(zone.pk),
+                "timezone": "UTC",
+                "is_active": "on",
+            },
+        )
+        self.assertEqual(update_response.status_code, 302)
+        self.site.refresh_from_db()
+        self.assertEqual(self.site.operations_zone_id, zone.pk)
+
+    def test_map_zone_duplicate_name_rejected(self):
+        OperationsZone.objects.create(name="Duplicate")
+        self.client.force_login(self.staff)
+        response = self.client.post(
+            reverse("dashboard:map-zones"),
+            {"name": "duplicate", "color": "#6366f1", "sort_order": "0"},
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(OperationsZone.objects.filter(name__iexact="duplicate").count(), 1)
+
+    def test_auditor_cannot_manage_map_zones(self):
+        self.client.force_login(self.auditor)
+        response = self.client.get(reverse("dashboard:map-zones"))
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response.url, reverse("dashboard:home"))
+
+    def test_inactive_zone_preserved_on_site_update(self):
+        hidden = OperationsZone.objects.create(name="Legacy Zone", is_active=False)
+        self.site.operations_zone = hidden
+        self.site.save(update_fields=["operations_zone"])
+
+        self.client.force_login(self.staff)
+        get_response = self.client.get(reverse("dashboard:update-site", args=[self.site.pk]))
+        self.assertContains(get_response, "Legacy Zone")
+        self.assertContains(get_response, "(hidden)")
+
+        post_response = self.client.post(
+            reverse("dashboard:update-site", args=[self.site.pk]),
+            {
+                "name": "Renamed Site",
+                "hik_site_id": self.site.hik_site_id,
+                "operations_zone": str(hidden.pk),
+                "timezone": "UTC",
+                "is_active": "on",
+            },
+        )
+        self.assertEqual(post_response.status_code, 302)
+        self.site.refresh_from_db()
+        self.assertEqual(self.site.operations_zone_id, hidden.pk)
+        self.assertEqual(self.site.name, "Renamed Site")
+
+    def test_site_directory_filters_by_zone(self):
+        zone = OperationsZone.objects.create(name="Filter Zone")
+        self.site.operations_zone = zone
+        self.site.save(update_fields=["operations_zone"])
+        Site.objects.create(name="Other", hik_site_id="hik-zone-2", operations_zone=zone)
+
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("dashboard:sites"), {"zone": str(zone.pk)})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Zone Test Site")
+        self.assertContains(response, "Other")
+        self.assertNotContains(response, "Directory is Empty")
+
+    def test_site_map_accepts_zone_query_param(self):
+        zone = OperationsZone.objects.create(name="URL Zone")
+        self.site.operations_zone = zone
+        self.site.save(update_fields=["operations_zone"])
+
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("dashboard:site-map"), {"zone": str(zone.pk)})
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "activeZoneFilter")
+
+    def test_build_guard_map_payload_scopes_site_lookup(self):
+        from apps.dashboard.api_views import build_guard_map_payload
+
+        OperationsZone.objects.create(name="Unused")
+        with patch("apps.dashboard.api_views.build_command_center_snapshot") as mock_snapshot:
+            mock_snapshot.return_value = {
+                "guards": [],
+                "open_panic_count": 0,
+                "active_dispatch_count": 0,
+                "generated_at": timezone.now().isoformat(),
+            }
+            with patch.object(Site.objects, "filter") as mock_filter:
+                build_guard_map_payload()
+                mock_filter.assert_not_called()

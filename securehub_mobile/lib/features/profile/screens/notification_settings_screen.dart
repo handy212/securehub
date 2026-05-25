@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:firebase_messaging/firebase_messaging.dart' as fcm;
-import 'package:google_fonts/google_fonts.dart';
 import '../../../core/notifications/notification_settings_notifier.dart';
 import '../../../core/notifications/notification_service.dart';
 import '../../../core/theme/app_theme.dart';
@@ -18,7 +17,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
       backgroundColor: Colors.transparent,
       appBar: AppBar(
         title: Text('Alert Settings',
-            style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 17)),
+            style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17)),
         backgroundColor: Colors.transparent,
         elevation: 0,
         centerTitle: true,
@@ -54,7 +53,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                             children: [
                               Text(
                                 'System permissions denied',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(
                                     color: AppTheme.error,
                                     fontSize: 13,
                                     fontWeight: FontWeight.w800),
@@ -62,7 +61,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                               const SizedBox(height: 2),
                               Text(
                                 'Notifications are blocked in settings.',
-                                style: GoogleFonts.inter(
+                                style: TextStyle(
                                     color: AppTheme.onSurfaceVariant,
                                     fontSize: 12),
                               ),
@@ -77,7 +76,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
                             ref.invalidate(notificationServiceProvider);
                           }),
                           child: Text('ENABLE',
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                   fontWeight: FontWeight.w800,
                                   fontSize: 12,
                                   color: AppTheme.error)),
@@ -167,10 +166,10 @@ class NotificationSettingsScreen extends ConsumerWidget {
                       color: AppTheme.primary, size: 20),
                 ),
                 title: Text('Test notification',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                         fontWeight: FontWeight.w700, fontSize: 14)),
                 subtitle: Text('Tap to trigger a local test notification',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                         fontSize: 12, color: AppTheme.onSurfaceVariant)),
                 onTap: () {
                   HapticFeedback.heavyImpact();
@@ -195,7 +194,7 @@ class NotificationSettingsScreen extends ConsumerWidget {
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (err, _) => Center(
             child: Text('Error: $err',
-                style: const TextStyle(color: AppTheme.error))),
+                style: TextStyle(color: AppTheme.error))),
       ),
     );
   }
@@ -211,7 +210,7 @@ class _SectionHeader extends StatelessWidget {
       padding: const EdgeInsets.only(left: 4, bottom: 12),
       child: Text(
         title.toUpperCase(),
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w800,
           letterSpacing: 1.5,
@@ -242,12 +241,12 @@ class _NotificationToggle extends StatelessWidget {
     return SwitchListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
       title: Text(title,
-          style: GoogleFonts.inter(
+          style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 14,
               color: isCritical && value ? AppTheme.error : AppTheme.primary)),
       subtitle: Text(subtitle,
-          style: GoogleFonts.inter(
+          style: TextStyle(
               fontSize: 12, color: AppTheme.onSurfaceVariant)),
       value: value,
       activeThumbColor: isCritical ? AppTheme.error : AppTheme.secondary,
@@ -260,3 +259,5 @@ class _NotificationToggle extends StatelessWidget {
     );
   }
 }
+
+

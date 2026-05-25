@@ -44,3 +44,13 @@ class NetworkException implements Exception {
   @override
   String toString() => message;
 }
+
+/// Thrown when the app is missing required build-time configuration.
+class AppConfigurationException implements Exception {
+  const AppConfigurationException(this.message);
+
+  final String message;
+
+  @override
+  String toString() => message;
+}

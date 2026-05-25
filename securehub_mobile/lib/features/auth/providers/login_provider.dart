@@ -43,6 +43,8 @@ class LoginNotifier extends _$LoginNotifier {
       }
     } on NetworkException {
       state = LoginError('No connection. Please check your network.');
+    } on AppConfigurationException catch (e) {
+      state = LoginError(e.message);
     } catch (e) {
       if (kDebugMode) {
         debugPrint('LOGIN_NOTIFIER_ERROR: $e');
@@ -63,7 +65,9 @@ class LoginNotifier extends _$LoginNotifier {
         if (kDebugMode) {
           debugPrint('GOOGLE_LOGIN_NOTIFIER_ERROR: $e');
         }
-        state = LoginError('Google login failed. Please try again.');
+        state = e is AppConfigurationException
+            ? LoginError(e.message)
+            : LoginError('Google login failed. Please try again.');
       }
     }
   }

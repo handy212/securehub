@@ -1,0 +1,281 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Guard Shifts | SecureHub{% endblock %}
+{% block header_title %}Guard Scheduling{% endblock %}
+{% block content %}
+{% include "dashboard/guarding/_nav.html" %}
+<div class="space-y-3" x-data="{ createModal: false, clockModal: false, welfareModal: false, editShiftId: null, editClockId: null, editWelfareId: null }">
+    <div class="console-page-toolbar !mb-0 !pb-2">
+    {% include "dashboard/guarding/_kpi_strip.html" %}
+
+        <div class="min-w-0 flex-1">
+            {% include "dashboard/partials/console/page_header.html" with page_title="Shifts" page_subtitle="Assignments, attendance, and welfare checks" %}
+        </div>
+        <div class="console-page-actions">
+            <button type="button" @click="clockModal = true" class="btn-console-secondary">Clock event</button>
+            <button type="button" @click="welfareModal = true" class="btn-console-secondary">Welfare check</button>
+            <button type="button" @click="createModal = true" class="btn-console">New shift</button>
+        </div>
+    </div>
+
+    {% include "dashboard/partials/console/data_table_start.html" with table_scrollable=True table_min_width_class="min-w-[1120px]" %}
+            <thead class="console-thead">
+                <tr>
+                    <th scope="col" class="console-th">Post</th>
+                    <th scope="col" class="console-th">Time</th>
+                    <th scope="col" class="console-th">Status</th>
+                    <th scope="col" class="console-th">Required</th>
+                    <th scope="col" class="console-th">Assigned guards</th>
+                    <th scope="col" class="console-th text-right">Manage</th>
+                </tr>
+            </thead>
+            <tbody class="console-tbody">
+                {% for shift in shifts %}
+                <tr class="align-top">
+                    <td class="console-td">
+                        <div class="font-semibold text-slate-900 dark:text-slate-100">{{ shift.post.name }}</div>
+                        <div class="console-meta">{{ shift.post.site.name }}</div>
+                    </td>
+                    <td class="console-td whitespace-nowrap">
+                        <div>{{ shift.starts_at|date:"Y-m-d H:i" }}</div>
+                        <div class="console-meta">{{ shift.ends_at|date:"Y-m-d H:i" }}</div>
+                    </td>
+                    <td class="console-td"><span class="badge-console badge-console-slate">{{ shift.get_status_display }}</span></td>
+                    <td class="console-td tabular-nums">{{ shift.required_guards }}</td>
+                    <td class="console-td">
+                        {% for assignment in shift.assignments.all %}
+                        <form method="post" class="mb-1 flex flex-wrap items-center gap-1 rounded-md bg-slate-100 px-2 py-1 text-xs font-semibold dark:bg-slate-800">
+                            {% csrf_token %}
+                            <input type="hidden" name="action" value="update_assignment">
+                            <input type="hidden" name="assignment_id" value="{{ assignment.id }}">
+                            <span class="max-w-[8rem] truncate">{{ assignment.guard.full_name }}</span>
+                            <select name="status" class="console-inline-select h-7 max-w-[7rem] py-0">{% for value,label in assignment_statuses %}<option value="{{ value }}" {% if assignment.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+                            <input name="notes" value="{{ assignment.notes }}" placeholder="Notes" class="h-7 min-w-[5rem] flex-1 console-inline-input max-w-[8rem]">
+                            <button type="submit" class="text-xs font-semibold text-slate-600 hover:text-brand dark:text-slate-300">Save</button>
+                        </form>
+                        {% empty %}<span class="text-slate-400">None</span>{% endfor %}
+                    </td>
+                    <td class="console-td text-right">
+                        <button type="button" class="btn-console-secondary" @click="editShiftId = '{{ shift.id }}'">Manage</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="console-td console-empty-state">No shifts yet.</td></tr>
+                {% endfor %}
+            </tbody>
+    {% include "dashboard/partials/console/data_table_end.html" %}
+
+    <div class="console-table-card">
+        <div class="console-card-section-title">Assignment audit</div>
+        {% include "dashboard/partials/console/data_table_start.html" with table_scrollable=True table_min_width_class="min-w-[1100px]" %}
+        <thead class="console-thead">
+            <tr>
+                <th scope="col" class="console-th">Guard</th>
+                <th scope="col" class="console-th">Post / shift</th>
+                <th scope="col" class="console-th">Status</th>
+                <th scope="col" class="console-th">Assigned by</th>
+                <th scope="col" class="console-th">Accepted</th>
+                <th scope="col" class="console-th">Clock in</th>
+                <th scope="col" class="console-th">Clock out</th>
+                <th scope="col" class="console-th">Notes</th>
+            </tr>
+        </thead>
+        <tbody class="console-tbody">
+            {% for assignment in assignments %}
+            <tr>
+                <td class="console-td font-semibold">{{ assignment.guard.full_name }}</td>
+                <td class="console-td">{{ assignment.shift.post.name }}<div class="console-meta">{{ assignment.shift.starts_at|date:"Y-m-d H:i" }}</div></td>
+                <td class="console-td"><span class="badge-console badge-console-slate">{{ assignment.get_status_display }}</span></td>
+                <td class="console-td">{{ assignment.assigned_by.username|default:"-" }}</td>
+                <td class="console-td whitespace-nowrap">{{ assignment.accepted_at|date:"Y-m-d H:i"|default:"-" }}</td>
+                <td class="console-td whitespace-nowrap">{{ assignment.clocked_in_at|date:"Y-m-d H:i"|default:"-" }}</td>
+                <td class="console-td whitespace-nowrap">{{ assignment.clocked_out_at|date:"Y-m-d H:i"|default:"-" }}</td>
+                <td class="console-td">{{ assignment.notes|default:"-" }}</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="8" class="console-td console-empty-state">No assignments.</td></tr>
+            {% endfor %}
+        </tbody>
+        {% include "dashboard/partials/console/data_table_end.html" %}
+    </div>
+
+    <div class="grid gap-4 xl:grid-cols-2">
+        <div class="console-table-card">
+            <div class="console-card-section-title">Clock events</div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for event in clock_events %}
+                <div class="console-list-row">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="font-semibold text-slate-900 dark:text-slate-100">{{ event.assignment.guard.full_name }}</div>
+                            <div class="console-meta">{{ event.assignment.shift.post.name }} · {{ event.get_event_type_display }}</div>
+                            <div class="console-meta mt-1">{{ event.created_at|date:"Y-m-d H:i" }}{% if event.device_timestamp %} · device {{ event.device_timestamp|date:"Y-m-d H:i" }}{% endif %} · {{ event.latitude|default:"-" }}, {{ event.longitude|default:"-" }}</div>
+                            {% if event.metadata %}<div class="console-meta font-mono text-[10px]">{{ event.metadata }}</div>{% endif %}
+                        </div>
+                        <div class="flex shrink-0 flex-col items-end gap-2">
+                            {% if event.within_geofence %}<span class="badge-console badge-console-emerald">In fence</span>{% else %}<span class="badge-console badge-console-amber">Review</span>{% endif %}
+                            <button type="button" class="btn-console-secondary" @click="editClockId = '{{ event.id }}'">Edit</button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="console-empty-state">No clock events.</div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="console-table-card">
+            <div class="console-card-section-title">Welfare checks</div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for check in welfare_checks %}
+                <div class="console-list-row">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="font-semibold text-slate-900 dark:text-slate-100">{{ check.assignment.guard.full_name }}</div>
+                            <div class="console-meta">{{ check.assignment.shift.post.name }} · Due {{ check.due_at|date:"Y-m-d H:i" }}</div>
+                            <div class="console-meta mt-1">{{ check.response_note|default:"No response note" }}{% if check.responded_at %} · responded {{ check.responded_at|date:"Y-m-d H:i" }}{% endif %}</div>
+                        </div>
+                        <div class="flex shrink-0 flex-col items-end gap-2">
+                            {% if check.status == 'confirmed' %}<span class="badge-console badge-console-emerald">{{ check.get_status_display }}</span>{% elif check.status == 'missed' or check.status == 'escalated' %}<span class="badge-console badge-console-red">{{ check.get_status_display }}</span>{% else %}<span class="badge-console badge-console-sky">{{ check.get_status_display }}</span>{% endif %}
+                            <button type="button" class="btn-console-secondary" @click="editWelfareId = '{{ check.id }}'">Edit</button>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="console-empty-state">No welfare checks.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% for shift in shifts %}
+    <template x-if="editShiftId === '{{ shift.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit shift" modal_subtitle=shift.post.name modal_close="editShiftId = null" modal_max_width="max-w-3xl" modal_title_id="shift-edit-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_shift">
+            <input type="hidden" name="shift_id" value="{{ shift.id }}">
+            <div class="grid gap-2 sm:grid-cols-2">
+                <select name="post_id" required data-modal-initial-focus>{% for post in posts %}<option value="{{ post.id }}" {% if shift.post_id == post.id %}selected{% endif %}>{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select>
+                <select name="status">{% for value,label in statuses %}<option value="{{ value }}" {% if shift.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+            <div class="grid gap-2 sm:grid-cols-3">
+                <input name="starts_at" type="datetime-local" value="{{ shift.starts_at|date:'Y-m-d\\TH:i' }}" required>
+                <input name="ends_at" type="datetime-local" value="{{ shift.ends_at|date:'Y-m-d\\TH:i' }}" required>
+                <input name="required_guards" type="number" min="1" value="{{ shift.required_guards }}">
+            </div>
+            <select name="guard_ids" multiple class="h-28 w-full">{% for guard in guards %}<option value="{{ guard.id }}" {% if not guard.is_compliance_ready %}disabled title="{% for issue in guard.compliance_issues %}{{ issue }}{% if not forloop.last %} · {% endif %}{% endfor %}"{% endif %}>{{ guard.full_name }} · {{ guard.employee_number }}{% if not guard.is_compliance_ready %} (incomplete){% endif %}</option>{% endfor %}</select>
+            <textarea name="notes" class="w-full" placeholder="Shift notes">{{ shift.notes }}</textarea>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="editShiftId = null">Cancel</button>
+                <button type="submit" class="btn-console">Save</button>
+            </div>
+        </form>
+        <form method="post" class="px-5 pb-5">
+            {% csrf_token %}<input type="hidden" name="action" value="delete_shift"><input type="hidden" name="shift_id" value="{{ shift.id }}">
+            <button type="submit" class="btn-console-danger" onclick="return confirm('Delete this shift?');">Delete shift</button>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for event in clock_events %}
+    <template x-if="editClockId === '{{ event.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit clock event" modal_subtitle=event.assignment.guard.full_name modal_close="editClockId = null" modal_max_width="max-w-2xl" modal_title_id="clock-edit-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="update_clock_event"><input type="hidden" name="clock_event_id" value="{{ event.id }}">
+            <select name="assignment_id" required data-modal-initial-focus>{% for assignment in assignments %}<option value="{{ assignment.id }}" {% if event.assignment_id == assignment.id %}selected{% endif %}>{{ assignment.guard.full_name }} · {{ assignment.shift.post.name }}</option>{% endfor %}</select>
+            <select name="event_type">{% for value,label in clock_event_types %}<option value="{{ value }}" {% if event.event_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            <div class="grid grid-cols-3 gap-2">
+                <input name="latitude" value="{{ event.latitude|default:'' }}" placeholder="Latitude">
+                <input name="longitude" value="{{ event.longitude|default:'' }}" placeholder="Longitude">
+                <input name="accuracy_m" value="{{ event.accuracy_m|default:'' }}" placeholder="Accuracy">
+            </div>
+            <input name="device_timestamp" type="datetime-local" value="{{ event.device_timestamp|date:'Y-m-d\\TH:i' }}">
+            <label class="flex items-center gap-2 console-label text-slate-500"><input name="within_geofence" type="checkbox" {% if event.within_geofence %}checked{% endif %}> Within geofence</label>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="editClockId = null">Cancel</button>
+                <button type="submit" class="btn-console">Save</button>
+            </div>
+        </form>
+        <form method="post" class="px-5 pb-5">{% csrf_token %}<input type="hidden" name="action" value="delete_clock_event"><input type="hidden" name="clock_event_id" value="{{ event.id }}"><button type="submit" class="text-xs font-semibold text-red-500" onclick="return confirm('Delete event?');">Delete</button></form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for check in welfare_checks %}
+    <template x-if="editWelfareId === '{{ check.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit welfare check" modal_subtitle=check.assignment.guard.full_name modal_close="editWelfareId = null" modal_max_width="max-w-2xl" modal_title_id="welfare-edit-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="update_welfare_check"><input type="hidden" name="welfare_check_id" value="{{ check.id }}">
+            <input name="due_at" type="datetime-local" value="{{ check.due_at|date:'Y-m-d\\TH:i' }}" required data-modal-initial-focus>
+            <select name="status">{% for value,label in welfare_statuses %}<option value="{{ value }}" {% if check.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            <textarea name="response_note" class="w-full">{{ check.response_note }}</textarea>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="editWelfareId = null">Cancel</button>
+                <button type="submit" class="btn-console">Save</button>
+            </div>
+        </form>
+        <form method="post" class="px-5 pb-5">{% csrf_token %}<input type="hidden" name="action" value="delete_welfare_check"><input type="hidden" name="welfare_check_id" value="{{ check.id }}"><button type="submit" class="text-xs font-semibold text-red-500" onclick="return confirm('Delete check?');">Delete</button></form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    <template x-if="createModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Create shift" modal_close="createModal = false" modal_max_width="max-w-3xl" modal_title_id="shift-create-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="shift">
+            <div class="grid gap-3 sm:grid-cols-2">
+                <select name="post_id" required data-modal-initial-focus>{% for post in posts %}<option value="{{ post.id }}">{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select>
+                <select name="status">{% for value,label in statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-3"><input name="starts_at" type="datetime-local" required><input name="ends_at" type="datetime-local" required><input name="required_guards" type="number" min="1" value="1"></div>
+            <div><label class="mb-1 block console-label text-slate-400">Assign guards (compliant only)</label><select name="guard_ids" multiple class="h-36 w-full">{% for guard in guards %}<option value="{{ guard.id }}" {% if not guard.is_compliance_ready %}disabled title="{% for issue in guard.compliance_issues %}{{ issue }}{% if not forloop.last %} · {% endif %}{% endfor %}"{% endif %}>{{ guard.full_name }} · {{ guard.employee_number }}{% if not guard.is_compliance_ready %} (incomplete){% endif %}</option>{% endfor %}</select></div>
+            <textarea name="notes" placeholder="Shift notes" class="w-full"></textarea>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="createModal = false">Cancel</button>
+                <button type="submit" class="btn-console">Create</button>
+            </div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="clockModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Record clock event" modal_close="clockModal = false" modal_max_width="max-w-2xl" modal_title_id="clock-create-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="clock_event">
+            <div class="grid gap-3 sm:grid-cols-2">
+                <select name="assignment_id" required data-modal-initial-focus>{% for assignment in assignments %}<option value="{{ assignment.id }}">{{ assignment.guard.full_name }} · {{ assignment.shift.post.name }}</option>{% endfor %}</select>
+                <select name="event_type">{% for value,label in clock_event_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+            </div>
+            <div class="grid gap-3 sm:grid-cols-4"><input name="device_timestamp" type="datetime-local"><input name="latitude" placeholder="Latitude"><input name="longitude" placeholder="Longitude"><input name="accuracy_m" placeholder="Accuracy m"></div>
+            <label class="flex items-center gap-2 console-label text-slate-500"><input name="within_geofence" type="checkbox"> Within geofence</label>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="clockModal = false">Cancel</button>
+                <button type="submit" class="btn-console">Record</button>
+            </div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    {% include "dashboard/guarding/partials/shift_assets_panel.html" %}
+
+    <template x-if="welfareModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Schedule welfare check" modal_close="welfareModal = false" modal_max_width="max-w-2xl" modal_title_id="welfare-create-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="welfare_check">
+            <div class="grid gap-3 sm:grid-cols-2">
+                <select name="assignment_id" required data-modal-initial-focus>{% for assignment in assignments %}<option value="{{ assignment.id }}">{{ assignment.guard.full_name }} · {{ assignment.shift.post.name }}</option>{% endfor %}</select>
+                <select name="status">{% for value,label in welfare_statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+            </div>
+            <input name="due_at" type="datetime-local" required>
+            <textarea name="response_note" placeholder="Response note" class="w-full"></textarea>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="welfareModal = false">Cancel</button>
+                <button type="submit" class="btn-console">Schedule</button>
+            </div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+</div>
+</div>
+</div>
+{% endblock %}

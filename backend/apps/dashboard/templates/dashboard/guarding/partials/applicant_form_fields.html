@@ -1,0 +1,250 @@
+{# Expects: item (GuardApplicant), statuses, gender_choices, marital_status_choices, background_check_statuses, shift_preference_choices #}
+{% with profile=item.form_profile %}
+<div class="guarding-form-fields space-y-4">
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="Personal information" subtitle="Identity and contact details for the applicant." %}
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="form-group">
+                <label>First name *</label>
+                <input name="first_name" value="{{ item.first_name }}" required {% if not item.pk %}data-modal-initial-focus{% endif %}>
+            </div>
+            <div class="form-group">
+                <label>Last name *</label>
+                <input name="last_name" value="{{ item.last_name }}" required>
+            </div>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-3">
+            <div class="form-group">
+                <label>Phone</label>
+                <input name="phone_number" value="{{ item.phone_number|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Alternate phone</label>
+                <input name="alternate_phone" value="{{ item.alternate_phone|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Email</label>
+                <input name="email" value="{{ item.email|default:'' }}" type="email">
+            </div>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-3">
+            <div class="form-group">
+                <label>Date of birth</label>
+                <input name="date_of_birth" type="date" value="{{ item.date_of_birth|date:'Y-m-d' }}">
+            </div>
+            <div class="form-group">
+                <label>Gender</label>
+                <select name="gender"><option value="">—</option>{% for value,label in gender_choices %}<option value="{{ value }}" {% if item.gender == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+            <div class="form-group">
+                <label>Marital status</label>
+                <select name="marital_status"><option value="">—</option>{% for value,label in marital_status_choices %}<option value="{{ value }}" {% if item.marital_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="form-group">
+                <label>Nationality</label>
+                <input name="nationality" value="{{ item.nationality|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Ghana Card / National ID</label>
+                <input name="national_id" value="{{ item.national_id|default:'' }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Residential address</label>
+            <input name="address" value="{{ item.address|default:'' }}" class="w-full">
+        </div>
+        <div class="grid gap-3 sm:grid-cols-3">
+            <div class="form-group">
+                <label>City</label>
+                <input name="city" value="{{ item.city|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Country</label>
+                <input name="country" value="{{ item.country|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>GPS address</label>
+                <input name="gps_address" value="{{ item.gps_address|default:'' }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Photo</label>
+            <input name="photo" type="file" accept="image/*" class="!h-auto py-2">
+            {% if item.pk and item.photo %}<p class="console-meta">A photo is already on file. Upload to replace.</p>{% endif %}
+        </div>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="Emergency contact" %}
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="form-group">
+                <label>Full name</label>
+                <input name="emergency_contact_name" value="{{ item.emergency_contact_name|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Relationship</label>
+                <input name="emergency_contact_relationship" value="{{ item.emergency_contact_relationship|default:'' }}">
+            </div>
+        </div>
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="form-group">
+                <label>Phone</label>
+                <input name="emergency_contact_phone" value="{{ item.emergency_contact_phone|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Address</label>
+                <input name="emergency_contact_address" value="{{ item.emergency_contact_address|default:'' }}">
+            </div>
+        </div>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="Recruitment" subtitle="Pipeline status, screening, and interview notes." %}
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="form-group">
+                <label>Source</label>
+                <input name="source" value="{{ item.source|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Status</label>
+                <select name="status">{% for value,label in statuses %}<option value="{{ value }}" {% if item.pk %}{% if item.status == value %}selected{% endif %}{% elif value == 'applied' %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Background check</label>
+            <select name="background_check_status">
+                <option value="">—</option>
+                {% for value,label in background_check_statuses %}<option value="{{ value }}" {% if item.background_check_status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+            </select>
+        </div>
+        <div class="guarding-checkbox-grid">
+            <label class="guarding-check"><input name="prior_security_experience" type="checkbox" {% if item.prior_security_experience %}checked{% endif %}> Prior security experience</label>
+            <label class="guarding-check"><input name="convicted_of_crime" type="checkbox" {% if item.convicted_of_crime %}checked{% endif %}> Convicted of a crime</label>
+        </div>
+        <div class="form-group">
+            <label>Conviction details (if applicable)</label>
+            <textarea name="conviction_explanation" class="w-full">{{ item.conviction_explanation|default:'' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label>Interview notes</label>
+            <textarea name="interview_notes" class="w-full">{{ item.interview_notes|default:'' }}</textarea>
+        </div>
+        <div class="form-group">
+            <label>Rejection reason</label>
+            <textarea name="rejection_reason" class="w-full">{{ item.rejection_reason|default:'' }}</textarea>
+        </div>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="Qualifications & skills" %}
+        <div class="guarding-checkbox-grid">
+            <label class="guarding-check"><input name="security_training_completed" type="checkbox" {% if profile and profile.security_training_completed %}checked{% endif %}> Security training</label>
+            <label class="guarding-check"><input name="fire_safety_training" type="checkbox" {% if profile and profile.fire_safety_training %}checked{% endif %}> Fire safety</label>
+            <label class="guarding-check"><input name="first_aid_certification" type="checkbox" {% if profile and profile.first_aid_certification %}checked{% endif %}> First aid</label>
+            <label class="guarding-check"><input name="cctv_monitoring_experience" type="checkbox" {% if profile and profile.cctv_monitoring_experience %}checked{% endif %}> CCTV experience</label>
+            <label class="guarding-check"><input name="access_control_experience" type="checkbox" {% if profile and profile.access_control_experience %}checked{% endif %}> Access control</label>
+            <label class="guarding-check"><input name="military_police_background" type="checkbox" {% if profile and profile.military_police_background %}checked{% endif %}> Military / police</label>
+        </div>
+        <div class="form-group">
+            <label>Driving license class</label>
+            <input name="driving_license_class" value="{{ profile.driving_license_class|default:'' }}">
+        </div>
+        <p class="console-meta">Self-assessed skills (1 = low, 5 = high)</p>
+        <div class="grid gap-3 sm:grid-cols-5">
+            <div class="form-group">
+                <label>Communication</label>
+                <input name="skill_communication" type="number" min="1" max="5" value="{{ profile.skill_communication|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Report writing</label>
+                <input name="skill_report_writing" type="number" min="1" max="5" value="{{ profile.skill_report_writing|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Computer</label>
+                <input name="skill_computer" type="number" min="1" max="5" value="{{ profile.skill_computer|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Radio</label>
+                <input name="skill_radio" type="number" min="1" max="5" value="{{ profile.skill_radio|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Conflict resolution</label>
+                <input name="skill_conflict_resolution" type="number" min="1" max="5" value="{{ profile.skill_conflict_resolution|default:'' }}">
+            </div>
+        </div>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="Physical & medical" %}
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="form-group">
+                <label>Height (cm)</label>
+                <input name="height_cm" type="number" value="{{ profile.height_cm|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Weight (kg)</label>
+                <input name="weight_kg" type="number" value="{{ profile.weight_kg|default:'' }}">
+            </div>
+        </div>
+        <label class="guarding-check"><input name="has_medical_condition" type="checkbox" {% if profile and profile.has_medical_condition %}checked{% endif %}> Has a medical condition</label>
+        <div class="form-group">
+            <label>Medical notes</label>
+            <textarea name="medical_condition_notes" class="w-full">{{ profile.medical_condition_notes|default:'' }}</textarea>
+        </div>
+        <label class="guarding-check"><input name="has_physical_disability" type="checkbox" {% if profile and profile.has_physical_disability %}checked{% endif %}> Has a physical disability</label>
+        <div class="form-group">
+            <label>Disability notes</label>
+            <textarea name="physical_disability_notes" class="w-full">{{ profile.physical_disability_notes|default:'' }}</textarea>
+        </div>
+        <div class="guarding-checkbox-grid">
+            <label class="guarding-check"><input name="can_work_night_shifts" type="checkbox" {% if not profile or profile.can_work_night_shifts %}checked{% endif %}> Can work night shifts</label>
+            <label class="guarding-check"><input name="can_stand_long_hours" type="checkbox" {% if not profile or profile.can_stand_long_hours %}checked{% endif %}> Can stand long hours</label>
+        </div>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="Availability" %}
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="form-group">
+                <label>Available start date</label>
+                <input name="available_start_date" type="date" value="{% if profile and profile.available_start_date %}{{ profile.available_start_date|date:'Y-m-d' }}{% endif %}">
+            </div>
+            <div class="form-group">
+                <label>Shift preference</label>
+                <select name="shift_preference"><option value="">—</option>{% for value,label in shift_preference_choices %}<option value="{{ value }}" {% if profile and profile.shift_preference == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Preferred location</label>
+            <input name="preferred_location" value="{{ profile.preferred_location|default:'' }}" class="w-full">
+        </div>
+        <label class="guarding-check"><input name="willing_to_travel" type="checkbox" {% if profile and profile.willing_to_travel %}checked{% endif %}> Willing to travel</label>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="HR & assignment" %}
+        <div class="grid gap-3 sm:grid-cols-3">
+            <div class="form-group">
+                <label>Interview score</label>
+                <input name="interview_score" value="{{ item.interview_score|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Uniform size</label>
+                <input name="uniform_size" value="{{ item.uniform_size|default:'' }}">
+            </div>
+            <div class="form-group">
+                <label>Assigned branch</label>
+                <input name="assigned_branch" value="{{ item.assigned_branch|default:'' }}">
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Salary expectation</label>
+            <input name="salary_expectation" value="{{ item.salary_expectation|default:'' }}">
+        </div>
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+
+    {% include "dashboard/guarding/partials/form_section_start.html" with title="Declaration" subtitle="Applicant certification of accuracy." %}
+        <div class="form-group">
+            <label>Typed signature (full legal name)</label>
+            <input name="declaration_signature_name" value="{{ item.declaration_signature_name|default:'' }}" class="w-full">
+        </div>
+        <label class="guarding-check"><input name="declaration_signed" type="checkbox" {% if item.declaration_signed_at %}checked{% endif %}> I certify the information is true and complete</label>
+        {% if item.declaration_signed_at %}<p class="console-meta">Signed {{ item.declaration_signed_at|date:"Y-m-d H:i" }}</p>{% endif %}
+    {% include "dashboard/guarding/partials/form_section_end.html" %}
+</div>
+{% endwith %}

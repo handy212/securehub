@@ -1,0 +1,38 @@
+{% comment %}
+Opens the modal surface (backdrop + panel header + scrollable body). Wrap with
+<template x-if="yourCondition"> … </template> in the parent.
+
+Required `with`:
+  modal_title   — Heading string
+  modal_close   — Alpine expression to run on close, e.g. createModal = false
+
+Optional:
+  modal_subtitle
+  modal_max_width — Tailwind max-width class (default max-w-2xl)
+  modal_title_id  — id for aria-labelledby (default console-modal-title)
+{% endcomment %}
+<div class="console-modal-backdrop"
+     @click.self="{{ modal_close }}"
+     @keydown.escape.window="{{ modal_close }}">
+    <div class="console-modal-stack guarding-modal-panel console-modal-panel form-perfex w-full {{ modal_max_width|default:'max-w-2xl' }}"
+         role="dialog"
+         aria-modal="true"
+         aria-labelledby="{{ modal_title_id|default:'console-modal-title' }}"
+         tabindex="-1"
+         @click.stop
+         x-init="$nextTick(() => { const el = $el.querySelector('[data-modal-initial-focus]'); if (el) el.focus(); else { const f = $el.querySelector('input:not([type=hidden]):not([disabled]),select:not([disabled]),textarea:not([disabled])'); f?.focus(); } })">
+        <div class="console-modal-header">
+            <div>
+                <h2 id="{{ modal_title_id|default:'console-modal-title' }}" class="text-sm font-semibold text-slate-900 dark:text-slate-100">{{ modal_title }}</h2>
+                {% if modal_subtitle %}
+                <p class="console-meta mt-0.5">{{ modal_subtitle }}</p>
+                {% endif %}
+            </div>
+            <button type="button"
+                    class="rounded-lg p-1.5 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-900 dark:hover:bg-slate-800 dark:hover:text-slate-200"
+                    @click="{{ modal_close }}"
+                    aria-label="Close dialog">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><path d="M18 6 6 18"/><path d="m6 6 12 12"/></svg>
+            </button>
+        </div>
+        <div class="console-modal-body">

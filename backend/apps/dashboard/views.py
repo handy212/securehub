@@ -1,22 +1,23 @@
 from datetime import date, datetime, timedelta
+import csv
 import json
 from decimal import Decimal, InvalidOperation
 
 from django.contrib import messages
 from django.contrib.auth import authenticate, login
+from django.contrib.auth.mixins import UserPassesTestMixin
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.models import User
-from django.contrib.auth.mixins import UserPassesTestMixin
 from django.core.cache import cache
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db.models import Count, Q, Sum
 from django.db import transaction
-from django.http import HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils.http import url_has_allowed_host_and_scheme
 from django.utils import timezone
-from django.utils.dateparse import parse_datetime
+from django.utils.dateparse import parse_date, parse_datetime, parse_time
 from django.utils.timesince import timesince
 from django.views.generic import ListView, TemplateView, View
 
@@ -33,8 +34,45 @@ from apps.alarms.tasks import (
     sync_hik_site_devices,
 )
 from apps.hik_adapter.services import HikPartnerService
-from apps.sites.models import AlarmOutput, AlarmPanelDevice, AlarmPeripheral, CustomerSiteAccess, Site, Subsystem, Subscription, SubscriptionPackage, SubscriptionPayment, Zone
+from apps.sites.models import AlarmOutput, AlarmPanelDevice, AlarmPeripheral, CustomerSiteAccess, OperationsZone, Site, Subsystem, Subscription, SubscriptionPackage, SubscriptionPayment, Zone
 from apps.sites.scenes import SCENE_OPTIONS, normalize_scene_label
+from apps.accounts.permissions import user_has_console_permission
+from apps.accounts.rbac import Perm
+
+
+def _normalize_zone_color(color: str, default: str = "#6366f1") -> str:
+    value = (color or "").strip()
+    if len(value) == 7 and value.startswith("#"):
+        try:
+            int(value[1:], 16)
+            return value.lower()
+        except ValueError:
+            pass
+    return default
+
+
+def _operations_zone_name_taken(name: str, *, exclude_pk=None) -> bool:
+    qs = OperationsZone.objects.filter(name__iexact=name.strip())
+    if exclude_pk:
+        qs = qs.exclude(pk=exclude_pk)
+    return qs.exists()
+
+
+def _operations_zones_for_site(site=None):
+    qs = OperationsZone.objects.all()
+    if site is not None:
+        qs = qs.filter(Q(is_active=True) | Q(pk=site.operations_zone_id))
+    else:
+        qs = qs.filter(is_active=True)
+    return qs.order_by("sort_order", "name")
+
+
+def _assign_site_operations_zone(site, zone_id: str) -> None:
+    zone_id = (zone_id or "").strip()
+    if not zone_id:
+        site.operations_zone = None
+        return
+    site.operations_zone = OperationsZone.objects.filter(pk=zone_id).first()
 from apps.accounts.models import CustomerGroup, FCMDevice
 from apps.communication.models import BroadcastMessage
 from apps.communication.tasks import send_broadcast_push_notifications
@@ -48,68 +86,95 @@ from apps.emergency.models import (
 from apps.guarding.models import (
     Checkpoint,
     CheckpointScan,
+    ClientPortalAccess,
     ClockEvent,
     DispatchTask,
     FieldReport,
+    FieldReportAcknowledgement,
     FieldReportAttachment,
     GuardApplicant,
+    GuardApplicantDocument,
+    GuardApplicantEducation,
+    GuardApplicantEmployment,
+    GuardApplicantProfile,
+    GuardApplicantReference,
+    GuardAvailability,
+    GuardContract,
     GuardCredential,
     GuardDocument,
+    GuardEquipmentIssue,
+    GuardInvoice,
+    GuardInvoiceLine,
+    GuardOffboardingChecklist,
+    GuardTimesheet,
+    GuardTrainingRecord,
     GuardingEventLog,
     GuardLocationPing,
     GuardPanicAlert,
     GuardPost,
     GuardProfile,
+    LeaveRequest,
     PatrolRoute,
     PatrolRouteCheckpoint,
     PatrolRound,
     PostOrder,
+    ReportTemplate,
     Shift,
     ShiftAssignment,
+    ShiftSwapRequest,
+    ShiftTemplate,
+    SiteGuardDispatchPolicy,
     WelfareCheck,
 )
+from apps.guarding.applicant_forms import populate_applicant_from_request, populate_applicant_profile_from_request
 from apps.guarding.services import (
     acknowledge_panic_alert,
+    apply_credential_verification,
     complete_patrol_round,
+    count_non_compliant_active_guards,
     ensure_applicant_status_transition,
+    ensure_guard_compliance_ready,
     ensure_guard_status_transition,
+    guard_compliance_issues,
     ensure_panic_alert_status_transition,
     ensure_report_status_transition,
     ensure_shift_status_transition,
     hire_applicant,
     record_clock_event,
+    review_leave_request,
+    review_shift_swap_request,
+    acknowledge_field_report,
     review_field_report,
+    review_timesheet,
     resolve_panic_alert,
     transition_assignment,
     transition_dispatch_task,
     transition_panic_alert,
     transition_patrol_round,
     transition_shift,
+    generate_guard_invoice,
+    transition_guard_invoice,
 )
 from apps.dashboard.event_presenters import serialize_console_event, should_hide_console_event
+from apps.accounts.permissions import ensure_operator_profile, user_can_access_console
+from apps.accounts.models import StaffOperatorProfile
+from apps.accounts.rbac import OperatorRole
 from apps.accounts.serializers import resolve_username_for_login
+from apps.dashboard.permissions import StaffRequiredMixin, SuperuserRequiredMixin
 
 
-class StaffRequiredMixin(UserPassesTestMixin):
+class GuardingClientRequiredMixin(UserPassesTestMixin):
     def test_func(self):
-        return bool(self.request.user.is_authenticated and self.request.user.is_staff)
+        return bool(
+            self.request.user.is_authenticated
+            and ClientPortalAccess.objects.filter(user=self.request.user).exists()
+        )
 
     def handle_no_permission(self):
         if not self.request.user.is_authenticated:
             login_url = f"{reverse('dashboard:login')}?next={self.request.get_full_path()}"
             return redirect(login_url)
-        return HttpResponseForbidden("Staff access required.")
-
-
-class SuperuserRequiredMixin(StaffRequiredMixin):
-    def test_func(self):
-        return bool(self.request.user.is_authenticated and self.request.user.is_superuser)
-
-    def handle_no_permission(self):
-        if not self.request.user.is_authenticated:
-            login_url = f"{reverse('dashboard:login')}?next={self.request.get_full_path()}"
-            return redirect(login_url)
-        return HttpResponseForbidden("Superuser access required.")
+        return HttpResponseForbidden("Guarding client access required.")
 
 
 def _visible_console_events(site: Site, *, limit: int = 15) -> list[Event]:
@@ -516,7 +581,7 @@ def _compute_alarm_inventory_counts(site: Site, display_peripherals: list[dict])
     }
 
 class ConsoleLoginView(View):
-    template_name = "dashboard/login.html"
+    template_name = "dashboard/auth/login.html"
 
     def get(self, request):
         if request.user.is_authenticated:
@@ -540,7 +605,8 @@ class ConsoleLoginView(View):
             })
         auth_username = resolve_username_for_login(username)
         user = authenticate(request, username=auth_username, password=password)
-        if user is not None and user.is_staff:
+        if user is not None and user.is_staff and user_can_access_console(user):
+            ensure_operator_profile(user)
             _clear_console_login_failures(request, username)
             login(request, user)
             return redirect(next_url)
@@ -552,7 +618,7 @@ class ConsoleLoginView(View):
 
 
 class DashboardHomeView(StaffRequiredMixin, TemplateView):
-    template_name = "dashboard/home.html"
+    template_name = "dashboard/ops/home.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -560,7 +626,7 @@ class DashboardHomeView(StaffRequiredMixin, TemplateView):
         total_sites = sites_qs.count()
         total_panels = AlarmPanelDevice.objects.count()
         online_devices = AlarmPanelDevice.objects.filter(is_online=True).count()
-        recent_events = Event.objects.select_related("site", "subsystem", "zone").order_by("-occurred_at")[:10]
+        recent_events = Event.objects.select_related("site", "subsystem", "zone").order_by("-occurred_at")[:12]
         context["total_sites"] = total_sites
         context["total_alarms"] = total_panels
         context["online_devices"] = online_devices
@@ -674,18 +740,47 @@ class DashboardHomeView(StaffRequiredMixin, TemplateView):
             or Decimal("0.00")
         )
 
+        from apps.guarding.models import DispatchTask, GuardPanicAlert, ShiftAssignment
+
+        active_dispatch_statuses = [
+            DispatchTask.Status.OPEN,
+            DispatchTask.Status.ASSIGNED,
+            DispatchTask.Status.ACCEPTED,
+            DispatchTask.Status.EN_ROUTE,
+            DispatchTask.Status.ARRIVED,
+        ]
+        context["active_emergencies"] = EmergencyRequest.objects.filter(
+            status__in=EmergencyRequest.ACTIVE_STATUSES
+        ).count()
+        context["guard_sos_count"] = GuardPanicAlert.objects.filter(
+            status=GuardPanicAlert.Status.OPEN
+        ).count()
+        context["guard_dispatch_count"] = DispatchTask.objects.filter(
+            status__in=active_dispatch_statuses
+        ).count()
+        context["guards_on_duty"] = ShiftAssignment.objects.filter(
+            status=ShiftAssignment.Status.CLOCKED_IN,
+            shift__starts_at__lte=now,
+            shift__ends_at__gte=now,
+        ).count()
+
         return context
 
 class SiteDirectoryView(StaffRequiredMixin, ListView):
     model = Site
-    template_name = "dashboard/sites.html"
+    template_name = "dashboard/sites/directory.html"
     context_object_name = "sites"
 
     def get_queryset(self):
-        qs = super().get_queryset().select_related("subscription").prefetch_related("devices", "access_list")
+        qs = super().get_queryset().select_related("subscription", "operations_zone").prefetch_related("devices", "access_list")
         query = self.request.GET.get("q")
         if query:
             qs = qs.filter(Q(name__icontains=query) | Q(hik_site_id__icontains=query))
+        zone_filter = self.request.GET.get("zone", "").strip()
+        if zone_filter == "none":
+            qs = qs.filter(operations_zone__isnull=True)
+        elif zone_filter:
+            qs = qs.filter(operations_zone_id=zone_filter)
         return qs
 
     def get_context_data(self, **kwargs):
@@ -702,14 +797,16 @@ class SiteDirectoryView(StaffRequiredMixin, ListView):
         context["count_with_plan"] = total - count_no_plan
         context["count_online"] = len(online_site_ids)
         context["current_query"] = self.request.GET.get("q", "")
+        context["current_zone_filter"] = self.request.GET.get("zone", "")
+        context["operations_zones"] = OperationsZone.objects.filter(is_active=True).order_by("sort_order", "name")
         return context
 
 class SiteMapView(StaffRequiredMixin, TemplateView):
-    template_name = "dashboard/site_map.html"
+    template_name = "dashboard/ops/site_map.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        sites = Site.objects.all().prefetch_related("devices")
+        sites = Site.objects.select_related("operations_zone").prefetch_related("devices")
         active_emergencies = (
             EmergencyRequest.objects.filter(status__in=EmergencyRequest.ACTIVE_STATUSES)
             .select_related("customer", "site")
@@ -754,11 +851,23 @@ class SiteMapView(StaffRequiredMixin, TemplateView):
                     "lng": float(site.longitude),
                     "is_active": site.is_active,
                     "is_online": is_any_online,
+                    "zone_id": str(site.operations_zone_id) if site.operations_zone_id else None,
+                    "zone_name": site.operations_zone.name if site.operations_zone else None,
+                    "zone_color": site.operations_zone.color if site.operations_zone else None,
                     "devices": devices,
                     "url": f"/console/sites/{site.id}/"
                 })
         
         context["sites_data"] = sites_data
+        context["zones_data"] = [
+            {
+                "id": str(zone.id),
+                "name": zone.name,
+                "color": zone.color,
+                "sort_order": zone.sort_order,
+            }
+            for zone in OperationsZone.objects.filter(is_active=True).order_by("sort_order", "name")
+        ]
         context["emergencies_data"] = [
             {
                 "id": str(item.id),
@@ -772,11 +881,20 @@ class SiteMapView(StaffRequiredMixin, TemplateView):
             }
             for item in active_emergencies
         ]
+
+        from apps.dashboard.api_views import build_guard_map_payload
+
+        guard_payload = build_guard_map_payload()
+        context["guards_data"] = guard_payload["guards"]
+        context["guard_snapshot"] = guard_payload["snapshot"]
+        context["can_manage_zones"] = user_has_console_permission(
+            self.request.user, Perm.MANAGE_SITES
+        )
         return context
 
 
 class EmergencyConsoleView(StaffRequiredMixin, TemplateView):
-    template_name = "dashboard/emergency.html"
+    template_name = "dashboard/emergency/dispatch.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -850,6 +968,63 @@ def _parse_datetime_field(raw_value, *, label):
     return value
 
 
+def _parse_date_field(raw_value, *, label):
+    value = parse_date(str(raw_value or "").strip())
+    if value is None:
+        raise ValueError(f"{label} must be a valid date.")
+    return value
+
+
+def _parse_optional_date_field(raw_value, *, label):
+    raw = str(raw_value or "").strip()
+    if not raw:
+        return None
+    return _parse_date_field(raw, label=label)
+
+
+def _populate_guard_profile_from_post(guard, request) -> None:
+    from apps.guarding.guard_forms import populate_guard_profile_from_request
+
+    populate_guard_profile_from_request(
+        guard,
+        request,
+        parse_optional_date=_parse_optional_date_field,
+    )
+
+
+def _attach_guard_compliance_flags(guards) -> None:
+    for guard in guards:
+        guard.compliance_issues = guard_compliance_issues(guard)
+        guard.is_compliance_ready = not guard.compliance_issues
+
+
+def _apply_credential_from_post(credential, request, *, actor) -> None:
+    credential.credential_type = request.POST.get("credential_type") or GuardCredential.CredentialType.OTHER
+    credential.name = request.POST.get("name", "").strip()
+    credential.issuing_authority = request.POST.get("issuing_authority", "").strip()
+    credential.reference_number = request.POST.get("reference_number", "").strip()
+    credential.issued_on = request.POST.get("issued_on") or None
+    credential.expires_on = request.POST.get("expires_on") or None
+    credential.notes = request.POST.get("notes", "").strip()
+    apply_credential_verification(credential, verified=bool(request.POST.get("verified")), actor=actor)
+
+
+def _parse_time_field(raw_value, *, label):
+    value = parse_time(str(raw_value or "").strip())
+    if value is None:
+        raise ValueError(f"{label} must be a valid time.")
+    return value
+
+
+def _csv_response(filename, headers, rows):
+    response = HttpResponse(content_type="text/csv")
+    response["Content-Disposition"] = f'attachment; filename="{filename}"'
+    writer = csv.writer(response)
+    writer.writerow(headers)
+    writer.writerows(rows)
+    return response
+
+
 class GuardingOverviewMixin:
     def get_guarding_counts(self):
         active_dispatch_statuses = [
@@ -859,7 +1034,7 @@ class GuardingOverviewMixin:
             DispatchTask.Status.EN_ROUTE,
             DispatchTask.Status.ARRIVED,
         ]
-        return {
+        counts = {
             "guards": GuardProfile.objects.filter(status=GuardProfile.Status.ACTIVE).count(),
             "applicants": GuardApplicant.objects.exclude(
                 status__in=[
@@ -874,11 +1049,24 @@ class GuardingOverviewMixin:
             "welfare_due": WelfareCheck.objects.filter(
                 status__in=[WelfareCheck.Status.PENDING, WelfareCheck.Status.ESCALATED]
             ).count(),
+            "non_compliant_guards": count_non_compliant_active_guards(),
         }
+        try:
+            from apps.guarding.asset_services import asset_analytics_summary
+
+            asset_stats = asset_analytics_summary()
+            counts["open_manifests"] = asset_stats["open_manifests"]
+            counts["assets_out"] = asset_stats["units_out"]
+            counts["overdue_asset_returns"] = asset_stats["overdue_returns"]
+        except Exception:
+            counts["open_manifests"] = 0
+            counts["assets_out"] = 0
+            counts["overdue_asset_returns"] = 0
+        return counts
 
 
 class GuardingOverviewView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
-    template_name = "dashboard/guarding_overview.html"
+    template_name = "dashboard/guarding/overview.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -954,15 +1142,28 @@ class GuardingOverviewView(StaffRequiredMixin, GuardingOverviewMixin, TemplateVi
             "critical": GuardingEventLog.objects.filter(severity=GuardingEventLog.Severity.CRITICAL).count(),
             "warning": GuardingEventLog.objects.filter(severity=GuardingEventLog.Severity.WARNING).count(),
         }
+        expiry_cutoff = today + timedelta(days=30)
+        context["backoffice_summary"] = {
+            "active_contracts": GuardContract.objects.filter(status=GuardContract.Status.ACTIVE).count(),
+            "draft_timesheets": GuardTimesheet.objects.filter(status=GuardTimesheet.Status.DRAFT).count(),
+            "pending_timesheets": GuardTimesheet.objects.filter(status=GuardTimesheet.Status.SUBMITTED).count(),
+            "expiring_credentials": GuardCredential.objects.filter(expires_on__gte=today, expires_on__lte=expiry_cutoff).count(),
+            "expiring_documents": GuardDocument.objects.filter(expires_on__gte=today, expires_on__lte=expiry_cutoff).count(),
+            "expiring_training": GuardTrainingRecord.objects.filter(expires_on__gte=today, expires_on__lte=expiry_cutoff).count(),
+        }
         return context
 
 
 class GuardingApplicantsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
-    template_name = "dashboard/guarding_applicants.html"
+    template_name = "dashboard/guarding/applicants.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        applicants = GuardApplicant.objects.select_related("hired_guard", "created_by").order_by("-created_at")
+        applicants = (
+            GuardApplicant.objects.select_related("hired_guard", "created_by", "profile")
+            .prefetch_related("documents", "education_records", "employment_records", "references")
+            .order_by("-created_at")
+        )
         query = self.request.GET.get("q", "").strip()
         if query:
             applicants = applicants.filter(
@@ -970,70 +1171,150 @@ class GuardingApplicantsView(StaffRequiredMixin, GuardingOverviewMixin, Template
                 | Q(last_name__icontains=query)
                 | Q(email__icontains=query)
                 | Q(phone_number__icontains=query)
+                | Q(national_id__icontains=query)
             )
         context["applicants"] = applicants[:200]
         context["statuses"] = GuardApplicant.Status.choices
+        context["background_check_statuses"] = [
+            ("pending", "Pending"),
+            ("clear", "Clear"),
+            ("failed", "Failed"),
+        ]
+        context["gender_choices"] = [
+            ("male", "Male"),
+            ("female", "Female"),
+            ("other", "Other"),
+            ("prefer_not", "Prefer not to say"),
+        ]
+        context["marital_status_choices"] = [
+            ("single", "Single"),
+            ("married", "Married"),
+            ("divorced", "Divorced"),
+            ("widowed", "Widowed"),
+            ("other", "Other"),
+        ]
+        context["shift_preference_choices"] = GuardApplicantProfile.ShiftPreference.choices
+        context["applicant_document_types"] = GuardApplicantDocument.DocumentType.choices
+        context["public_apply_url"] = self.request.build_absolute_uri("/apply/guard/")
         context["counts"] = self.get_guarding_counts()
         context["current_query"] = query
+        context["new_applicant"] = GuardApplicant(status=GuardApplicant.Status.APPLIED)
         return context
+
+    def _save_applicant_core(self, applicant, request):
+        if not applicant.first_name or not applicant.last_name:
+            raise ValueError("First name and last name are required.")
+        next_status = request.POST.get("status") or applicant.status or GuardApplicant.Status.APPLIED
+        ensure_applicant_status_transition(applicant, next_status)
+        applicant.status = next_status
+        applicant.save()
+        populate_applicant_profile_from_request(applicant, request, parse_dates=_parse_date_field)
 
     def post(self, request):
         action = request.POST.get("action", "applicant")
-        if action == "update_applicant":
-            try:
+        parse_date = _parse_date_field
+        try:
+            if action == "update_applicant":
                 applicant = get_object_or_404(GuardApplicant, pk=request.POST.get("applicant_id"))
-                first_name = request.POST.get("first_name", "").strip()
-                last_name = request.POST.get("last_name", "").strip()
-                if not first_name or not last_name:
-                    raise ValueError("First name and last name are required.")
-                applicant.first_name = first_name
-                applicant.last_name = last_name
-                applicant.email = request.POST.get("email", "").strip()
-                applicant.phone_number = request.POST.get("phone_number", "").strip()
-                applicant.source = request.POST.get("source", "").strip()
-                next_status = request.POST.get("status") or GuardApplicant.Status.APPLIED
-                ensure_applicant_status_transition(applicant, next_status)
-                applicant.status = next_status
-                applicant.save(
-                    update_fields=[
-                        "first_name",
-                        "last_name",
-                        "email",
-                        "phone_number",
-                        "source",
-                        "status",
-                        "updated_at",
-                    ]
-                )
+                populate_applicant_from_request(applicant, request, parse_dates=parse_date)
+                self._save_applicant_core(applicant, request)
                 messages.success(request, "Applicant updated.")
-            except Exception as exc:
-                messages.error(request, str(exc))
-            return redirect("dashboard:guarding-applicants")
-        if action == "delete_applicant":
-            try:
+            elif action == "delete_applicant":
                 applicant = get_object_or_404(GuardApplicant, pk=request.POST.get("applicant_id"))
                 if applicant.hired_guard_id:
                     raise ValueError("Hired applicants are linked to guard profiles and cannot be deleted here.")
                 applicant.delete()
                 messages.success(request, "Applicant deleted.")
-            except Exception as exc:
-                messages.error(request, str(exc))
-            return redirect("dashboard:guarding-applicants")
-        first_name = request.POST.get("first_name", "").strip()
-        last_name = request.POST.get("last_name", "").strip()
-        if not first_name or not last_name:
-            messages.error(request, "First name and last name are required.")
-            return redirect("dashboard:guarding-applicants")
-        GuardApplicant.objects.create(
-            first_name=first_name,
-            last_name=last_name,
-            email=request.POST.get("email", "").strip(),
-            phone_number=request.POST.get("phone_number", "").strip(),
-            source=request.POST.get("source", "").strip(),
-            status=GuardApplicant.Status.APPLIED,
-            created_by=request.user,
-        )
-        messages.success(request, "Applicant created.")
+            elif action == "applicant_document":
+                applicant = get_object_or_404(GuardApplicant, pk=request.POST.get("applicant_id"))
+                upload = request.FILES.get("file")
+                if not upload:
+                    raise ValueError("Document file is required.")
+                GuardApplicantDocument.objects.create(
+                    applicant=applicant,
+                    document_type=request.POST.get("document_type") or GuardApplicantDocument.DocumentType.OTHER,
+                    title=request.POST.get("title", "").strip() or upload.name,
+                    file=upload,
+                    reference_number=request.POST.get("reference_number", "").strip(),
+                    notes=request.POST.get("notes", "").strip(),
+                    uploaded_by=request.user,
+                )
+                messages.success(request, "Document uploaded.")
+            elif action == "delete_applicant_document":
+                get_object_or_404(GuardApplicantDocument, pk=request.POST.get("document_id")).delete()
+                messages.success(request, "Document deleted.")
+            elif action in {"applicant_education", "update_applicant_education"}:
+                applicant = get_object_or_404(GuardApplicant, pk=request.POST.get("applicant_id"))
+                record = (
+                    get_object_or_404(GuardApplicantEducation, pk=request.POST.get("education_id"))
+                    if action == "update_applicant_education"
+                    else GuardApplicantEducation(applicant=applicant)
+                )
+                record.education_level = request.POST.get("education_level", "").strip()
+                if not record.education_level:
+                    raise ValueError("Education level is required.")
+                record.institution_name = request.POST.get("institution_name", "").strip()
+                year_raw = request.POST.get("year_completed", "").strip()
+                record.year_completed = int(year_raw) if year_raw else None
+                record.certificates_obtained = request.POST.get("certificates_obtained", "").strip()
+                record.save()
+                messages.success(request, "Education record saved.")
+            elif action == "delete_applicant_education":
+                get_object_or_404(GuardApplicantEducation, pk=request.POST.get("education_id")).delete()
+                messages.success(request, "Education record deleted.")
+            elif action in {"applicant_employment", "update_applicant_employment"}:
+                applicant = get_object_or_404(GuardApplicant, pk=request.POST.get("applicant_id"))
+                record = (
+                    get_object_or_404(GuardApplicantEmployment, pk=request.POST.get("employment_id"))
+                    if action == "update_applicant_employment"
+                    else GuardApplicantEmployment(applicant=applicant)
+                )
+                record.company_name = request.POST.get("company_name", "").strip()
+                if not record.company_name:
+                    raise ValueError("Company name is required.")
+                record.position = request.POST.get("position", "").strip()
+                record.duties = request.POST.get("duties", "").strip()
+                record.supervisor_name = request.POST.get("supervisor_name", "").strip()
+                record.supervisor_contact = request.POST.get("supervisor_contact", "").strip()
+                record.reason_for_leaving = request.POST.get("reason_for_leaving", "").strip()
+                years_raw = request.POST.get("years_experience", "").strip()
+                record.years_experience = Decimal(years_raw) if years_raw else None
+                if request.POST.get("started_on"):
+                    record.started_on = parse_date(request.POST.get("started_on"), label="Start date")
+                if request.POST.get("ended_on"):
+                    record.ended_on = parse_date(request.POST.get("ended_on"), label="End date")
+                record.save()
+                messages.success(request, "Employment record saved.")
+            elif action == "delete_applicant_employment":
+                get_object_or_404(GuardApplicantEmployment, pk=request.POST.get("employment_id")).delete()
+                messages.success(request, "Employment record deleted.")
+            elif action in {"applicant_reference", "update_applicant_reference"}:
+                applicant = get_object_or_404(GuardApplicant, pk=request.POST.get("applicant_id"))
+                record = (
+                    get_object_or_404(GuardApplicantReference, pk=request.POST.get("reference_id"))
+                    if action == "update_applicant_reference"
+                    else GuardApplicantReference(applicant=applicant)
+                )
+                record.full_name = request.POST.get("full_name", "").strip()
+                if not record.full_name:
+                    raise ValueError("Reference name is required.")
+                record.company = request.POST.get("company", "").strip()
+                record.position = request.POST.get("position", "").strip()
+                record.phone_number = request.POST.get("phone_number", "").strip()
+                record.save()
+                messages.success(request, "Reference saved.")
+            elif action == "delete_applicant_reference":
+                get_object_or_404(GuardApplicantReference, pk=request.POST.get("reference_id")).delete()
+                messages.success(request, "Reference deleted.")
+            elif action == "applicant":
+                applicant = GuardApplicant(created_by=request.user, status=GuardApplicant.Status.APPLIED)
+                populate_applicant_from_request(applicant, request, parse_dates=parse_date)
+                self._save_applicant_core(applicant, request)
+                messages.success(request, "Applicant created.")
+            else:
+                messages.error(request, "Unknown action.")
+        except Exception as exc:
+            messages.error(request, str(exc))
         return redirect("dashboard:guarding-applicants")
 
 
@@ -1052,8 +1333,20 @@ class GuardingApplicantHireView(StaffRequiredMixin, View):
         return redirect("dashboard:guarding-applicants")
 
 
+class GuardingApplicantPdfView(StaffRequiredMixin, View):
+    def get(self, request, applicant_id):
+        from apps.guarding.reports.pdf import render_guard_applicant_pdf
+
+        applicant = get_object_or_404(GuardApplicant, pk=applicant_id)
+        pdf_bytes = render_guard_applicant_pdf(applicant)
+        filename = f"guard-application-{applicant.last_name}-{applicant.pk}.pdf".replace(" ", "-")
+        response = HttpResponse(pdf_bytes, content_type="application/pdf")
+        response["Content-Disposition"] = f'attachment; filename="{filename}"'
+        return response
+
+
 class GuardingGuardsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
-    template_name = "dashboard/guarding_guards.html"
+    template_name = "dashboard/guarding/guards.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1070,8 +1363,11 @@ class GuardingGuardsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                 | Q(employee_number__icontains=query)
                 | Q(phone_number__icontains=query)
                 | Q(email__icontains=query)
+                | Q(metadata__national_id__icontains=query)
             )
-        context["guards"] = guards[:200]
+        guards = list(guards[:200])
+        _attach_guard_compliance_flags(guards)
+        context["guards"] = guards
         context["users"] = User.objects.filter(is_active=True).order_by("username")
         context["supervisors"] = User.objects.filter(is_active=True, is_staff=True).order_by("username")
         context["statuses"] = GuardProfile.Status.choices
@@ -1079,7 +1375,13 @@ class GuardingGuardsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
         context["current_query"] = query
         context["credential_types"] = GuardCredential.CredentialType.choices
         context["document_types"] = GuardDocument.DocumentType.choices
-        context["credentials"] = GuardCredential.objects.select_related("guard").order_by("expires_on", "name")[:100]
+        from apps.guarding.guard_forms import guard_form_choices
+
+        context.update(guard_form_choices())
+        context["credentials"] = (
+            GuardCredential.objects.select_related("guard", "verified_by")
+            .order_by("expires_on", "name")[:100]
+        )
         context["documents"] = GuardDocument.objects.select_related("guard", "uploaded_by").order_by("-created_at")[:100]
         context["location_pings"] = GuardLocationPing.objects.select_related("guard", "assignment").order_by("-created_at")[:100]
         context["assignments"] = ShiftAssignment.objects.select_related("shift", "shift__post", "guard").order_by("-shift__starts_at")[:200]
@@ -1102,11 +1404,12 @@ class GuardingGuardsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                 guard.employee_number = employee_number
                 guard.first_name = first_name
                 guard.last_name = last_name
-                guard.phone_number = request.POST.get("phone_number", "").strip()
-                guard.email = request.POST.get("email", "").strip()
+                _populate_guard_profile_from_post(guard, request)
                 next_status = request.POST.get("status") or GuardProfile.Status.ACTIVE
                 ensure_guard_status_transition(guard, next_status)
                 guard.status = next_status
+                if guard.status == GuardProfile.Status.TERMINATED and not guard.termination_date:
+                    guard.termination_date = timezone.localdate()
                 guard.save(
                     update_fields=[
                         "user",
@@ -1116,6 +1419,13 @@ class GuardingGuardsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                         "last_name",
                         "phone_number",
                         "email",
+                        "home_address",
+                        "emergency_contact_name",
+                        "emergency_contact_phone",
+                        "hire_date",
+                        "termination_date",
+                        "notes",
+                        "metadata",
                         "status",
                         "updated_at",
                     ]
@@ -1144,14 +1454,7 @@ class GuardingGuardsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
             try:
                 credential = get_object_or_404(GuardCredential, pk=request.POST.get("credential_id"))
                 credential.guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
-                credential.credential_type = request.POST.get("credential_type") or GuardCredential.CredentialType.OTHER
-                credential.name = request.POST.get("name", "").strip()
-                credential.issuing_authority = request.POST.get("issuing_authority", "").strip()
-                credential.reference_number = request.POST.get("reference_number", "").strip()
-                credential.issued_on = request.POST.get("issued_on") or None
-                credential.expires_on = request.POST.get("expires_on") or None
-                credential.verified = bool(request.POST.get("verified"))
-                credential.notes = request.POST.get("notes", "").strip()
+                _apply_credential_from_post(credential, request, actor=request.user)
                 credential.save(
                     update_fields=[
                         "guard",
@@ -1162,6 +1465,8 @@ class GuardingGuardsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                         "issued_on",
                         "expires_on",
                         "verified",
+                        "verified_by",
+                        "verified_at",
                         "notes",
                         "updated_at",
                     ]
@@ -1245,17 +1550,9 @@ class GuardingGuardsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
         if action == "credential":
             try:
                 guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
-                GuardCredential.objects.create(
-                    guard=guard,
-                    credential_type=request.POST.get("credential_type") or GuardCredential.CredentialType.OTHER,
-                    name=request.POST.get("name", "").strip(),
-                    issuing_authority=request.POST.get("issuing_authority", "").strip(),
-                    reference_number=request.POST.get("reference_number", "").strip(),
-                    issued_on=request.POST.get("issued_on") or None,
-                    expires_on=request.POST.get("expires_on") or None,
-                    verified=bool(request.POST.get("verified")),
-                    notes=request.POST.get("notes", "").strip(),
-                )
+                credential = GuardCredential(guard=guard)
+                _apply_credential_from_post(credential, request, actor=request.user)
+                credential.save()
                 messages.success(request, "Guard credential created.")
             except Exception as exc:
                 messages.error(request, str(exc))
@@ -1288,26 +1585,37 @@ class GuardingGuardsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
             return redirect("dashboard:guarding-guards")
         user = User.objects.filter(pk=request.POST.get("user_id")).first()
         supervisor = User.objects.filter(pk=request.POST.get("supervisor_id"), is_staff=True).first()
-        GuardProfile.objects.create(
+        next_status = request.POST.get("status") or GuardProfile.Status.INACTIVE
+        guard = GuardProfile(
             user=user,
             employee_number=employee_number,
             first_name=first_name,
             last_name=last_name,
-            phone_number=request.POST.get("phone_number", "").strip(),
-            email=request.POST.get("email", "").strip(),
-            status=request.POST.get("status") or GuardProfile.Status.ACTIVE,
             supervisor=supervisor,
+            status=next_status,
             hire_date=timezone.localdate(),
         )
+        _populate_guard_profile_from_post(guard, request)
+        if next_status == GuardProfile.Status.ACTIVE:
+            try:
+                ensure_guard_compliance_ready(guard)
+            except Exception as exc:
+                messages.error(request, str(exc))
+                return redirect("dashboard:guarding-guards")
+        guard.save()
         messages.success(request, "Guard profile created.")
         return redirect("dashboard:guarding-guards")
 
 
 class GuardingPostsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
-    template_name = "dashboard/guarding_posts.html"
+    template_name = "dashboard/guarding/posts.html"
 
     def get_context_data(self, **kwargs):
+        from .guarding_asset_console import posts_asset_context
+
         context = super().get_context_data(**kwargs)
+        context.update(posts_asset_context())
+        context["all_posts"] = GuardPost.objects.filter(is_active=True).select_related("site").order_by("site__name", "name")
         posts = GuardPost.objects.select_related("site", "supervisor").order_by("site__name", "name")
         query = self.request.GET.get("q", "").strip()
         if query:
@@ -1321,7 +1629,11 @@ class GuardingPostsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView)
         return context
 
     def post(self, request):
+        from .guarding_asset_console import handle_posts_asset_action
+
         action = request.POST.get("action", "post")
+        if handle_posts_asset_action(request):
+            return redirect("dashboard:guarding-posts")
         if action == "update_post":
             try:
                 post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
@@ -1443,18 +1755,25 @@ class GuardingPostsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView)
 
 
 class GuardingShiftsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
-    template_name = "dashboard/guarding_shifts.html"
+    template_name = "dashboard/guarding/shifts.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
         context["shifts"] = (
             Shift.objects.select_related("post", "post__site")
-            .prefetch_related("assignments__guard")
+            .prefetch_related("assignments__guard", "assignments__assigned_by")
             .order_by("-starts_at")[:200]
         )
         context["posts"] = GuardPost.objects.filter(is_active=True).select_related("site").order_by("site__name", "name")
-        context["guards"] = GuardProfile.objects.filter(status=GuardProfile.Status.ACTIVE).order_by("last_name", "first_name")
-        context["assignments"] = ShiftAssignment.objects.select_related("shift", "shift__post", "guard").order_by("-shift__starts_at")[:200]
+        guards = list(
+            GuardProfile.objects.filter(status=GuardProfile.Status.ACTIVE).order_by("last_name", "first_name")
+        )
+        _attach_guard_compliance_flags(guards)
+        context["guards"] = guards
+        context["assignments"] = (
+            ShiftAssignment.objects.select_related("shift", "shift__post", "guard", "assigned_by")
+            .order_by("-shift__starts_at")[:200]
+        )
         context["clock_events"] = ClockEvent.objects.select_related("assignment", "assignment__guard", "assignment__shift__post").order_by("-created_at")[:100]
         context["welfare_checks"] = WelfareCheck.objects.select_related("assignment", "assignment__guard", "assignment__shift__post").order_by("due_at")[:100]
         context["statuses"] = Shift.Status.choices
@@ -1462,11 +1781,39 @@ class GuardingShiftsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
         context["clock_event_types"] = ClockEvent.EventType.choices
         context["welfare_statuses"] = WelfareCheck.Status.choices
         context["counts"] = self.get_guarding_counts()
+        from apps.guarding.asset_models import (
+            GuardAssetDepot,
+            GuardAssetType,
+            GuardAssetUnit,
+            ShiftAssetManifest,
+            ShiftAssetManifestLine,
+        )
+
+        context["asset_types"] = GuardAssetType.objects.filter(is_active=True).order_by("name")
+        context["asset_depots"] = GuardAssetDepot.objects.filter(is_active=True).order_by("name")
+        context["available_units"] = GuardAssetUnit.objects.filter(
+            status=GuardAssetUnit.Status.AVAILABLE,
+        ).select_related("asset_type", "depot")[:500]
+        context["shift_manifests"] = (
+            ShiftAssetManifest.objects.select_related(
+                "assignment__guard",
+                "assignment__shift__post",
+                "assignment__shift__post__site",
+            )
+            .prefetch_related("lines__asset_type", "lines__asset_unit")
+            .order_by("-created_at")[:100]
+        )
+        context["manifest_statuses"] = ShiftAssetManifest.Status.choices
+        context["manifest_line_statuses"] = ShiftAssetManifestLine.Status.choices
         return context
 
     def post(self, request):
+        from .guarding_asset_console import handle_shifts_asset_action
+
         action = request.POST.get("action", "shift")
         try:
+            if handle_shifts_asset_action(request):
+                return redirect("dashboard:guarding-shifts")
             if action == "update_shift":
                 shift = get_object_or_404(Shift, pk=request.POST.get("shift_id"))
                 post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
@@ -1494,6 +1841,7 @@ class GuardingShiftsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                 for guard_id in request.POST.getlist("guard_ids"):
                     guard = GuardProfile.objects.filter(pk=guard_id, status=GuardProfile.Status.ACTIVE).first()
                     if guard and guard.pk not in existing_guard_ids:
+                        ensure_guard_compliance_ready(guard)
                         ShiftAssignment.objects.get_or_create(shift=shift, guard=guard, defaults={"assigned_by": request.user})
                 if next_status != shift.status:
                     transition_shift(shift, next_status)
@@ -1504,11 +1852,15 @@ class GuardingShiftsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                 messages.success(request, "Shift deleted.")
             elif action == "update_assignment":
                 assignment = get_object_or_404(ShiftAssignment, pk=request.POST.get("assignment_id"))
+                note = request.POST.get("notes", "").strip()
                 transition_assignment(
                     assignment,
                     request.POST.get("status") or ShiftAssignment.Status.ASSIGNED,
-                    note=request.POST.get("notes", "").strip(),
+                    note=note,
                 )
+                if note:
+                    assignment.notes = note
+                    assignment.save(update_fields=["notes", "updated_at"])
                 messages.success(request, "Shift assignment updated.")
             elif action == "delete_assignment":
                 assignment = get_object_or_404(ShiftAssignment, pk=request.POST.get("assignment_id"))
@@ -1583,6 +1935,7 @@ class GuardingShiftsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                 for guard_id in request.POST.getlist("guard_ids"):
                     guard = GuardProfile.objects.filter(pk=guard_id, status=GuardProfile.Status.ACTIVE).first()
                     if guard:
+                        ensure_guard_compliance_ready(guard)
                         ShiftAssignment.objects.get_or_create(shift=shift, guard=guard, defaults={"assigned_by": request.user})
                 messages.success(request, "Shift created.")
         except Exception as exc:
@@ -1591,7 +1944,7 @@ class GuardingShiftsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
 
 
 class GuardingPatrolsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
-    template_name = "dashboard/guarding_patrols.html"
+    template_name = "dashboard/guarding/patrols.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1778,8 +2131,99 @@ class GuardingPatrolCompleteView(StaffRequiredMixin, View):
         return redirect("dashboard:guarding-patrols")
 
 
+class GuardingCheckpointQrView(StaffRequiredMixin, View):
+    def get(self, request, checkpoint_id):
+        import qrcode
+        import qrcode.image.svg
+
+        checkpoint = get_object_or_404(Checkpoint.objects.select_related("post", "post__site"), pk=checkpoint_id)
+        payload = json.dumps(
+            {
+                "type": "guard_checkpoint",
+                "checkpoint_id": str(checkpoint.id),
+                "code": checkpoint.code,
+                "site_id": str(checkpoint.post.site_id),
+                "site": checkpoint.post.site.name,
+                "post_id": str(checkpoint.post_id),
+                "post": checkpoint.post.name,
+            },
+            separators=(",", ":"),
+        )
+        image = qrcode.make(payload, image_factory=qrcode.image.svg.SvgPathImage)
+        response = HttpResponse(content_type="image/svg+xml")
+        response["Content-Disposition"] = f'inline; filename="checkpoint-{checkpoint.id}.svg"'
+        image.save(response)
+        return response
+
+
+class GuardingPatrolProofExportView(StaffRequiredMixin, View):
+    def get(self, request):
+        rounds = (
+            PatrolRound.objects.select_related(
+                "route",
+                "route__post",
+                "route__post__site",
+                "assignment",
+                "assignment__guard",
+            )
+            .prefetch_related("scans__checkpoint", "scans__guard")
+            .order_by("-scheduled_start")[:1000]
+        )
+        rows = []
+        for patrol_round in rounds:
+            scans = list(patrol_round.scans.all())
+            rows.append(
+                [
+                    patrol_round.id,
+                    patrol_round.route.post.site.name,
+                    patrol_round.route.post.name,
+                    patrol_round.route.name,
+                    patrol_round.assignment.guard.full_name if patrol_round.assignment else "",
+                    patrol_round.get_status_display(),
+                    patrol_round.scheduled_start,
+                    patrol_round.scheduled_end,
+                    patrol_round.started_at,
+                    patrol_round.completed_at,
+                    len(scans),
+                    "; ".join(
+                        f"{scan.checkpoint.name} ({scan.scanned_at:%Y-%m-%d %H:%M})"
+                        for scan in sorted(scans, key=lambda item: item.scanned_at)
+                    ),
+                ]
+            )
+        if request.GET.get("format") == "pdf" and rounds:
+            from django.http import HttpResponse
+
+            from apps.guarding.reports.pdf import render_patrol_round_pdf
+
+            patrol_round = rounds[0]
+            pdf_bytes = render_patrol_round_pdf(patrol_round)
+            response = HttpResponse(pdf_bytes, content_type="application/pdf")
+            response["Content-Disposition"] = f'attachment; filename="patrol-{patrol_round.id}.pdf"'
+            return response
+
+        return _csv_response(
+            "guarding-patrol-proof.csv",
+            [
+                "round_id",
+                "site",
+                "post",
+                "route",
+                "guard",
+                "status",
+                "scheduled_start",
+                "scheduled_end",
+                "started_at",
+                "completed_at",
+                "scan_count",
+                "scans",
+            ],
+            rows,
+        )
+
+
 class GuardingReportsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
-    template_name = "dashboard/guarding_reports.html"
+    template_name = "dashboard/guarding/reports.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1915,8 +2359,577 @@ class GuardingReportReviewView(StaffRequiredMixin, View):
         return redirect("dashboard:guarding-reports")
 
 
+class GuardingReportExportView(StaffRequiredMixin, View):
+    def get(self, request):
+        reports = (
+            FieldReport.objects.select_related("site", "post", "guard", "reviewed_by")
+            .order_by("-submitted_at")[:1000]
+        )
+        rows = [
+            [
+                report.id,
+                report.site.name,
+                report.post.name if report.post else "",
+                report.guard.full_name if report.guard else "",
+                report.get_report_type_display(),
+                report.get_status_display(),
+                report.title,
+                report.body,
+                report.visible_to_client,
+                report.submitted_at,
+                report.reviewed_by.username if report.reviewed_by else "",
+                report.reviewed_at or "",
+                report.review_note,
+            ]
+            for report in reports
+        ]
+        return _csv_response(
+            "guarding-reports.csv",
+            [
+                "report_id",
+                "site",
+                "post",
+                "guard",
+                "type",
+                "status",
+                "title",
+                "body",
+                "visible_to_client",
+                "submitted_at",
+                "reviewed_by",
+                "reviewed_at",
+                "review_note",
+            ],
+            rows,
+        )
+
+
+class GuardingBackOfficeView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
+    template_name = "dashboard/guarding/backoffice.html"
+    _BACKOFFICE_ACTION_TABS = {
+        "contract": "contracts",
+        "update_contract": "contracts",
+        "delete_contract": "contracts",
+        "availability": "attendance",
+        "update_availability": "attendance",
+        "delete_availability": "attendance",
+        "leave": "attendance",
+        "update_leave": "attendance",
+        "review_leave": "attendance",
+        "delete_leave": "attendance",
+        "review_shift_swap": "attendance",
+        "delete_shift_swap": "attendance",
+        "review_timesheet": "attendance",
+        "generate_invoice": "attendance",
+        "transition_invoice": "attendance",
+        "shift_template": "templates",
+        "report_template": "templates",
+        "client_access": "templates",
+        "training": "people",
+        "update_training": "people",
+        "delete_training": "people",
+        "equipment": "people",
+        "update_equipment": "people",
+        "delete_equipment": "people",
+        "offboarding": "people",
+        "update_offboarding": "people",
+        "delete_offboarding": "people",
+    }
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["contracts"] = GuardContract.objects.select_related("site", "post").order_by("site__name", "name")[:150]
+        context["availability_records"] = GuardAvailability.objects.select_related("guard").order_by("-starts_at")[:150]
+        context["leave_requests"] = LeaveRequest.objects.select_related("guard", "reviewed_by").order_by("-starts_at")[:150]
+        context["shift_swaps"] = ShiftSwapRequest.objects.select_related("assignment", "assignment__shift", "assignment__shift__post", "requested_by", "target_guard", "reviewed_by").order_by("-created_at")[:150]
+        context["timesheets"] = GuardTimesheet.objects.select_related("guard", "site", "post", "assignment").order_by("-period_start")[:150]
+        context["invoices"] = GuardInvoice.objects.select_related("site", "contract", "generated_by").order_by("-period_start", "-created_at")[:100]
+        context["shift_templates"] = ShiftTemplate.objects.select_related("post", "post__site").order_by("post__site__name", "post__name", "name")[:150]
+        context["report_templates"] = ReportTemplate.objects.select_related("site").order_by("report_type", "name")[:150]
+        context["client_access"] = ClientPortalAccess.objects.select_related("user", "site").order_by("site__name", "user__username")[:150]
+        context["training_records"] = GuardTrainingRecord.objects.select_related("guard").order_by("expires_on", "name")[:150]
+        context["equipment_issues"] = GuardEquipmentIssue.objects.select_related("guard", "issued_by").order_by("-issued_at")[:150]
+        context["offboarding_checklists"] = GuardOffboardingChecklist.objects.select_related("guard", "completed_by").order_by("-created_at")[:150]
+        context["sites"] = Site.objects.order_by("name")
+        context["posts"] = GuardPost.objects.select_related("site").order_by("site__name", "name")
+        context["guards"] = GuardProfile.objects.order_by("last_name", "first_name")
+        context["users"] = User.objects.order_by("username")
+        context["assignments"] = ShiftAssignment.objects.select_related("guard", "shift", "shift__post").order_by("-shift__starts_at")[:200]
+        context["contract_statuses"] = GuardContract.Status.choices
+        context["availability_types"] = GuardAvailability.AvailabilityType.choices
+        context["leave_statuses"] = LeaveRequest.Status.choices
+        context["swap_statuses"] = ShiftSwapRequest.Status.choices
+        context["timesheet_statuses"] = GuardTimesheet.Status.choices
+        context["invoice_statuses"] = GuardInvoice.Status.choices
+        context["report_types"] = FieldReport.ReportType.choices
+        context["client_roles"] = ClientPortalAccess.Role.choices
+        context["training_statuses"] = GuardTrainingRecord.Status.choices
+        context["equipment_statuses"] = GuardEquipmentIssue.Status.choices
+        context["counts"] = self.get_guarding_counts()
+        pending_leave = LeaveRequest.objects.filter(status=LeaveRequest.Status.PENDING).count()
+        pending_swaps = ShiftSwapRequest.objects.filter(status=ShiftSwapRequest.Status.PENDING).count()
+        pending_timesheets = GuardTimesheet.objects.filter(status=GuardTimesheet.Status.SUBMITTED).count()
+        context["backoffice_tab_counts"] = {
+            "contracts": GuardContract.objects.count(),
+            "pending_leave": pending_leave,
+            "pending_swaps": pending_swaps,
+            "pending_timesheets": pending_timesheets,
+            "attendance_actions": pending_leave + pending_swaps + pending_timesheets,
+            "shift_templates": ShiftTemplate.objects.filter(is_active=True).count(),
+            "report_templates": ReportTemplate.objects.filter(is_active=True).count(),
+            "client_access": ClientPortalAccess.objects.count(),
+            "open_offboarding": GuardOffboardingChecklist.objects.exclude(
+                equipment_returned=True,
+                documents_archived=True,
+                access_revoked=True,
+                final_timesheet_approved=True,
+            ).count(),
+        }
+        return context
+
+    def post(self, request):
+        action = request.POST.get("action", "")
+        try:
+            if action in {"contract", "update_contract"}:
+                contract = (
+                    get_object_or_404(GuardContract, pk=request.POST.get("contract_id"))
+                    if action == "update_contract"
+                    else GuardContract()
+                )
+                contract.site = get_object_or_404(Site, pk=request.POST.get("site_id"))
+                contract.post = GuardPost.objects.filter(pk=request.POST.get("post_id")).first()
+                contract.name = request.POST.get("name", "").strip()
+                if not contract.name:
+                    raise ValueError("Contract name is required.")
+                contract.status = request.POST.get("status") or GuardContract.Status.DRAFT
+                contract.starts_on = _parse_date_field(request.POST.get("starts_on"), label="Start date")
+                contract.ends_on = _parse_date_field(request.POST.get("ends_on"), label="End date") if request.POST.get("ends_on") else None
+                contract.bill_rate = _parse_decimal_field(request.POST.get("bill_rate", "0"), label="Bill rate", min_value=Decimal("0.00"))
+                contract.pay_rate = _parse_decimal_field(request.POST.get("pay_rate", "0"), label="Pay rate", min_value=Decimal("0.00"))
+                contract.overtime_multiplier = _parse_decimal_field(
+                    request.POST.get("overtime_multiplier", "1.5"),
+                    label="Overtime multiplier",
+                    min_value=Decimal("1.00"),
+                )
+                contract.sla_minutes = _parse_int_field(request.POST.get("sla_minutes", "30"), label="SLA minutes", min_value=1)
+                contract.notes = request.POST.get("notes", "").strip()
+                contract.full_clean()
+                contract.save()
+                messages.success(request, "Contract saved.")
+            elif action == "delete_contract":
+                get_object_or_404(GuardContract, pk=request.POST.get("contract_id")).delete()
+                messages.success(request, "Contract deleted.")
+            elif action in {"availability", "update_availability"}:
+                availability = (
+                    get_object_or_404(GuardAvailability, pk=request.POST.get("availability_id"))
+                    if action == "update_availability"
+                    else GuardAvailability(created_by=request.user)
+                )
+                availability.guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                availability.availability_type = request.POST.get("availability_type") or GuardAvailability.AvailabilityType.UNAVAILABLE
+                availability.starts_at = _parse_datetime_field(request.POST.get("starts_at"), label="Start time")
+                availability.ends_at = _parse_datetime_field(request.POST.get("ends_at"), label="End time")
+                availability.reason = request.POST.get("reason", "").strip()
+                availability.full_clean()
+                availability.save()
+                messages.success(request, "Availability saved.")
+            elif action == "delete_availability":
+                get_object_or_404(GuardAvailability, pk=request.POST.get("availability_id")).delete()
+                messages.success(request, "Availability deleted.")
+            elif action in {"leave", "update_leave"}:
+                leave = get_object_or_404(LeaveRequest, pk=request.POST.get("leave_id")) if action == "update_leave" else LeaveRequest()
+                leave.guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                leave.starts_at = _parse_datetime_field(request.POST.get("starts_at"), label="Start time")
+                leave.ends_at = _parse_datetime_field(request.POST.get("ends_at"), label="End time")
+                leave.reason = request.POST.get("reason", "").strip()
+                if request.POST.get("status"):
+                    leave.status = request.POST.get("status")
+                leave.full_clean()
+                leave.save()
+                messages.success(request, "Leave request saved.")
+            elif action == "review_leave":
+                leave = get_object_or_404(LeaveRequest, pk=request.POST.get("leave_id"))
+                review_leave_request(
+                    leave,
+                    actor=request.user,
+                    status=request.POST.get("status"),
+                    note=request.POST.get("note", "").strip(),
+                )
+                messages.success(request, "Leave request reviewed.")
+            elif action == "delete_leave":
+                get_object_or_404(LeaveRequest, pk=request.POST.get("leave_id")).delete()
+                messages.success(request, "Leave request deleted.")
+            elif action == "review_shift_swap":
+                swap = get_object_or_404(ShiftSwapRequest, pk=request.POST.get("swap_id"))
+                review_shift_swap_request(
+                    swap,
+                    actor=request.user,
+                    status=request.POST.get("status"),
+                    note=request.POST.get("note", "").strip(),
+                )
+                messages.success(request, "Shift swap reviewed.")
+            elif action == "delete_shift_swap":
+                get_object_or_404(ShiftSwapRequest, pk=request.POST.get("swap_id")).delete()
+                messages.success(request, "Shift swap deleted.")
+            elif action == "review_timesheet":
+                timesheet = get_object_or_404(GuardTimesheet, pk=request.POST.get("timesheet_id"))
+                review_timesheet(
+                    timesheet,
+                    actor=request.user,
+                    status=request.POST.get("status"),
+                    note=request.POST.get("note", "").strip(),
+                )
+                messages.success(request, "Timesheet updated.")
+            elif action == "delete_timesheet":
+                get_object_or_404(GuardTimesheet, pk=request.POST.get("timesheet_id")).delete()
+                messages.success(request, "Timesheet deleted.")
+            elif action == "generate_invoice":
+                site = get_object_or_404(Site, pk=request.POST.get("site_id"))
+                contract = GuardContract.objects.filter(pk=request.POST.get("contract_id"), site=site).first()
+                invoice = generate_guard_invoice(
+                    site=site,
+                    contract=contract,
+                    period_start=_parse_date_field(request.POST.get("period_start"), label="Period start"),
+                    period_end=_parse_date_field(request.POST.get("period_end"), label="Period end"),
+                    actor=request.user,
+                )
+                messages.success(request, f"Invoice {invoice.invoice_number} generated.")
+            elif action == "transition_invoice":
+                invoice = get_object_or_404(GuardInvoice, pk=request.POST.get("invoice_id"))
+                transition_guard_invoice(invoice, status=request.POST.get("status"), actor=request.user)
+                messages.success(request, "Invoice updated.")
+            elif action == "delete_invoice":
+                get_object_or_404(GuardInvoice, pk=request.POST.get("invoice_id")).delete()
+                messages.success(request, "Invoice deleted.")
+            elif action in {"shift_template", "update_shift_template"}:
+                shift_template = (
+                    get_object_or_404(ShiftTemplate, pk=request.POST.get("shift_template_id"))
+                    if action == "update_shift_template"
+                    else ShiftTemplate()
+                )
+                shift_template.post = get_object_or_404(GuardPost, pk=request.POST.get("post_id"))
+                shift_template.name = request.POST.get("name", "").strip()
+                if not shift_template.name:
+                    raise ValueError("Shift template name is required.")
+                shift_template.start_time = _parse_time_field(request.POST.get("start_time"), label="Start time")
+                shift_template.end_time = _parse_time_field(request.POST.get("end_time"), label="End time")
+                shift_template.required_guards = _parse_int_field(request.POST.get("required_guards", "1"), label="Required guards", min_value=1)
+                shift_template.days_of_week = [day for day in request.POST.getlist("days_of_week") if day]
+                shift_template.is_active = bool(request.POST.get("is_active"))
+                shift_template.notes = request.POST.get("notes", "").strip()
+                shift_template.full_clean()
+                shift_template.save()
+                messages.success(request, "Shift template saved.")
+            elif action == "delete_shift_template":
+                get_object_or_404(ShiftTemplate, pk=request.POST.get("shift_template_id")).delete()
+                messages.success(request, "Shift template deleted.")
+            elif action in {"report_template", "update_report_template"}:
+                template = (
+                    get_object_or_404(ReportTemplate, pk=request.POST.get("template_id"))
+                    if action == "update_report_template"
+                    else ReportTemplate(created_by=request.user)
+                )
+                template.name = request.POST.get("name", "").strip()
+                if not template.name:
+                    raise ValueError("Template name is required.")
+                template.report_type = request.POST.get("report_type") or FieldReport.ReportType.OTHER
+                template.site = Site.objects.filter(pk=request.POST.get("site_id")).first()
+                template.is_active = bool(request.POST.get("is_active"))
+                template.schema = {"fields": [field.strip() for field in request.POST.get("fields", "").splitlines() if field.strip()]}
+                template.save()
+                messages.success(request, "Report template saved.")
+            elif action == "delete_report_template":
+                get_object_or_404(ReportTemplate, pk=request.POST.get("template_id")).delete()
+                messages.success(request, "Report template deleted.")
+            elif action in {"client_access", "update_client_access"}:
+                access = (
+                    get_object_or_404(ClientPortalAccess, pk=request.POST.get("access_id"))
+                    if action == "update_client_access"
+                    else ClientPortalAccess()
+                )
+                access.user = get_object_or_404(User, pk=request.POST.get("user_id"))
+                access.site = get_object_or_404(Site, pk=request.POST.get("site_id"))
+                access.role = request.POST.get("role") or ClientPortalAccess.Role.VIEWER
+                access.can_view_reports = bool(request.POST.get("can_view_reports"))
+                access.can_view_patrols = bool(request.POST.get("can_view_patrols"))
+                access.can_view_attendance = bool(request.POST.get("can_view_attendance"))
+                access.can_acknowledge_reports = bool(request.POST.get("can_acknowledge_reports"))
+                access.full_clean()
+                access.save()
+                messages.success(request, "Client access saved.")
+            elif action == "delete_client_access":
+                get_object_or_404(ClientPortalAccess, pk=request.POST.get("access_id")).delete()
+                messages.success(request, "Client access deleted.")
+            elif action in {"training", "update_training"}:
+                training = (
+                    get_object_or_404(GuardTrainingRecord, pk=request.POST.get("training_id"))
+                    if action == "update_training"
+                    else GuardTrainingRecord()
+                )
+                training.guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                training.name = request.POST.get("name", "").strip()
+                if not training.name:
+                    raise ValueError("Training name is required.")
+                training.provider = request.POST.get("provider", "").strip()
+                training.status = request.POST.get("status") or GuardTrainingRecord.Status.PLANNED
+                training.completed_on = _parse_date_field(request.POST.get("completed_on"), label="Completed date") if request.POST.get("completed_on") else None
+                training.expires_on = _parse_date_field(request.POST.get("expires_on"), label="Expiry date") if request.POST.get("expires_on") else None
+                training.certificate_number = request.POST.get("certificate_number", "").strip()
+                training.notes = request.POST.get("notes", "").strip()
+                training.save()
+                messages.success(request, "Training record saved.")
+            elif action == "delete_training":
+                get_object_or_404(GuardTrainingRecord, pk=request.POST.get("training_id")).delete()
+                messages.success(request, "Training record deleted.")
+            elif action in {"equipment", "update_equipment"}:
+                equipment = (
+                    get_object_or_404(GuardEquipmentIssue, pk=request.POST.get("equipment_id"))
+                    if action == "update_equipment"
+                    else GuardEquipmentIssue(issued_by=request.user)
+                )
+                equipment.guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                equipment.item_name = request.POST.get("item_name", "").strip()
+                if not equipment.item_name:
+                    raise ValueError("Equipment item name is required.")
+                equipment.item_code = request.POST.get("item_code", "").strip()
+                equipment.quantity = _parse_int_field(request.POST.get("quantity", "1"), label="Quantity", min_value=1)
+                equipment.status = request.POST.get("status") or GuardEquipmentIssue.Status.ISSUED
+                equipment.issued_at = _parse_datetime_field(request.POST.get("issued_at"), label="Issued time") if request.POST.get("issued_at") else equipment.issued_at
+                equipment.returned_at = _parse_datetime_field(request.POST.get("returned_at"), label="Returned time") if request.POST.get("returned_at") else None
+                equipment.notes = request.POST.get("notes", "").strip()
+                equipment.save()
+                from apps.guarding.asset_services import sync_offboarding_equipment_flag
+
+                sync_offboarding_equipment_flag(equipment.guard)
+                messages.success(request, "Equipment issue saved.")
+            elif action == "delete_equipment":
+                get_object_or_404(GuardEquipmentIssue, pk=request.POST.get("equipment_id")).delete()
+                messages.success(request, "Equipment issue deleted.")
+            elif action in {"offboarding", "update_offboarding"}:
+                checklist = (
+                    get_object_or_404(GuardOffboardingChecklist, pk=request.POST.get("offboarding_id"))
+                    if action == "update_offboarding"
+                    else GuardOffboardingChecklist()
+                )
+                checklist.guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
+                checklist.equipment_returned = bool(request.POST.get("equipment_returned"))
+                checklist.documents_archived = bool(request.POST.get("documents_archived"))
+                checklist.access_revoked = bool(request.POST.get("access_revoked"))
+                checklist.final_timesheet_approved = bool(request.POST.get("final_timesheet_approved"))
+                checklist.exit_notes = request.POST.get("exit_notes", "").strip()
+                if checklist.is_complete and checklist.completed_at is None:
+                    checklist.completed_by = request.user
+                    checklist.completed_at = timezone.now()
+                checklist.save()
+                messages.success(request, "Offboarding checklist saved.")
+            elif action == "delete_offboarding":
+                get_object_or_404(GuardOffboardingChecklist, pk=request.POST.get("offboarding_id")).delete()
+                messages.success(request, "Offboarding checklist deleted.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        tab = self._BACKOFFICE_ACTION_TABS.get(action)
+        if tab:
+            return redirect(f"{reverse('dashboard:guarding-backoffice')}?tab={tab}")
+        return redirect("dashboard:guarding-backoffice")
+
+
+class GuardingTimesheetExportView(StaffRequiredMixin, View):
+    def get(self, request):
+        timesheets = (
+            GuardTimesheet.objects.select_related("guard", "site", "post", "assignment")
+            .order_by("-period_start")[:1000]
+        )
+        rows = [
+            [
+                sheet.id,
+                sheet.guard.full_name,
+                sheet.site.name,
+                sheet.post.name if sheet.post else "",
+                sheet.period_start,
+                sheet.period_end,
+                sheet.regular_minutes,
+                sheet.overtime_minutes,
+                sheet.total_minutes,
+                sheet.pay_amount,
+                sheet.bill_amount,
+                sheet.get_status_display(),
+                sheet.approved_by.username if sheet.approved_by else "",
+                sheet.approved_at or "",
+                sheet.export_reference,
+            ]
+            for sheet in timesheets
+        ]
+        return _csv_response(
+            "guarding-timesheets.csv",
+            [
+                "timesheet_id",
+                "guard",
+                "site",
+                "post",
+                "period_start",
+                "period_end",
+                "regular_minutes",
+                "overtime_minutes",
+                "total_minutes",
+                "pay_amount",
+                "bill_amount",
+                "status",
+                "approved_by",
+                "approved_at",
+                "export_reference",
+            ],
+            rows,
+        )
+
+
+class GuardingClientPortalView(GuardingClientRequiredMixin, TemplateView):
+    template_name = "dashboard/guarding/client.html"
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        access_records = list(ClientPortalAccess.objects.select_related("site").filter(user=self.request.user))
+        site_ids = [access.site_id for access in access_records]
+        report_site_ids = [access.site_id for access in access_records if access.can_view_reports]
+        acknowledge_site_ids = [access.site_id for access in access_records if access.can_acknowledge_reports]
+        patrol_site_ids = [access.site_id for access in access_records if access.can_view_patrols]
+        attendance_site_ids = [access.site_id for access in access_records if access.can_view_attendance]
+        reports = (
+            FieldReport.objects.select_related("site", "post", "guard")
+            .prefetch_related("client_acknowledgements")
+            .filter(
+                site_id__in=report_site_ids,
+                visible_to_client=True,
+                status=FieldReport.Status.APPROVED,
+            )
+            .order_by("-submitted_at")[:100]
+        )
+        patrol_rounds = (
+            PatrolRound.objects.select_related(
+                "route",
+                "route__post",
+                "route__post__site",
+                "assignment",
+                "assignment__guard",
+            )
+            .prefetch_related("scans")
+            .filter(route__post__site_id__in=patrol_site_ids)
+            .order_by("-scheduled_start")[:100]
+        )
+        assignments = (
+            ShiftAssignment.objects.select_related("guard", "shift", "shift__post", "shift__post__site")
+            .filter(shift__post__site_id__in=attendance_site_ids)
+            .order_by("-shift__starts_at")[:100]
+        )
+        timesheets = (
+            GuardTimesheet.objects.select_related("guard", "site", "post")
+            .filter(
+                site_id__in=attendance_site_ids,
+                status__in=[
+                    GuardTimesheet.Status.SUBMITTED,
+                    GuardTimesheet.Status.APPROVED,
+                    GuardTimesheet.Status.EXPORTED,
+                ],
+            )
+            .order_by("-period_start")[:100]
+        )
+        context.update(
+            {
+                "access_records": access_records,
+                "sites": Site.objects.filter(id__in=site_ids).order_by("name"),
+                "reports": reports,
+                "patrol_rounds": patrol_rounds,
+                "assignments": assignments,
+                "timesheets": timesheets,
+                "can_export_reports": bool(report_site_ids),
+                "acknowledge_site_ids": acknowledge_site_ids,
+                "client_counts": {
+                    "sites": len(site_ids),
+                    "reports": reports.count(),
+                    "patrols": patrol_rounds.count(),
+                    "assignments": assignments.count(),
+                },
+            }
+        )
+        return context
+
+
+class GuardingClientReportAcknowledgeView(GuardingClientRequiredMixin, View):
+    def post(self, request, report_id):
+        report = get_object_or_404(FieldReport, pk=report_id)
+        try:
+            acknowledge_field_report(report, user=request.user, comment=request.POST.get("comment", "").strip())
+            messages.success(request, "Report acknowledged.")
+        except Exception as exc:
+            messages.error(request, str(exc))
+        return redirect("dashboard:client-guarding")
+
+
+class GuardingClientReportExportView(GuardingClientRequiredMixin, View):
+    def get(self, request):
+        report_site_ids = ClientPortalAccess.objects.filter(
+            user=request.user,
+            can_view_reports=True,
+        ).values_list("site_id", flat=True)
+        reports = (
+            FieldReport.objects.select_related("site", "post", "guard")
+            .filter(
+                site_id__in=report_site_ids,
+                visible_to_client=True,
+                status=FieldReport.Status.APPROVED,
+            )
+            .order_by("-submitted_at")[:1000]
+        )
+        rows = [
+            [
+                report.site.name,
+                report.post.name if report.post else "",
+                report.guard.full_name if report.guard else "",
+                report.get_report_type_display(),
+                report.title,
+                report.body,
+                report.submitted_at,
+            ]
+            for report in reports
+        ]
+        return _csv_response(
+            "guarding-client-reports.csv",
+            ["site", "post", "guard", "type", "title", "body", "submitted_at"],
+            rows,
+        )
+
+
+class GuardingLiveMapView(StaffRequiredMixin, View):
+    """Legacy route — field guards live on the global map."""
+
+    def get(self, request, *args, **kwargs):
+        return redirect(f"{reverse('dashboard:site-map')}?focus=guards")
+
+
+class GuardingAnalyticsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
+    template_name = "dashboard/guarding/analytics.html"
+
+    def get_context_data(self, **kwargs):
+        from apps.guarding.analytics import guarding_kpis
+
+        context = super().get_context_data(**kwargs)
+        days = int(self.request.GET.get("days", 7))
+        context["kpis"] = guarding_kpis(days=days)
+        context["days"] = days
+        context["counts"] = self.get_guarding_counts()
+        return context
+
+
 class GuardingDispatchView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView):
-    template_name = "dashboard/guarding_dispatch.html"
+    template_name = "dashboard/guarding/dispatch.html"
+    _DISPATCH_ACTION_TABS = {
+        "save_dispatch_policy": "policies",
+        "panic_alert": "sos",
+        "update_panic_alert": "sos",
+        "delete_panic_alert": "sos",
+        "update_task": "tasks",
+        "delete_task": "tasks",
+        "task": "tasks",
+    }
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -1927,13 +2940,50 @@ class GuardingDispatchView(StaffRequiredMixin, GuardingOverviewMixin, TemplateVi
         context["assignments"] = ShiftAssignment.objects.select_related("shift", "shift__post", "guard").order_by("-shift__starts_at")[:200]
         context["priorities"] = DispatchTask.Priority.choices
         context["panic_statuses"] = GuardPanicAlert.Status.choices
+        policies = {
+            policy.site_id: policy
+            for policy in SiteGuardDispatchPolicy.objects.select_related("site")
+        }
+        context["site_dispatch_policies"] = [
+            {"site": site, "policy": policies.get(site.id)}
+            for site in Site.objects.order_by("name")
+        ]
+        context["alarm_severity_options"] = [
+            ("critical", "Critical"),
+            ("high", "High"),
+            ("medium", "Medium"),
+            ("low", "Low"),
+        ]
         context["counts"] = self.get_guarding_counts()
+        counts = context["counts"]
+        context["dispatch_tab_counts"] = {
+            "open_panic": counts["open_panic"],
+            "open_tasks": counts["open_dispatch"],
+            "policy_sites": len(context["site_dispatch_policies"]),
+            "active_policies": SiteGuardDispatchPolicy.objects.filter(is_active=True).count(),
+        }
         return context
 
     def post(self, request):
         try:
             action = request.POST.get("action", "task")
-            if action == "panic_alert":
+            if action == "save_dispatch_policy":
+                site = get_object_or_404(Site, pk=request.POST.get("site_id"))
+                policy, _ = SiteGuardDispatchPolicy.objects.get_or_create(site=site)
+                policy.is_active = bool(request.POST.get("is_active"))
+                policy.auto_from_emergency = bool(request.POST.get("auto_from_emergency"))
+                policy.auto_from_alarm = bool(request.POST.get("auto_from_alarm"))
+                policy.auto_assign_nearest = bool(request.POST.get("auto_assign_nearest"))
+                policy.default_priority = (
+                    request.POST.get("default_priority") or DispatchTask.Priority.HIGH
+                )
+                policy.alarm_severities = [
+                    value for value in request.POST.getlist("alarm_severities") if value
+                ]
+                policy.full_clean()
+                policy.save()
+                messages.success(request, f"Auto-dispatch policy saved for {site.name}.")
+            elif action == "panic_alert":
                 guard = get_object_or_404(GuardProfile, pk=request.POST.get("guard_id"))
                 assignment = ShiftAssignment.objects.filter(pk=request.POST.get("assignment_id")).first()
                 site = Site.objects.filter(pk=request.POST.get("site_id")).first()
@@ -2017,6 +3067,9 @@ class GuardingDispatchView(StaffRequiredMixin, GuardingOverviewMixin, TemplateVi
                 messages.success(request, "Dispatch task created.")
         except Exception as exc:
             messages.error(request, str(exc))
+        tab = self._DISPATCH_ACTION_TABS.get(action)
+        if tab:
+            return redirect(f"{reverse('dashboard:guarding-dispatch')}?tab={tab}")
         return redirect("dashboard:guarding-dispatch")
 
 
@@ -2030,11 +3083,11 @@ class GuardingPanicActionView(StaffRequiredMixin, View):
                 resolve_panic_alert(alert, actor=request.user)
             else:
                 messages.error(request, "Unsupported panic action.")
-                return redirect("dashboard:guarding-dispatch")
+                return redirect(f"{reverse('dashboard:guarding-dispatch')}?tab=sos")
             messages.success(request, "Panic alert updated.")
         except Exception as exc:
             messages.error(request, str(exc))
-        return redirect("dashboard:guarding-dispatch")
+        return redirect(f"{reverse('dashboard:guarding-dispatch')}?tab=sos")
 
 
 class GuardingDispatchActionView(StaffRequiredMixin, View):
@@ -2051,7 +3104,7 @@ class GuardingDispatchActionView(StaffRequiredMixin, View):
         task = get_object_or_404(DispatchTask, pk=task_id)
         if action not in self.action_statuses:
             messages.error(request, "Unsupported dispatch action.")
-            return redirect("dashboard:guarding-dispatch")
+            return redirect(f"{reverse('dashboard:guarding-dispatch')}?tab=tasks")
         guard = GuardProfile.objects.filter(pk=request.POST.get("guard_id")).first()
         if guard:
             task.assigned_guard = guard
@@ -2066,11 +3119,11 @@ class GuardingDispatchActionView(StaffRequiredMixin, View):
             messages.success(request, "Dispatch task updated.")
         except Exception as exc:
             messages.error(request, str(exc))
-        return redirect("dashboard:guarding-dispatch")
+        return redirect(f"{reverse('dashboard:guarding-dispatch')}?tab=tasks")
 
 
 class EmergencyServiceManagementView(StaffRequiredMixin, TemplateView):
-    template_name = "dashboard/emergency_services.html"
+    template_name = "dashboard/emergency/services.html"
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -2250,7 +3303,7 @@ class DeleteAccountEmergencyServiceView(StaffRequiredMixin, View):
         return redirect("dashboard:emergency-services")
 
 class SiteConsoleView(StaffRequiredMixin, TemplateView):
-    template_name = "dashboard/site_console.html"
+    template_name = "dashboard/sites/console.html"
 
     def _fallback_panic_capability(self):
         return {
@@ -2263,9 +3316,12 @@ class SiteConsoleView(StaffRequiredMixin, TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        site = get_object_or_404(Site, pk=self.kwargs["pk"])
+        site = get_object_or_404(Site.objects.select_related("operations_zone"), pk=self.kwargs["pk"])
         service = HikPartnerService()
         context["site"] = site
+        context["can_manage_zones"] = user_has_console_permission(
+            self.request.user, Perm.MANAGE_SITES
+        )
         devices = AlarmPanelDevice.objects.filter(site=site).prefetch_related("subsystems__zones", "peripherals", "outputs")
         context["devices"] = devices
         context["devices_count"] = devices.count()
@@ -2355,7 +3411,7 @@ class SiteConsoleView(StaffRequiredMixin, TemplateView):
 
 class WebhookLogsView(StaffRequiredMixin, ListView):
     model = Event
-    template_name = "dashboard/logs.html"
+    template_name = "dashboard/ops/logs.html"
     context_object_name = "events"
     paginate_by = 30
     ordering = ["-occurred_at"]
@@ -2394,17 +3450,26 @@ class WebhookLogsView(StaffRequiredMixin, ListView):
 
 class UserListView(SuperuserRequiredMixin, ListView):
     model = User
-    template_name = "dashboard/users.html"
+    template_name = "dashboard/ops/users.html"
     context_object_name = "users"
     ordering = ["-is_superuser", "username"]
 
     def get_queryset(self):
-        return User.objects.filter(is_staff=True).order_by("-is_superuser", "username")
+        return (
+            User.objects.filter(is_staff=True)
+            .select_related("operator_profile")
+            .order_by("-is_superuser", "username")
+        )
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context["operator_roles"] = OperatorRole.CHOICES
+        return context
 
 
 class CustomerDirectoryView(StaffRequiredMixin, ListView):
     model = User
-    template_name = "dashboard/customers.html"
+    template_name = "dashboard/customers/list.html"
     context_object_name = "customers"
 
     def get_queryset(self):
@@ -2471,7 +3536,15 @@ class StaffUserCreateView(SuperuserRequiredMixin, View):
             messages.error(request, str(exc))
             return redirect("dashboard:user-list")
 
-        User.objects.create_user(
+        role = request.POST.get("role", "").strip() or OperatorRole.OPERATIONS
+        valid_roles = {choice[0] for choice in OperatorRole.CHOICES}
+        if role not in valid_roles:
+            messages.error(request, "Invalid operator role selected.")
+            return redirect("dashboard:user-list")
+        if is_superuser:
+            role = OperatorRole.PLATFORM_ADMIN
+
+        staff_user = User.objects.create_user(
             username=username,
             email=email,
             password=password,
@@ -2480,6 +3553,7 @@ class StaffUserCreateView(SuperuserRequiredMixin, View):
             is_staff=True,
             is_superuser=is_superuser,
         )
+        StaffOperatorProfile.objects.create(user=staff_user, role=role)
         messages.success(request, f"Staff user '{username}' created.")
         return redirect("dashboard:user-list")
 
@@ -2494,6 +3568,13 @@ class StaffUserUpdateView(SuperuserRequiredMixin, View):
         password = request.POST.get("password", "").strip()
         is_superuser = request.POST.get("is_superuser") == "on"
         is_active = request.POST.get("is_active") == "on"
+        role = request.POST.get("role", "").strip() or OperatorRole.OPERATIONS
+        valid_roles = {choice[0] for choice in OperatorRole.CHOICES}
+        if role not in valid_roles:
+            messages.error(request, "Invalid operator role selected.")
+            return redirect("dashboard:user-list")
+        if is_superuser:
+            role = OperatorRole.PLATFORM_ADMIN
 
         if not username or not email:
             messages.error(request, "Username and email are required.")
@@ -2532,6 +3613,13 @@ class StaffUserUpdateView(SuperuserRequiredMixin, View):
                 return redirect("dashboard:user-list")
             staff_user.set_password(password)
         staff_user.save()
+        profile, _ = StaffOperatorProfile.objects.get_or_create(
+            user=staff_user,
+            defaults={"role": role},
+        )
+        if profile.role != role:
+            profile.role = role
+            profile.save(update_fields=["role", "updated_at"])
         messages.success(request, f"Staff user '{staff_user.username}' updated.")
         return redirect("dashboard:user-list")
 
@@ -2689,7 +3777,7 @@ class CustomerUserDeleteView(StaffRequiredMixin, View):
 
 
 class CustomerGroupListView(StaffRequiredMixin, View):
-    template_name = "dashboard/groups.html"
+    template_name = "dashboard/customers/groups.html"
 
     def get(self, request):
         groups = CustomerGroup.objects.annotate(member_count=Count("members"))
@@ -2734,6 +3822,79 @@ class CustomerGroupDeleteView(StaffRequiredMixin, View):
         group.delete()
         messages.success(request, f"Group '{name}' deleted.")
         return redirect("dashboard:customer-groups")
+
+
+class MapZoneListView(StaffRequiredMixin, View):
+    template_name = "dashboard/ops/map_zones.html"
+
+    def get(self, request):
+        zones = OperationsZone.objects.annotate(site_count=Count("sites")).order_by("sort_order", "name")
+        return render(request, self.template_name, {"zones": zones})
+
+    def post(self, request):
+        name = request.POST.get("name", "").strip()
+        color = request.POST.get("color", "#6366f1").strip()
+        description = request.POST.get("description", "").strip()
+        sort_order_raw = request.POST.get("sort_order", "0").strip()
+        try:
+            sort_order = max(0, int(sort_order_raw or 0))
+        except ValueError:
+            sort_order = 0
+        if not name:
+            messages.error(request, "Zone name is required.")
+            return redirect("dashboard:map-zones")
+        if _operations_zone_name_taken(name):
+            messages.error(request, f"A zone named '{name}' already exists.")
+            return redirect("dashboard:map-zones")
+        OperationsZone.objects.create(
+            name=name,
+            color=_normalize_zone_color(color),
+            description=description,
+            sort_order=sort_order,
+        )
+        messages.success(request, f"Zone '{name}' created.")
+        return redirect("dashboard:map-zones")
+
+
+class MapZoneUpdateView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        zone = get_object_or_404(OperationsZone, pk=pk)
+        name = request.POST.get("name", "").strip()
+        color = request.POST.get("color", "#6366f1").strip()
+        description = request.POST.get("description", "").strip()
+        sort_order_raw = request.POST.get("sort_order", "0").strip()
+        is_active = request.POST.get("is_active") == "on"
+        try:
+            sort_order = max(0, int(sort_order_raw or 0))
+        except ValueError:
+            sort_order = zone.sort_order
+        if not name:
+            messages.error(request, "Zone name is required.")
+            return redirect("dashboard:map-zones")
+        if _operations_zone_name_taken(name, exclude_pk=zone.pk):
+            messages.error(request, f"A zone named '{name}' already exists.")
+            return redirect("dashboard:map-zones")
+        zone.name = name
+        zone.color = _normalize_zone_color(color)
+        zone.description = description
+        zone.sort_order = sort_order
+        zone.is_active = is_active
+        zone.save()
+        messages.success(request, f"Zone '{zone.name}' updated.")
+        return redirect("dashboard:map-zones")
+
+
+class MapZoneDeleteView(StaffRequiredMixin, View):
+    def post(self, request, pk):
+        zone = get_object_or_404(OperationsZone, pk=pk)
+        name = zone.name
+        site_count = zone.sites.count()
+        zone.delete()
+        if site_count:
+            messages.success(request, f"Zone '{name}' deleted. {site_count} site(s) moved to Unassigned.")
+        else:
+            messages.success(request, f"Zone '{name}' deleted.")
+        return redirect("dashboard:map-zones")
 
 
 class SiteActionView(StaffRequiredMixin, View):
@@ -2966,6 +4127,8 @@ class ProvisionSiteView(StaffRequiredMixin, View):
         )
 
         if created:
+            _assign_site_operations_zone(site, request.POST.get("operations_zone", ""))
+            site.save(update_fields=["operations_zone"])
             messages.success(request, f"Site '{name}' provisioned successfully.")
             transaction.on_commit(lambda: initial_site_discovery.delay(str(site.pk)))
             messages.info(
@@ -2982,11 +4145,19 @@ class ProvisionSiteView(StaffRequiredMixin, View):
         return redirect("dashboard:site-console", pk=site.pk)
 
 class UpdateSiteView(StaffRequiredMixin, View):
-    template_name = "dashboard/site_update.html"
+    template_name = "dashboard/sites/update.html"
 
     def get(self, request, pk):
         site = get_object_or_404(Site, pk=pk)
-        return render(request, self.template_name, {"site": site, "scene_options": SCENE_OPTIONS})
+        return render(
+            request,
+            self.template_name,
+            {
+                "site": site,
+                "scene_options": SCENE_OPTIONS,
+                "operations_zones": _operations_zones_for_site(site),
+            },
+        )
 
     def post(self, request, pk):
         site = get_object_or_404(Site, pk=pk)
@@ -3031,6 +4202,7 @@ class UpdateSiteView(StaffRequiredMixin, View):
         site.longitude = longitude_value
         site.primary_industry = normalize_scene_label(request.POST.get("primary_industry", "").strip())
         site.secondary_industry = request.POST.get("secondary_industry", "").strip()
+        _assign_site_operations_zone(site, request.POST.get("operations_zone", ""))
         site.is_active = is_active
         site.save()
 
@@ -3047,7 +4219,7 @@ class UpdateSiteView(StaffRequiredMixin, View):
 
 class SubscriptionListView(StaffRequiredMixin, ListView):
     model = Subscription
-    template_name = "dashboard/subscriptions.html"
+    template_name = "dashboard/billing/subscriptions.html"
     context_object_name = "subscriptions"
     ordering = ["status", "next_due_date"]
 
@@ -3513,7 +4685,7 @@ class ReactivateSubscriptionView(StaffRequiredMixin, View):
 # ---------------------------------------------------------------------------
 
 class SubscriptionPackageListView(StaffRequiredMixin, View):
-    template_name = "dashboard/packages.html"
+    template_name = "dashboard/billing/packages.html"
 
     def get(self, request):
         packages = SubscriptionPackage.objects.all()
@@ -3720,7 +4892,7 @@ class SiteDeleteView(StaffRequiredMixin, View):
 
 
 class OnboardClientView(StaffRequiredMixin, View):
-    template_name = "dashboard/onboard.html"
+    template_name = "dashboard/sites/onboard.html"
 
     def get(self, request, pk):
         site = get_object_or_404(Site, pk=pk)
@@ -4121,7 +5293,7 @@ def _send_welcome_email(user, site, temp_password=None):
         pass
 
 class PlatformSettingsView(StaffRequiredMixin, TemplateView):
-    template_name = "dashboard/settings.html"
+    template_name = "dashboard/ops/settings.html"
 
     def get_context_data(self, **kwargs):
         from django.conf import settings as django_settings
@@ -4167,7 +5339,7 @@ class PlatformSettingsView(StaffRequiredMixin, TemplateView):
 
 
 class BroadcastManagementView(StaffRequiredMixin, TemplateView):
-    template_name = "dashboard/broadcast.html"
+    template_name = "dashboard/ops/broadcast.html"
 
     def get_context_data(self, **kwargs):
         from django.conf import settings as django_settings
@@ -4297,3 +5469,6 @@ class BroadcastDeleteView(StaffRequiredMixin, View):
         message.delete()
         messages.success(request, f"Broadcast '{title}' deleted.")
         return redirect("dashboard:broadcast")
+
+
+from .guarding_asset_console import GuardingAssetsView  # noqa: E402

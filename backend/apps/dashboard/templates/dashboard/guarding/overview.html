@@ -1,0 +1,273 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Guarding | SecureHub{% endblock %}
+{% block header_title %}Guarding{% endblock %}
+
+{% block content %}
+{% include "dashboard/guarding/_nav.html" %}
+<div class="space-y-3" x-data="{ queue: {% if counts.open_panic %}'sos'{% elif counts.open_dispatch %}'dispatch'{% else %}'welfare'{% endif %} }">
+
+    <div class="console-page-toolbar !mb-0 !pb-2">
+        <div class="min-w-0 flex-1">
+            {% include "dashboard/partials/console/page_header.html" with page_title="Command center" page_subtitle="Coverage · dispatch · welfare · field activity" %}
+        </div>
+        <div class="console-page-actions flex-wrap">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 console-label text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300">
+                Synced {% now "H:i" %}
+            </span>
+            <a href="{% url 'dashboard:site-map' %}?focus=guards" class="btn-console-secondary py-1.5 text-[11px]">Field map</a>
+            <a href="{% url 'dashboard:guarding-shifts' %}" class="btn-console-secondary py-1.5 text-[11px]">Schedule</a>
+            <a href="{% url 'dashboard:guarding-dispatch' %}" class="btn-console py-1.5 text-[11px]">
+                Dispatch{% if counts.open_panic %}<span class="ml-1 rounded bg-white/20 px-1.5 py-px text-[10px] font-semibold">{{ counts.open_panic }}</span>{% endif %}
+            </a>
+        </div>
+    </div>
+
+    <div class="console-dash-kpi-strip lg:grid-cols-4 xl:grid-cols-8">
+        <button type="button" @click="queue = 'sos'" class="console-kpi-tile text-left transition-colors hover:border-red-200 {% if counts.open_panic %}border-red-200 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/25{% endif %}">
+            <p class="console-stat-label text-red-500">SOS open</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-red-600">{{ counts.open_panic }}</p>
+        </button>
+        <button type="button" @click="queue = 'dispatch'" class="console-kpi-tile text-left transition-colors hover:border-amber-200 {% if counts.open_dispatch %}border-amber-200 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/25{% endif %}">
+            <p class="console-stat-label text-amber-600">Dispatch</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.open_dispatch }}</p>
+        </button>
+        <button type="button" @click="queue = 'welfare'" class="console-kpi-tile text-left transition-colors hover:border-sky-200 {% if counts.welfare_due %}border-sky-200 bg-sky-50/60 dark:border-sky-900/40 dark:bg-sky-950/25{% endif %}">
+            <p class="console-stat-label text-sky-600">Welfare</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.welfare_due }}</p>
+        </button>
+        <a href="{% url 'dashboard:guarding-shifts' %}" class="console-kpi-tile transition-colors hover:border-brand/30">
+            <p class="console-stat-label">Coverage</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-emerald-600">{{ today_summary.coverage_percent }}%</p>
+            <p class="console-meta">{{ today_summary.coverage_gap }} gaps</p>
+        </a>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Clocked in</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ today_summary.clocked_in }}</p>
+            <p class="console-meta">of {{ today_summary.required_guards }} req.</p>
+        </div>
+        <a href="{% url 'dashboard:guarding-guards' %}" class="console-kpi-tile transition-colors hover:border-brand/30 {% if counts.non_compliant_guards %}border-amber-200 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/25{% endif %}">
+            <p class="console-stat-label">Guards</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.guards }}</p>
+            <p class="console-meta">{% if counts.non_compliant_guards %}{{ counts.non_compliant_guards }} incomplete · {% endif %}{{ counts.applicants }} applicants</p>
+        </a>
+        <a href="{% url 'dashboard:guarding-posts' %}" class="console-kpi-tile transition-colors hover:border-brand/30">
+            <p class="console-stat-label">Posts</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ counts.posts }}</p>
+            <p class="console-meta">{{ today_summary.shifts }} shifts today</p>
+        </a>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Today</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ today_summary.patrol_scans }}</p>
+            <p class="console-meta">{{ today_summary.reports }} reports</p>
+        </div>
+    </div>
+
+    <section class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_260px]">
+        <div class="space-y-3">
+            <div class="grid gap-3 lg:grid-cols-[11rem_minmax(0,1fr)]">
+                <section class="console-table-card flex flex-col items-center justify-center p-3">
+                    <p class="console-label w-full text-left">Today coverage</p>
+                    <div class="console-coverage-ring mt-2 flex h-24 w-24 items-center justify-center rounded-full" style="--coverage: {{ today_summary.coverage_percent }};">
+                        <div class="flex h-[5.5rem] w-[5.5rem] flex-col items-center justify-center rounded-full border border-slate-100 bg-white text-center dark:border-slate-800 dark:bg-slate-900">
+                            <span class="console-stat-value-xs text-lg tabular-nums">{{ today_summary.coverage_percent }}%</span>
+                            <span class="console-meta">filled</span>
+                        </div>
+                    </div>
+                    <p class="console-meta mt-2 text-center">{{ today_summary.assigned_guards }}/{{ today_summary.required_guards }} assigned</p>
+                </section>
+
+                <section class="console-table-card overflow-hidden">
+                    {% url 'dashboard:guarding-shifts' as shifts_url %}
+                    {% include "dashboard/partials/console/panel_section_header.html" with eyebrow="Shifts" title="Upcoming" action_url=shifts_url action_label="Manage" %}
+                    <div class="max-h-[220px] divide-y divide-slate-100 overflow-y-auto dark:divide-slate-800">
+                        {% for shift in upcoming_shifts %}
+                        <a href="{% url 'dashboard:guarding-shifts' %}" class="console-feed-row group !py-2">
+                            <div class="min-w-0 flex-1">
+                                <p class="console-row-title truncate group-hover:text-brand">{{ shift.post.name }}</p>
+                                <p class="console-meta truncate">{{ shift.post.site.name }} · {{ shift.starts_at|date:"M j, H:i" }}</p>
+                            </div>
+                            <span class="console-count-pill">{{ shift.assignments.count }}/{{ shift.required_guards }}</span>
+                        </a>
+                        {% empty %}
+                        <p class="console-empty-state !py-6">No upcoming shifts.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+
+            <div class="grid gap-3 lg:grid-cols-2">
+                <section class="console-table-card overflow-hidden">
+                    {% url 'dashboard:guarding-patrols' as patrols_url %}
+                    {% include "dashboard/partials/console/panel_section_header.html" with eyebrow="Patrol" title="Recent scans" action_url=patrols_url action_label="Routes" %}
+                    <div class="max-h-[200px] divide-y divide-slate-100 overflow-y-auto dark:divide-slate-800">
+                        {% for scan in recent_scans %}
+                        <div class="console-feed-row !py-2">
+                            <span class="h-2 w-2 shrink-0 rounded-full bg-emerald-500"></span>
+                            <div class="min-w-0 flex-1">
+                                <p class="console-row-title truncate">{{ scan.checkpoint.name }}</p>
+                                <p class="console-meta truncate">{{ scan.guard.full_name|default:"No guard" }}</p>
+                            </div>
+                            <span class="console-meta shrink-0 tabular-nums">{{ scan.scanned_at|date:"H:i" }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="console-empty-state !py-6">No checkpoint scans.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+
+                <section class="console-table-card overflow-hidden">
+                    <div class="console-panel-header">
+                        <div>
+                            <p class="console-label text-slate-400">Workflow</p>
+                            <h2 class="console-panel-title mt-0.5">Automation</h2>
+                        </div>
+                        <div class="flex gap-1">
+                            <span class="badge-console-red">{{ workflow_event_counts.critical }}</span>
+                            <span class="badge-console-amber">{{ workflow_event_counts.warning }}</span>
+                        </div>
+                    </div>
+                    <div class="max-h-[200px] divide-y divide-slate-100 overflow-y-auto dark:divide-slate-800">
+                        {% for event in workflow_events|slice:":6" %}
+                        <div class="console-feed-row !py-2">
+                            <span class="h-2 w-2 shrink-0 rounded-full {% if event.severity == 'critical' %}bg-red-500{% elif event.severity == 'warning' %}bg-amber-500{% else %}bg-emerald-500{% endif %}"></span>
+                            <div class="min-w-0 flex-1">
+                                <p class="console-row-title truncate">{{ event.title }}</p>
+                                <p class="console-meta truncate">{{ event.guard.full_name|default:"System" }}</p>
+                            </div>
+                            <span class="console-meta shrink-0 tabular-nums">{{ event.created_at|date:"H:i" }}</span>
+                        </div>
+                        {% empty %}
+                        <p class="console-empty-state !py-6">No workflow events.</p>
+                        {% endfor %}
+                    </div>
+                </section>
+            </div>
+
+            <section class="console-table-card overflow-hidden">
+                {% url 'dashboard:guarding-reports' as reports_url %}
+                {% include "dashboard/partials/console/panel_section_header.html" with eyebrow="Reports" title="Review pipeline" action_url=reports_url action_label="All reports" %}
+                <div class="console-table-wrap console-table-wrap--scroll">
+                    <table class="console-table min-w-[640px]">
+                        <thead class="console-thead">
+                            <tr>
+                                <th scope="col" class="console-th">Report</th>
+                                <th scope="col" class="console-th">Site</th>
+                                <th scope="col" class="console-th">Guard</th>
+                                <th scope="col" class="console-th">Status</th>
+                                <th scope="col" class="console-th text-right">Submitted</th>
+                            </tr>
+                        </thead>
+                        <tbody class="console-tbody">
+                            {% for report in recent_reports %}
+                            <tr class="transition hover:bg-slate-50 dark:hover:bg-slate-800/50">
+                                <td class="console-td">
+                                    <p class="console-row-title">{{ report.title }}</p>
+                                    <p class="console-meta">{{ report.get_report_type_display }}</p>
+                                </td>
+                                <td class="console-td console-meta">{{ report.site.name }}</td>
+                                <td class="console-td console-meta">{{ report.guard.full_name|default:"-" }}</td>
+                                <td class="console-td"><span class="badge-console badge-console-slate">{{ report.get_status_display }}</span></td>
+                                <td class="console-td text-right console-meta tabular-nums">{{ report.submitted_at|date:"M j, H:i" }}</td>
+                            </tr>
+                            {% empty %}
+                            <tr><td colspan="5" class="console-td console-empty-state">No reports yet.</td></tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+
+        <aside class="space-y-3 xl:sticky xl:top-3 xl:self-start">
+            <section class="console-table-card overflow-hidden">
+                <div class="border-b border-slate-100 p-2 dark:border-slate-800">
+                    <div class="console-segment-track grid grid-cols-3 gap-1 console-label text-slate-500">
+                        <button type="button" @click="queue = 'sos'"
+                                :class="queue === 'sos' ? 'bg-red-600 text-white dark:bg-red-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800'"
+                                class="rounded-md px-2 py-1.5">SOS</button>
+                        <button type="button" @click="queue = 'dispatch'"
+                                :class="queue === 'dispatch' ? 'bg-amber-600 text-white dark:bg-amber-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800'"
+                                class="rounded-md px-2 py-1.5">Tasks</button>
+                        <button type="button" @click="queue = 'welfare'"
+                                :class="queue === 'welfare' ? 'bg-sky-600 text-white dark:bg-sky-700' : 'hover:bg-slate-50 dark:hover:bg-slate-800'"
+                                class="rounded-md px-2 py-1.5">Welfare</button>
+                    </div>
+                </div>
+
+                <div x-show="queue === 'sos'" class="max-h-[280px] divide-y divide-slate-100 overflow-y-auto dark:divide-slate-800">
+                    {% for alert in open_panic_alerts %}
+                    <a href="{% url 'dashboard:guarding-dispatch' %}" class="console-feed-row group !py-2.5">
+                        <span class="h-2 w-2 shrink-0 rounded-full bg-red-500"></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="console-row-title truncate group-hover:text-brand">{{ alert.guard.full_name }}</p>
+                            <p class="console-meta truncate">{{ alert.site.name|default:"No site" }}</p>
+                        </div>
+                        <span class="console-meta tabular-nums">{{ alert.created_at|date:"H:i" }}</span>
+                    </a>
+                    {% empty %}
+                    <p class="console-empty-state !py-8">No active SOS.</p>
+                    {% endfor %}
+                </div>
+
+                <div x-cloak x-show="queue === 'dispatch'" class="max-h-[280px] divide-y divide-slate-100 overflow-y-auto dark:divide-slate-800">
+                    {% for task in active_dispatch_tasks %}
+                    <a href="{% url 'dashboard:guarding-dispatch' %}" class="console-feed-row group !py-2.5">
+                        <span class="h-2 w-2 shrink-0 rounded-full bg-amber-500"></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="console-row-title truncate group-hover:text-brand">{{ task.title }}</p>
+                            <p class="console-meta truncate">{{ task.assigned_guard.full_name|default:"Unassigned" }}</p>
+                        </div>
+                        <span class="badge-console badge-console-amber shrink-0">{{ task.get_status_display }}</span>
+                    </a>
+                    {% empty %}
+                    <p class="console-empty-state !py-8">No open tasks.</p>
+                    {% endfor %}
+                </div>
+
+                <div x-cloak x-show="queue === 'welfare'" class="max-h-[280px] divide-y divide-slate-100 overflow-y-auto dark:divide-slate-800">
+                    {% for check in welfare_checks %}
+                    <a href="{% url 'dashboard:guarding-shifts' %}" class="console-feed-row group !py-2.5">
+                        <span class="h-2 w-2 shrink-0 rounded-full bg-sky-500"></span>
+                        <div class="min-w-0 flex-1">
+                            <p class="console-row-title truncate group-hover:text-brand">{{ check.assignment.guard.full_name }}</p>
+                            <p class="console-meta truncate">{{ check.assignment.shift.post.name }}</p>
+                        </div>
+                        <span class="console-meta tabular-nums">{{ check.due_at|date:"H:i" }}</span>
+                    </a>
+                    {% empty %}
+                    <p class="console-empty-state !py-8">No welfare checks due.</p>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="console-table-card p-3">
+                <p class="console-label mb-2">Back office</p>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <div class="console-kpi-tile !py-2">
+                        <p class="console-stat-value-xs">{{ backoffice_summary.pending_timesheets }}</p>
+                        <p class="console-meta">Pending sheets</p>
+                    </div>
+                    <div class="console-kpi-tile !py-2">
+                        <p class="console-stat-value-xs text-amber-600">{{ backoffice_summary.expiring_credentials }}</p>
+                        <p class="console-meta">Expiring creds</p>
+                    </div>
+                </div>
+                <a href="{% url 'dashboard:guarding-backoffice' %}" class="console-panel-link mt-2 inline-block">Open back office →</a>
+            </section>
+
+            <section class="console-table-card p-3">
+                <p class="console-label mb-2">Shortcuts</p>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <a href="{% url 'dashboard:guarding-dispatch' %}" class="console-shortcut-btn"><span class="console-row-title truncate">Dispatch</span></a>
+                    <a href="{% url 'dashboard:guarding-patrols' %}" class="console-shortcut-btn"><span class="console-row-title truncate">Patrols</span></a>
+                    <a href="{% url 'dashboard:guarding-reports' %}" class="console-shortcut-btn"><span class="console-row-title truncate">Reports</span></a>
+                    <a href="{% url 'dashboard:guarding-analytics' %}" class="console-shortcut-btn"><span class="console-row-title truncate">Analytics</span></a>
+                </div>
+            </section>
+        </aside>
+    </section>
+
+</div>
+</div>
+</div>
+{% endblock %}

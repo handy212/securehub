@@ -20,6 +20,15 @@ import '../../features/activities/screens/activities_screen.dart';
 import '../../features/menu/screens/menu_screen.dart';
 import '../../features/profile/screens/notification_settings_screen.dart';
 import '../../features/profile/screens/help_screen.dart';
+import '../../features/guard/models/guard_models.dart';
+import '../../features/guard/screens/guard_home_screen.dart';
+import '../../features/guard/screens/shift_detail_screen.dart';
+import '../../features/guard/screens/guard_patrol_screen.dart';
+import '../../features/guard/screens/guard_dispatch_screen.dart';
+import '../../features/guard/screens/guard_panic_screen.dart';
+import '../../features/guard/screens/guard_patrol_scan_screen.dart';
+import '../../features/guard/screens/guard_report_screen.dart';
+import '../../features/guard/screens/guard_welfare_screen.dart';
 import '../../features/sites/providers/selected_site_provider.dart';
 import '../../features/sites/providers/sites_provider.dart';
 import '../../shared/widgets/main_scaffold.dart';
@@ -58,10 +67,16 @@ GoRouter appRouter(Ref ref) {
 
       if (isLoading && !isLoadingRoute && !isLoginRoute) return '/loading';
       if (!isLoading && !isAuthenticated && !isLoginRoute) return '/login';
-      if (isAuthenticated && (isLoginRoute || isLoadingRoute)) return '/home';
+      if (isAuthenticated && (isLoginRoute || isLoadingRoute)) {
+        final authenticated = authState as AuthAuthenticated;
+        return authenticated.isGuard ? '/guard/home' : '/home';
+      }
 
-      // Global Account Suspension Check
-      if (isAuthenticated) {
+      final isGuard =
+          isAuthenticated && (authState as AuthAuthenticated).isGuard;
+
+      // Global Account Suspension Check (customer accounts only)
+      if (isAuthenticated && !isGuard) {
         final sitesAsync = ref.read(siteListProvider);
         final isSuspended = sitesAsync.maybeWhen(
           error: (err, _) =>
@@ -75,13 +90,18 @@ GoRouter appRouter(Ref ref) {
             return '/account-suspended';
           }
         } else if (state.matchedLocation == '/account-suspended') {
-          // If no longer suspended but on the suspension screen, go home
           return '/home';
         }
+      } else if (isGuard && state.matchedLocation == '/account-suspended') {
+        return '/guard/home';
+      }
+
+      if (isGuard && !state.matchedLocation.startsWith('/guard')) {
+        return '/guard/home';
       }
 
       // Redirect to specific site if landing on /home
-      if (isAuthenticated && state.matchedLocation == '/home') {
+      if (isAuthenticated && !isGuard && state.matchedLocation == '/home') {
         final selectedSiteId = ref.read(selectedSiteProvider);
         if (selectedSiteId != null) return '/home/$selectedSiteId';
 
@@ -122,6 +142,38 @@ GoRouter appRouter(Ref ref) {
           channelName: state.pathParameters['channelName']!,
         ),
       ),
+      GoRoute(path: '/guard/home', builder: (_, _) => const GuardHomeScreen()),
+      GoRoute(
+        path: '/guard/shift/:assignmentId',
+        builder: (context, state) {
+          final extra = state.extra;
+          final assignment = extra is GuardShiftAssignment
+              ? extra
+              : GuardShiftAssignment(
+                  id: state.pathParameters['assignmentId']!,
+                  status: 'assigned',
+                  postName: 'Shift',
+                  siteName: '',
+                );
+          return ShiftDetailScreen(assignment: assignment);
+        },
+      ),
+      GoRoute(
+        path: '/guard/patrols',
+        builder: (context, state) => GuardPatrolScreen(
+          assignmentId: state.extra is String ? state.extra as String : null,
+        ),
+      ),
+      GoRoute(path: '/guard/dispatch', builder: (_, _) => const GuardDispatchScreen()),
+      GoRoute(path: '/guard/panic', builder: (_, _) => const GuardPanicScreen()),
+      GoRoute(path: '/guard/report', builder: (_, _) => const GuardReportScreen()),
+      GoRoute(path: '/guard/welfare', builder: (_, _) => const GuardWelfareScreen()),
+      GoRoute(
+        path: '/guard/scan',
+        builder: (context, state) => GuardPatrolScanScreen(
+          assignmentId: state.extra is String ? state.extra as String : null,
+        ),
+      ),
       ShellRoute(
         navigatorKey: shellNavigatorKey,
         builder: (context, state, child) => MainScaffold(child: child),
@@ -139,35 +191,38 @@ GoRouter appRouter(Ref ref) {
                   error: (err, _) {
                     return Scaffold(
                       body: Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            const Icon(
-                              Icons.cloud_off_rounded,
-                              size: 64,
-                              color: Colors.grey,
-                            ),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'Unable to connect to Secure Hub',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              err.toString(),
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
+                        child: SingleChildScrollView(
+                          padding: const EdgeInsets.all(24),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              const Icon(
+                                Icons.cloud_off_rounded,
+                                size: 64,
                                 color: Colors.grey,
-                                fontSize: 12,
                               ),
-                            ),
-                            const SizedBox(height: 24),
-                            FilledButton.icon(
-                              onPressed: () => ref.invalidate(siteListProvider),
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Retry Connection'),
-                            ),
-                          ],
+                              const SizedBox(height: 16),
+                              Text(
+                                'Unable to connect to Secure Hub',
+                                style: TextStyle(fontWeight: FontWeight.bold),
+                              ),
+                              const SizedBox(height: 8),
+                              Text(
+                                err.toString(),
+                                textAlign: TextAlign.center,
+                                style: TextStyle(
+                                  color: Colors.grey,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 24),
+                              FilledButton.icon(
+                                onPressed: () => ref.invalidate(siteListProvider),
+                                icon: const Icon(Icons.refresh),
+                                label: const Text('Retry Connection'),
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     );
@@ -249,3 +304,6 @@ GoRouter appRouter(Ref ref) {
     ],
   );
 }
+
+
+

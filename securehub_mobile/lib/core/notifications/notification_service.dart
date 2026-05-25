@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:io';
 import 'dart:ui';
 
 import 'package:firebase_core/firebase_core.dart';
@@ -10,6 +9,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../../features/guard/guard_navigation.dart';
 import '../../features/alarms/providers/event_list_provider.dart';
 import '../../features/sites/providers/selected_site_provider.dart';
 import '../../features/sites/providers/sites_provider.dart';
@@ -127,6 +127,7 @@ bool isCriticalAlarmPayload(Map<String, dynamic> data) {
 }
 
 final siteNotificationNavProvider = StateProvider<String?>((ref) => null);
+final guardRouteNavProvider = StateProvider<String?>((ref) => null);
 
 @riverpod
 class BillingLockoutNav extends _$BillingLockoutNav {
@@ -192,10 +193,21 @@ class NotificationService {
   static const _categoryMessages = 'messages_category';
 
   bool _ready = false;
+  Future<void>? _initializing;
 
   Future<void> initialize() async {
     if (_ready) return;
+    if (_initializing != null) return _initializing;
 
+    _initializing = _initialize();
+    try {
+      await _initializing;
+    } finally {
+      _initializing = null;
+    }
+  }
+
+  Future<void> _initialize() async {
     try {
       if (Firebase.apps.isEmpty) {
         await Firebase.initializeApp();
@@ -204,7 +216,6 @@ class NotificationService {
       return;
     }
 
-    _ready = true;
     FirebaseMessaging.onBackgroundMessage(_onBackgroundMessage);
 
     await FirebaseMessaging.instance.requestPermission(
@@ -318,6 +329,8 @@ class NotificationService {
       _log('FCM token refreshed, re-registering');
       registerToken();
     });
+
+    _ready = true;
   }
 
   Future<bool> requestPermission() async {
@@ -350,7 +363,7 @@ class NotificationService {
       final dio = _ref.read(dioProvider);
       final response = await dio.post(
         ApiEndpoints.registerDevice,
-        data: {'token': token, 'platform': Platform.isIOS ? 'ios' : 'android'},
+        data: {'token': token, 'platform': _devicePlatform},
       );
       _log('Token registration success: ${response.statusCode}');
     } catch (e) {
@@ -478,6 +491,21 @@ class NotificationService {
   void _handleNotificationTap(Map<String, dynamic> data) {
     _log('Handling notification tap with data: $data');
     final type = _payloadString(data, const ['type']);
+    final route = _payloadString(data, const ['route']);
+    final eventType = _payloadString(data, const ['event_type', 'eventType']) ?? '';
+
+    final isGuardPush = (route != null &&
+            (route.startsWith('guard/') || route.startsWith('/guard'))) ||
+        eventType.contains('dispatch') ||
+        eventType.contains('welfare') ||
+        eventType.contains('patrol') ||
+        eventType.contains('panic') ||
+        eventType.contains('clock');
+
+    if (isGuardPush) {
+      _ref.read(guardRouteNavProvider.notifier).state = guardRouteFromPushData(data);
+      return;
+    }
 
     if (type == 'billing_lockout') {
       _ref.read(billingLockoutNavProvider.notifier).trigger();
@@ -668,6 +696,19 @@ class NotificationService {
     if (kDebugMode) {
       debugPrint('[NotificationService] $message');
     }
+  }
+
+  String get _devicePlatform {
+    if (kIsWeb) return 'web';
+
+    return switch (defaultTargetPlatform) {
+      TargetPlatform.iOS => 'ios',
+      TargetPlatform.android => 'android',
+      TargetPlatform.macOS => 'macos',
+      TargetPlatform.windows => 'windows',
+      TargetPlatform.linux => 'linux',
+      TargetPlatform.fuchsia => 'fuchsia',
+    };
   }
 
   AndroidNotificationCategory? _androidCategoryFor(String? type) {

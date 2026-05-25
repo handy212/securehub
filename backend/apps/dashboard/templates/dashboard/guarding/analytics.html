@@ -1,0 +1,56 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Guarding Analytics | SecureHub{% endblock %}
+{% block header_title %}Guarding Analytics{% endblock %}
+
+{% block content %}
+{% include "dashboard/guarding/_nav.html" %}
+<div class="space-y-3">
+    <div class="console-page-toolbar !mb-0 !pb-2">
+        {% include "dashboard/guarding/_kpi_strip.html" %}
+        <div class="min-w-0 flex-1">
+            {% include "dashboard/partials/console/page_header.html" with page_title="Guarding analytics" page_subtitle="KPIs for the selected period" %}
+        </div>
+    </div>
+    <form method="get" class="console-search-bar console-table-card !rounded-lg !border !border-slate-100 !px-2.5 !py-2 dark:!border-slate-800">
+        <label class="console-label flex items-center gap-2 text-slate-500">
+            <span class="shrink-0">Period (days)</span>
+            <input type="number" name="days" min="1" max="90" value="{{ days }}" class="console-inline-input w-20">
+        </label>
+        <button type="submit" class="btn-console shrink-0 py-1.5 text-[11px]">Apply</button>
+    </form>
+    <div class="console-dash-kpi-strip sm:grid-cols-2 xl:grid-cols-4">
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">No-show rate</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ kpis.no_show_rate }}%</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Missed patrol rate</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ kpis.missed_patrol_rate }}%</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label text-emerald-600">Patrol completion</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-emerald-600">{{ kpis.patrol_completion_rate }}%</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label text-amber-600">Open dispatch</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-amber-600">{{ kpis.open_dispatch_tasks }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Late clock-ins</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ kpis.late_clock_in_count }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Checkpoint scans</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ kpis.checkpoint_scans }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label text-red-500">Dispatch SLA breaches</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-red-600">{{ kpis.dispatch_sla_breaches }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Assignments (period)</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ kpis.total_assignments }}</p>
+        </div>
+    </div>
+</div>
+{% endblock %}

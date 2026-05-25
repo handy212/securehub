@@ -1,7 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:video_player/video_player.dart';
 
@@ -54,7 +53,7 @@ class EventDetailsInline extends ConsumerWidget {
           const SizedBox(height: 16),
           Text(
             'MEDIA EVIDENCE',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
@@ -85,7 +84,7 @@ class _DetailRow extends StatelessWidget {
             width: 100,
             child: Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: AppTheme.onSurfaceVariant.withValues(alpha: 0.6),
@@ -97,7 +96,7 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.onSurface,
@@ -128,7 +127,7 @@ class _MediaSection extends ConsumerWidget {
       ),
       error: (err, _) => Text(
         'Media unavailable: $err',
-        style: GoogleFonts.inter(fontSize: 11, color: AppTheme.error),
+        style: TextStyle(fontSize: 11, color: AppTheme.error),
       ),
       data: (pics) {
         if (pics.isEmpty) {
@@ -149,7 +148,7 @@ class _MediaSection extends ConsumerWidget {
                 Expanded(
                   child: Text(
                     'No footage links found for this event.',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 11,
                       color: AppTheme.onSurfaceVariant,
                     ),
@@ -358,7 +357,7 @@ class _InAppVideoPlayerState extends ConsumerState<_InAppVideoPlayer> {
             const SizedBox(height: 8),
             Text(
               _error!,
-              style: GoogleFonts.inter(fontSize: 10, color: Colors.white54),
+              style: TextStyle(fontSize: 10, color: Colors.white54),
             ),
           ],
         ),
@@ -456,7 +455,7 @@ class _EmptyFrame extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Load failed',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 10,
                 color: AppTheme.error,
                 fontWeight: FontWeight.w600,
@@ -468,3 +467,4 @@ class _EmptyFrame extends StatelessWidget {
     );
   }
 }
+

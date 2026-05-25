@@ -24,7 +24,7 @@ final authRefreshListenableProvider = AutoDisposeProvider<Listenable>.internal(
 @Deprecated('Will be removed in 3.0. Use Ref instead')
 // ignore: unused_element
 typedef AuthRefreshListenableRef = AutoDisposeProviderRef<Listenable>;
-String _$appRouterHash() => r'15e986cadab450f41091cb403564586fffda938b';
+String _$appRouterHash() => r'96809f0ed8f0fd4447c83d1afb3ba8c326fff2ef';
 
 /// See also [appRouter].
 @ProviderFor(appRouter)

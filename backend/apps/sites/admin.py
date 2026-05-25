@@ -1,12 +1,20 @@
 from django.contrib import admin
 
-from .models import AlarmOutput, AlarmPanelDevice, AlarmPeripheral, CustomerSiteAccess, Site, Subsystem, Zone
+from .models import AlarmOutput, AlarmPanelDevice, AlarmPeripheral, CustomerSiteAccess, OperationsZone, Site, Subsystem, Zone
 
 
 @admin.register(Site)
 class SiteAdmin(admin.ModelAdmin):
-    list_display = ("name", "city", "country", "hik_site_id", "is_active")
+    list_display = ("name", "city", "operations_zone", "country", "hik_site_id", "is_active")
     search_fields = ("name", "hik_site_id", "city", "country")
+    list_filter = ("operations_zone", "is_active")
+
+
+@admin.register(OperationsZone)
+class OperationsZoneAdmin(admin.ModelAdmin):
+    list_display = ("name", "color", "sort_order", "is_active")
+    search_fields = ("name",)
+    ordering = ("sort_order", "name")
 
 
 @admin.register(CustomerSiteAccess)

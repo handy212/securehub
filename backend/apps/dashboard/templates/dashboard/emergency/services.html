@@ -1,0 +1,175 @@
+{% extends 'dashboard/base.html' %}
+
+{% block title %}Emergency Services | SecureHub{% endblock %}
+{% block header_title %}Emergency Services{% endblock %}
+
+{% block content %}
+<div class="space-y-3">
+    {% url 'dashboard:emergency' as emergency_url %}
+    {% include "dashboard/partials/console/breadcrumbs.html" with breadcrumb_parent_url=emergency_url breadcrumb_parent_label="Emergency" breadcrumb_current="Add-ons" %}
+    <div class="console-page-toolbar !mb-0 !pb-2">
+        {% include "dashboard/partials/console/page_title_bar.html" with page_title="Emergency add-ons" %}
+        <div class="console-page-actions">
+            <a href="{% url 'dashboard:emergency' %}" class="btn-console-secondary hover:border-red-200 hover:text-red-600">Dispatch queue</a>
+        </div>
+    </div>
+
+    <div class="console-dash-kpi-strip md:grid-cols-2 lg:grid-cols-4">
+        <div class="console-kpi-tile border-red-200 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/25">
+            <p class="console-stat-label text-red-600">Emergency MRR</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">GH₵{{ total_emergency_mrr|floatformat:2 }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Sites</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ active_site_count }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Accounts</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ active_account_count }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Plans</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ plans|length }}</p>
+        </div>
+    </div>
+
+    <div class="grid gap-3 xl:grid-cols-3">
+        <form method="post" action="{% url 'dashboard:emergency-plan-create' %}" class="console-table-card p-4 form-perfex space-y-3">
+            {% csrf_token %}
+            <h2 class="console-label text-slate-900">New Plan</h2>
+            <div class="grid gap-2 sm:grid-cols-2 xl:grid-cols-1">
+                <div class="form-group">
+                    <label>Name</label>
+                    <input name="name" required class="w-full" placeholder="Emergency Patrol">
+                </div>
+                <div class="form-group">
+                    <label>Rate (GHS)</label>
+                    <input name="monthly_rate" type="number" min="0" step="0.01" required class="w-full">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Description</label>
+                <input name="description" class="w-full">
+            </div>
+            <input type="hidden" name="is_active" value="1">
+            <button type="submit" class="btn-console w-full justify-center py-2 text-[10px]">Create Plan</button>
+        </form>
+
+        <form method="post" action="{% url 'dashboard:site-emergency-create' %}" class="console-table-card p-4 form-perfex space-y-3">
+            {% csrf_token %}
+            <h2 class="console-label text-slate-900">Enable Site</h2>
+            <div class="form-group">
+                <label>Site</label>
+                <select name="site_id" required class="w-full">
+                    <option value="">Choose site</option>
+                    {% for site in available_sites %}<option value="{{ site.pk }}">{{ site.name }}</option>{% endfor %}
+                </select>
+            </div>
+            {% include 'dashboard/partials/emergency/service_fields.html' %}
+            <button type="submit" class="btn-console-danger w-full justify-center py-2 text-[10px]">Enable Site</button>
+        </form>
+
+        <form method="post" action="{% url 'dashboard:account-emergency-create' %}" class="console-table-card p-4 form-perfex space-y-3">
+            {% csrf_token %}
+            <h2 class="console-label text-slate-900">Enable Account</h2>
+            <div class="form-group">
+                <label>Customer</label>
+                <select name="user_id" required class="w-full">
+                    <option value="">Choose customer</option>
+                    {% for customer in available_customers %}<option value="{{ customer.pk }}">{{ customer.username }}{% if customer.email %} - {{ customer.email }}{% endif %}</option>{% endfor %}
+                </select>
+            </div>
+            {% include 'dashboard/partials/emergency/service_fields.html' %}
+            <button type="submit" class="btn-console-danger w-full justify-center py-2 text-[10px]">Enable Account</button>
+        </form>
+    </div>
+
+    <div class="console-table-card">
+        <div class="console-card-section-title">
+            <h2 class="console-label">Plans</h2>
+        </div>
+        <div class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for plan in plans %}
+            <form method="post" action="{% url 'dashboard:emergency-plan-update' plan.pk %}" class="grid gap-2 p-3 lg:grid-cols-12 lg:items-end form-perfex">
+                {% csrf_token %}
+                <div class="form-group lg:col-span-3">
+                    <label>Name</label>
+                    <input name="name" required value="{{ plan.name }}" class="w-full">
+                </div>
+                <div class="form-group lg:col-span-2">
+                    <label>Rate</label>
+                    <input name="monthly_rate" type="number" min="0" step="0.01" required value="{{ plan.monthly_rate }}" class="w-full">
+                </div>
+                <div class="form-group lg:col-span-4">
+                    <label>Description</label>
+                    <input name="description" value="{{ plan.description }}" class="w-full">
+                </div>
+                <label class="flex h-[34px] items-center gap-2 console-label text-slate-500 lg:col-span-1">
+                    <input type="checkbox" name="is_active" value="1" {% if plan.is_active %}checked{% endif %} class="h-3 w-3 rounded border-slate-300">
+                    Active
+                </label>
+                <div class="flex gap-1 lg:col-span-2">
+                    <button type="submit" class="btn-console flex-1 justify-center py-2 text-[10px]">Save</button>
+                    <button type="submit" form="delete-plan-{{ plan.pk }}" class="btn-console-danger !min-h-0 py-2 px-3 text-[10px]">Delete</button>
+                </div>
+            </form>
+            <form id="delete-plan-{{ plan.pk }}" method="post" action="{% url 'dashboard:emergency-plan-delete' plan.pk %}" class="hidden">{% csrf_token %}</form>
+            {% empty %}
+            <p class="console-empty-state">No emergency plans yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="grid gap-3 xl:grid-cols-2">
+        <div class="console-table-card">
+            <div class="console-card-section-title">
+                <h2 class="console-label">Site Services</h2>
+            </div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for service in site_services %}
+                <form method="post" action="{% url 'dashboard:site-emergency-update' service.pk %}" class="p-3 grid gap-2 lg:grid-cols-12 lg:items-end form-perfex">
+                    {% csrf_token %}
+                    <div class="lg:col-span-3">
+                        <p class="console-row-title">{{ service.site.name }}</p>
+                        <p class="console-label text-slate-400">{{ service.site.hik_site_id }}</p>
+                    </div>
+                    {% include 'dashboard/partials/emergency/service_fields.html' with service=service compact=True %}
+                    <div class="flex gap-1 lg:col-span-2">
+                        <button type="submit" class="btn-console flex-1 justify-center py-2 text-[10px]">Save</button>
+                        <button type="submit" form="delete-site-service-{{ service.pk }}" class="btn-console-danger !min-h-0 py-2 px-3 text-[10px]">Delete</button>
+                    </div>
+                </form>
+                <form id="delete-site-service-{{ service.pk }}" method="post" action="{% url 'dashboard:site-emergency-delete' service.pk %}" class="hidden">{% csrf_token %}</form>
+                {% empty %}
+                <p class="console-empty-state">No site add-ons yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="console-table-card">
+            <div class="console-card-section-title">
+                <h2 class="console-label">Account Services</h2>
+            </div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for service in account_services %}
+                <form method="post" action="{% url 'dashboard:account-emergency-update' service.pk %}" class="p-3 grid gap-2 lg:grid-cols-12 lg:items-end form-perfex">
+                    {% csrf_token %}
+                    <div class="lg:col-span-3">
+                        <p class="console-row-title">{{ service.user.username }}</p>
+                        <p class="console-label text-slate-400">{{ service.user.email|default:"No email" }}</p>
+                    </div>
+                    {% include 'dashboard/partials/emergency/service_fields.html' with service=service compact=True %}
+                    <div class="flex gap-1 lg:col-span-2">
+                        <button type="submit" class="btn-console flex-1 justify-center py-2 text-[10px]">Save</button>
+                        <button type="submit" form="delete-account-service-{{ service.pk }}" class="btn-console-danger !min-h-0 py-2 px-3 text-[10px]">Delete</button>
+                    </div>
+                </form>
+                <form id="delete-account-service-{{ service.pk }}" method="post" action="{% url 'dashboard:account-emergency-delete' service.pk %}" class="hidden">{% csrf_token %}</form>
+                {% empty %}
+                <p class="console-empty-state">No account add-ons yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

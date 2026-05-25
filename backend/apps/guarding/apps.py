@@ -6,3 +6,6 @@ class GuardingConfig(AppConfig):
     name = "apps.guarding"
     verbose_name = "Guard Operations"
 
+    def ready(self):
+        from . import signals  # noqa: F401
+

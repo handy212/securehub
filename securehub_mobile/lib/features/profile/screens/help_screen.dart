@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../../core/notifications/notification_service.dart';
@@ -19,7 +18,7 @@ class HelpScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           'Help',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 17),
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -30,7 +29,7 @@ class HelpScreen extends ConsumerWidget {
           children: [
             Text(
               'How can we help?',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 32,
                 fontWeight: FontWeight.w800,
                 color: AppTheme.primary,
@@ -76,7 +75,7 @@ class HelpScreen extends ConsumerWidget {
               padding: const EdgeInsets.only(left: 4, bottom: 20),
               child: Text(
                 'POPULAR TOPICS',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
@@ -131,14 +130,14 @@ class HelpScreen extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
         title: Text(
           'Login & Password Help',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
             color: AppTheme.primary,
           ),
         ),
         content: Text(
           'Password resets and installer-level code changes are handled by your provider for security reasons. If you still have access on this device, try biometric sign-in first. Otherwise call support for account recovery.',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: AppTheme.onSurfaceVariant,
             fontSize: 14,
             height: 1.5,
@@ -191,7 +190,7 @@ class HelpScreen extends ConsumerWidget {
               const SizedBox(height: 24),
               Text(
                 'Call The Control Center',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 22,
                   fontWeight: FontWeight.w800,
                   color: AppTheme.primary,
@@ -200,7 +199,7 @@ class HelpScreen extends ConsumerWidget {
               const SizedBox(height: 8),
               Text(
                 'Use the fastest available number below for urgent account, alarm, or monitoring issues.',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.onSurfaceVariant,
                   fontSize: 13,
                   height: 1.5,
@@ -284,7 +283,7 @@ class _HelpCardState extends State<_HelpCard> {
                         children: [
                           Text(
                             widget.title,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontWeight: FontWeight.w700,
                               fontSize: 15,
                               color: AppTheme.primary,
@@ -293,7 +292,7 @@ class _HelpCardState extends State<_HelpCard> {
                           const SizedBox(height: 2),
                           Text(
                             widget.subtitle,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               color: AppTheme.onSurfaceVariant,
                               fontSize: 12,
                             ),
@@ -338,7 +337,7 @@ class _FaqTile extends StatelessWidget {
           },
           title: Text(
             question,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 14,
               fontWeight: FontWeight.w700,
               color: AppTheme.primary,
@@ -349,7 +348,7 @@ class _FaqTile extends StatelessWidget {
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Text(
                 answer,
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   color: AppTheme.onSurfaceVariant,
                   fontSize: 13,
                   height: 1.6,
@@ -406,7 +405,7 @@ class _SupportNumberTile extends StatelessWidget {
               Expanded(
                 child: Text(
                   number,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 18,
                     fontWeight: FontWeight.w800,
                     color: AppTheme.primary,
@@ -425,3 +424,4 @@ class _SupportNumberTile extends StatelessWidget {
     );
   }
 }
+

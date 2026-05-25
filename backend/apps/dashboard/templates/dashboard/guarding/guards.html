@@ -1,0 +1,308 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Guards | SecureHub{% endblock %}
+{% block header_title %}Guard Operations{% endblock %}
+{% block content %}
+{% include "dashboard/guarding/_nav.html" %}
+<div class="space-y-3" x-data="{ createModal: false, credentialModal: false, documentModal: false, locationModal: false, editGuardId: null, editPingId: null, editCredentialId: null, editDocumentId: null }">
+    <div class="console-page-toolbar !mb-0 !pb-2">
+    {% include "dashboard/guarding/_kpi_strip.html" %}
+
+        <div class="min-w-0 flex-1">
+            {% include "dashboard/partials/console/page_header.html" with page_title="Guards" page_subtitle="Field workforce registry" %}
+        </div>
+        <div class="console-page-actions">
+            <button type="button" @click="locationModal = true" class="btn-console-secondary">Location</button>
+            <button type="button" @click="credentialModal = true" class="btn-console-secondary">Credential</button>
+            <button type="button" @click="documentModal = true" class="btn-console-secondary">Document</button>
+            <button type="button" @click="createModal = true" class="btn-console">New Guard</button>
+        </div>
+    </div>
+    {% include "dashboard/guarding/_search_bar.html" with search_placeholder="Search guards…" current_query=current_query %}
+
+    {% include "dashboard/partials/console/data_table_start.html" with table_scrollable=True table_min_width_class="min-w-[1100px]" %}
+            <thead class="console-thead">
+                <tr>
+                    <th scope="col" class="console-th">Guard</th>
+                    <th scope="col" class="console-th">Status</th>
+                    <th scope="col" class="console-th">Compliance</th>
+                    <th scope="col" class="console-th">Emergency</th>
+                    <th scope="col" class="console-th">National ID</th>
+                    <th scope="col" class="console-th">Contact</th>
+                    <th scope="col" class="console-th">Supervisor</th>
+                    <th scope="col" class="console-th">Credentials</th>
+                    <th scope="col" class="console-th">Hire date</th>
+                    <th scope="col" class="console-th text-right">Manage</th>
+                </tr>
+            </thead>
+            <tbody class="console-tbody">
+                {% for guard in guards %}
+                <tr class="align-top hover:bg-slate-50/80 dark:hover:bg-slate-800/40">
+                    <td class="console-td">
+                        <div class="font-semibold text-slate-900 dark:text-slate-100">{{ guard.full_name }}</div>
+                        <div class="console-meta font-mono">{{ guard.employee_number }}</div>
+                    </td>
+                    <td class="console-td"><span class="badge-console badge-console-slate">{{ guard.get_status_display }}</span></td>
+                    <td class="console-td">
+                        {% if guard.is_compliance_ready %}
+                        <span class="badge-console badge-console-emerald">Ready</span>
+                        {% else %}
+                        <span class="badge-console badge-console-amber" title="{% for issue in guard.compliance_issues %}{{ issue }}{% if not forloop.last %} · {% endif %}{% endfor %}">Incomplete</span>
+                        {% endif %}
+                    </td>
+                    <td class="console-td">
+                        <div class="text-xs">{{ guard.emergency_contact_name|default:"-" }}</div>
+                        <div class="console-meta">{{ guard.emergency_contact_phone|default:"-" }}</div>
+                    </td>
+                    <td class="console-td font-mono text-xs">{{ guard.metadata.national_id|default:"-" }}</td>
+                    <td class="console-td">{{ guard.phone_number|default:guard.email|default:"-" }}</td>
+                    <td class="console-td">{{ guard.supervisor.username|default:"-" }}</td>
+                    <td class="console-td tabular-nums">{{ guard.credentials.count }}</td>
+                    <td class="console-td whitespace-nowrap">{{ guard.hire_date|default:"-" }}</td>
+                    <td class="console-td text-right">
+                        <button type="button" class="btn-console-secondary" @click="editGuardId = '{{ guard.id }}'">Edit</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="10" class="console-td console-empty-state">No guards yet.</td></tr>
+                {% endfor %}
+            </tbody>
+    {% include "dashboard/partials/console/data_table_end.html" %}
+
+    <div class="grid gap-4 xl:grid-cols-3">
+        <div class="console-table-card">
+            <div class="console-card-section-title">Credentials</div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for credential in credentials %}
+                <div class="console-list-row">
+                    <div class="flex flex-col justify-between gap-2 sm:flex-row sm:items-start">
+                        <div class="min-w-0">
+                            <div class="font-semibold text-slate-900 dark:text-slate-100">{{ credential.name }}</div>
+                            <div class="console-meta">{{ credential.guard.full_name }} · {{ credential.get_credential_type_display }}</div>
+                        </div>
+                        <div class="flex shrink-0 flex-col items-end gap-1">
+                            {% if credential.verified %}<span class="badge-console badge-console-emerald">Verified</span>{% else %}<span class="badge-console badge-console-slate">Unverified</span>{% endif %}
+                            <button type="button" class="text-xs font-semibold text-slate-600 hover:text-brand dark:text-slate-300" @click="editCredentialId = '{{ credential.id }}'">Edit</button>
+                        </div>
+                    </div>
+                    <div class="mt-2 flex flex-wrap items-center justify-between gap-2 console-meta">
+                        <span>Expires {{ credential.expires_on|default:"-" }}{% if credential.verified_by %} · {{ credential.verified_by.username }} {{ credential.verified_at|date:"Y-m-d" }}{% endif %}</span>
+                        <form method="post" class="inline">{% csrf_token %}<input type="hidden" name="action" value="delete_credential"><input type="hidden" name="credential_id" value="{{ credential.id }}"><button type="submit" class="text-xs font-semibold text-red-500 hover:text-red-600" onclick="return confirm('Delete credential?');">Delete</button></form>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="console-empty-state">No credentials.</div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="console-table-card">
+            <div class="console-card-section-title">Documents</div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for document in documents %}
+                <div class="console-list-row">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <div class="font-semibold text-slate-900 dark:text-slate-100">{{ document.title }}</div>
+                            <div class="console-meta">{{ document.guard.full_name }} · {{ document.get_document_type_display }}</div>
+                            <div class="console-meta mt-1">Reference {{ document.reference_number|default:"-" }} · Expires {{ document.expires_on|default:"-" }}</div>
+                        </div>
+                        <div class="flex shrink-0 flex-col items-end gap-1">
+                            <button type="button" class="text-xs font-semibold text-slate-600 hover:text-brand dark:text-slate-300" @click="editDocumentId = '{{ document.id }}'">Edit</button>
+                            <form method="post">{% csrf_token %}<input type="hidden" name="action" value="delete_document"><input type="hidden" name="document_id" value="{{ document.id }}"><button type="submit" class="text-xs font-semibold text-red-500 hover:text-red-600" onclick="return confirm('Delete document?');">Delete</button></form>
+                        </div>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="console-empty-state">No documents.</div>
+                {% endfor %}
+            </div>
+        </div>
+        <div class="console-table-card">
+            <div class="console-card-section-title">Location pings</div>
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for ping in location_pings %}
+                <div class="console-list-row">
+                    <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="font-semibold text-slate-900 dark:text-slate-100">{{ ping.guard.full_name }}</div>
+                            <div class="console-meta font-mono">{{ ping.latitude }}, {{ ping.longitude }}</div>
+                            <div class="console-meta mt-1">{{ ping.created_at|date:"Y-m-d H:i" }} · Accuracy {{ ping.accuracy_m|default:"-" }}m</div>
+                        </div>
+                        <button type="button" class="btn-console-secondary shrink-0" @click="editPingId = '{{ ping.id }}'">Edit</button>
+                    </div>
+                </div>
+                {% empty %}
+                <div class="console-empty-state">No location pings.</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+    {% for guard in guards %}
+    <template x-if="editGuardId === '{{ guard.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit guard" modal_subtitle=guard.full_name modal_close="editGuardId = null" modal_max_width="max-w-4xl" modal_title_id="guard-edit-modal-title" %}
+        <div class="flex min-h-0 flex-1 flex-col">
+            <form id="guard-edit-{{ guard.id }}" method="post" class="form-perfex min-h-0 flex-1 overflow-y-auto -mx-5 px-5 py-4">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_guard">
+                <input type="hidden" name="guard_id" value="{{ guard.id }}">
+                {% include "dashboard/guarding/partials/guard_form_fields.html" with guard=guard %}
+                {% if guard.compliance_issues %}
+                <div class="guarding-callout guarding-callout--warning mt-4">
+                    <p class="guarding-callout__title">Compliance required for Active status</p>
+                    <ul class="guarding-callout__list">{% for issue in guard.compliance_issues %}<li>{{ issue }}</li>{% endfor %}</ul>
+                </div>
+                {% endif %}
+            </form>
+            <form method="post" class="border-t border-slate-100 px-5 py-3 dark:border-slate-800">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="delete_guard">
+                <input type="hidden" name="guard_id" value="{{ guard.id }}">
+                <button type="submit" class="btn-console-danger" onclick="return confirm('Delete this guard?');">Delete guard</button>
+            </form>
+            <div class="console-modal-footer -mx-5">
+                <button type="button" class="btn-console-secondary" @click="editGuardId = null">Cancel</button>
+                <button type="submit" class="btn-console" form="guard-edit-{{ guard.id }}">Save changes</button>
+            </div>
+        </div>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for ping in location_pings %}
+    <template x-if="editPingId === '{{ ping.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit location ping" modal_subtitle=ping.guard.full_name modal_close="editPingId = null" modal_max_width="max-w-2xl" modal_title_id="ping-edit-modal-title" %}
+        <div class="flex flex-col">
+            <form id="ping-edit-{{ ping.id }}" method="post" class="form-perfex space-y-3">
+                {% csrf_token %}
+                <input type="hidden" name="action" value="update_location_ping">
+                <input type="hidden" name="location_ping_id" value="{{ ping.id }}">
+                {% include "dashboard/guarding/partials/forms/location_ping_fields.html" with ping=ping %}
+            </form>
+            <form method="post" class="border-t border-slate-100 px-5 py-3 dark:border-slate-800">
+                {% csrf_token %}<input type="hidden" name="action" value="delete_location_ping"><input type="hidden" name="location_ping_id" value="{{ ping.id }}">
+                <button type="submit" class="text-xs font-semibold text-red-500" onclick="return confirm('Delete ping?');">Delete ping</button>
+            </form>
+            <div class="console-modal-footer -mx-5 -mb-5"><button type="button" class="btn-console-secondary" @click="editPingId = null">Cancel</button><button type="submit" class="btn-console" form="ping-edit-{{ ping.id }}">Save</button></div>
+        </div>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    <template x-if="createModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Create guard" modal_subtitle="Manual guard registry entry" modal_close="createModal = false" modal_max_width="max-w-4xl" modal_title_id="guard-create-modal-title" %}
+        <form method="post" class="form-perfex flex min-h-0 flex-1 flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="guard">
+            <div class="min-h-0 flex-1 overflow-y-auto -mx-5 px-5 py-4">
+                {% include "dashboard/guarding/partials/guard_form_fields.html" %}
+                <div class="guarding-callout mt-4">
+                    <p class="guarding-callout__title">Starts inactive</p>
+                    <p class="guarding-callout__text">Add emergency contact and a verified credential before activating or assigning shifts.</p>
+                </div>
+            </div>
+            <div class="console-modal-footer -mx-5">
+                <button type="button" class="btn-console-secondary" @click="createModal = false">Cancel</button>
+                <button type="submit" class="btn-console">Create guard</button>
+            </div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    {% for credential in credentials %}
+    <template x-if="editCredentialId === '{{ credential.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit credential" modal_subtitle=credential.name modal_close="editCredentialId = null" modal_max_width="max-w-2xl" modal_title_id="credential-edit-modal-title" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_credential">
+            <input type="hidden" name="credential_id" value="{{ credential.id }}">
+            <div class="space-y-3">{% include "dashboard/guarding/partials/forms/credential_fields.html" with credential=credential %}</div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="editCredentialId = null">Cancel</button><button type="submit" class="btn-console">Save</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for document in documents %}
+    <template x-if="editDocumentId === '{{ document.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit document" modal_subtitle=document.title modal_close="editDocumentId = null" modal_max_width="max-w-2xl" modal_title_id="document-edit-modal-title" %}
+        <form method="post" enctype="multipart/form-data" class="form-perfex flex flex-col">
+            {% csrf_token %}
+            <input type="hidden" name="action" value="update_document">
+            <input type="hidden" name="document_id" value="{{ document.id }}">
+            <div class="space-y-3">
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="form-group">
+                        <label>Guard *</label>
+                        <select name="guard_id" required data-modal-initial-focus>{% for guard in guards %}<option value="{{ guard.id }}" {% if document.guard_id == guard.id %}selected{% endif %}>{{ guard.full_name }}</option>{% endfor %}</select>
+                    </div>
+                    <div class="form-group">
+                        <label>Document type</label>
+                        <select name="document_type">{% for value,label in document_types %}<option value="{{ value }}" {% if document.document_type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+                    </div>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="form-group"><label>Title *</label><input name="title" value="{{ document.title }}" required></div>
+                    <div class="form-group"><label>Reference #</label><input name="reference_number" value="{{ document.reference_number }}"></div>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="form-group"><label>Expires on</label><input name="expires_on" type="date" value="{{ document.expires_on|date:'Y-m-d' }}"></div>
+                    <div class="form-group"><label>Replace file</label><input name="file" type="file" class="!h-auto py-2"></div>
+                </div>
+                <div class="form-group"><label>Notes</label><textarea name="notes" class="w-full">{{ document.notes }}</textarea></div>
+            </div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="editDocumentId = null">Cancel</button><button type="submit" class="btn-console">Save</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    <template x-if="credentialModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Add credential" modal_close="credentialModal = false" modal_max_width="max-w-2xl" modal_title_id="credential-create-modal-title" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="credential">
+            <div class="space-y-3">{% include "dashboard/guarding/partials/forms/credential_fields.html" %}</div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="credentialModal = false">Cancel</button><button type="submit" class="btn-console">Add credential</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="documentModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Add document" modal_close="documentModal = false" modal_max_width="max-w-2xl" modal_title_id="document-create-modal-title" %}
+        <form method="post" enctype="multipart/form-data" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="document">
+            <div class="space-y-3">
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="form-group">
+                        <label>Guard *</label>
+                        <select name="guard_id" required data-modal-initial-focus>{% for guard in guards %}<option value="{{ guard.id }}">{{ guard.full_name }} · {{ guard.employee_number }}</option>{% endfor %}</select>
+                    </div>
+                    <div class="form-group">
+                        <label>Document type</label>
+                        <select name="document_type">{% for value,label in document_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+                    </div>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="form-group"><label>Title *</label><input name="title" required></div>
+                    <div class="form-group"><label>Reference #</label><input name="reference_number"></div>
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <div class="form-group"><label>Expires on</label><input name="expires_on" type="date"></div>
+                    <div class="form-group"><label>File *</label><input name="file" type="file" required class="!h-auto py-2"></div>
+                </div>
+                <div class="form-group"><label>Notes</label><textarea name="notes" class="w-full"></textarea></div>
+            </div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="documentModal = false">Cancel</button><button type="submit" class="btn-console">Add document</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="locationModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Record location ping" modal_close="locationModal = false" modal_max_width="max-w-2xl" modal_title_id="location-create-modal-title" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="location_ping">
+            <div class="space-y-3">{% include "dashboard/guarding/partials/forms/location_ping_fields.html" %}</div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="locationModal = false">Cancel</button><button type="submit" class="btn-console">Record ping</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+</div>
+{% endblock %}

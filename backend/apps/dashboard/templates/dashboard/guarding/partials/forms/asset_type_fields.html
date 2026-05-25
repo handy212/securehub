@@ -1,0 +1,38 @@
+{% load dashboard_extras %}
+{# Pass asset_type= when editing #}
+<div class="grid gap-3 sm:grid-cols-2">
+    <div class="form-group">
+        <label>Name *</label>
+        <input name="name" required value="{% if asset_type %}{{ asset_type.name }}{% endif %}" {% if not asset_type %}data-modal-initial-focus{% endif %}>
+    </div>
+    <div class="form-group">
+        <label>Code *</label>
+        <input name="code" required value="{% if asset_type %}{{ asset_type.code }}{% endif %}" class="font-mono">
+    </div>
+</div>
+<div class="grid gap-3 sm:grid-cols-2">
+    <div class="form-group">
+        <label>Category</label>
+        <select name="category">{% for value,label in asset_categories %}<option value="{{ value }}" {% if asset_type and asset_type.category == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    </div>
+    <div class="form-group">
+        <label>Tracking mode</label>
+        <select name="tracking_mode">{% for value,label in tracking_modes %}<option value="{{ value }}" {% if asset_type and asset_type.tracking_mode == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+    </div>
+</div>
+<div class="form-group">
+    <label>Replacement cost</label>
+    <input name="replacement_cost" type="number" step="0.01" min="0" value="{% if asset_type and asset_type.replacement_cost %}{{ asset_type.replacement_cost }}{% endif %}">
+</div>
+<div class="guarding-checkbox-grid">
+    <label class="guarding-check"><input name="default_condition_check" type="checkbox" {% if not asset_type or asset_type.default_condition_check %}checked{% endif %}> Require condition check on issue/return</label>
+    <label class="guarding-check"><input name="no_return" type="checkbox" {% if asset_type and not asset_type.requires_return %}checked{% endif %}> Consumable (no return required)</label>
+    {% if asset_type %}
+    <label class="guarding-check"><input name="inactive" type="checkbox" {% if not asset_type.is_active %}checked{% endif %}> Inactive</label>
+    {% endif %}
+</div>
+<div class="form-group">
+    <label>Metadata (JSON)</label>
+    <textarea name="metadata" rows="3" class="w-full font-mono text-xs" placeholder="{}">{% if asset_type %}{{ asset_type.metadata|to_json }}{% endif %}</textarea>
+    <p class="console-meta mt-1">Optional key/value data for integrations or custom fields.</p>
+</div>

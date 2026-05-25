@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../core/auth/auth_notifier.dart';
 import '../../../core/theme/app_theme.dart';
 import '../../emergency/widgets/emergency_action_card.dart';
@@ -48,7 +47,7 @@ class MenuScreen extends ConsumerWidget {
                                           ? profile.user.username[0]
                                           : '?'))
                                 .toUpperCase(),
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                               fontSize: 24,
                               fontWeight: FontWeight.w800,
                               color: AppTheme.onPrimary,
@@ -65,7 +64,7 @@ class MenuScreen extends ConsumerWidget {
                               profile.user.firstName.isNotEmpty
                                   ? '${profile.user.firstName} ${profile.user.lastName}'
                                   : profile.user.username,
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 18,
                                 color: AppTheme.primary,
@@ -76,7 +75,7 @@ class MenuScreen extends ConsumerWidget {
                               const SizedBox(height: 6),
                               Text(
                                 profile.user.email,
-                                style: GoogleFonts.inter(
+                                style: TextStyle(
                                   color: AppTheme.onSurfaceVariant,
                                   fontSize: 13,
                                   fontWeight: FontWeight.w500,
@@ -175,7 +174,7 @@ class MenuScreen extends ConsumerWidget {
                   ),
                   title: Text(
                     'Sign out',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       color: AppTheme.error,
                       fontWeight: FontWeight.w700,
                       fontSize: 14,
@@ -199,7 +198,7 @@ class MenuScreen extends ConsumerWidget {
                         ),
                         title: Text(
                           'Sign Out',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontWeight: FontWeight.w800,
                             color: AppTheme.primary,
                             letterSpacing: -0.5,
@@ -207,7 +206,7 @@ class MenuScreen extends ConsumerWidget {
                         ),
                         content: Text(
                           'Are you sure you want to sign out on this device?',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             color: AppTheme.onSurfaceVariant,
                             fontSize: 14,
                             height: 1.4,
@@ -218,7 +217,7 @@ class MenuScreen extends ConsumerWidget {
                             onPressed: () => Navigator.of(ctx).pop(false),
                             child: Text(
                               'CANCEL',
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 color: AppTheme.onSurfaceVariant,
                                 fontWeight: FontWeight.w600,
                               ),
@@ -270,7 +269,7 @@ class _MenuSection extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
           child: Text(
             title.toUpperCase(),
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.5,
@@ -315,7 +314,7 @@ class _MenuTile extends StatelessWidget {
       ),
       title: Text(
         label,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontWeight: FontWeight.w600,
           fontSize: 14,
           color: AppTheme.primary,
@@ -330,3 +329,4 @@ class _MenuTile extends StatelessWidget {
     );
   }
 }
+

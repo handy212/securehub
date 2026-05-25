@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/models/arm_disarm_command.dart';
@@ -35,13 +34,13 @@ class CommandHistoryScreen extends ConsumerWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Command History',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                           color: AppTheme.primary,
                           letterSpacing: -0.5)),
                   Text('Audit logs for security commands',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                           fontSize: 12, color: AppTheme.onSurfaceVariant)),
                 ],
               ),
@@ -56,7 +55,7 @@ class CommandHistoryScreen extends ConsumerWidget {
             error: (err, _) => SliverFillRemaining(
               child: Center(
                   child: Text(err.toString(),
-                      style: const TextStyle(color: AppTheme.error))),
+                      style: TextStyle(color: AppTheme.error))),
             ),
             data: (cmds) {
               if (cmds.isEmpty) {
@@ -76,7 +75,7 @@ class CommandHistoryScreen extends ConsumerWidget {
                         ),
                         const SizedBox(height: 24),
                         Text('No commands found',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 18,
                                 color: AppTheme.primary)),
@@ -158,7 +157,7 @@ class _CommandTile extends StatelessWidget {
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 Text(cmd.action.toUpperCase(),
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 14,
                         color: AppTheme.primary)),
@@ -166,7 +165,7 @@ class _CommandTile extends StatelessWidget {
                 if (dt != null)
                   Text(
                     DateFormat('d MMM, HH:mm').format(dt),
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                         fontSize: 11, color: AppTheme.onSurfaceVariant),
                   ),
               ],
@@ -182,7 +181,7 @@ class _CommandTile extends StatelessWidget {
               ),
               child: Text(
                 cmd.status.toUpperCase(),
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 9,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1,
@@ -204,3 +203,5 @@ class _CommandTile extends StatelessWidget {
     }
   }
 }
+
+

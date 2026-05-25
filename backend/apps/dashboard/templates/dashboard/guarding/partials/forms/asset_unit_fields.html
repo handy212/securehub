@@ -1,0 +1,40 @@
+{# Pass unit= when editing; serial asset types only in parent select #}
+<div class="form-group">
+    <label>Asset type *</label>
+    <select name="asset_type_id" required {% if not unit %}data-modal-initial-focus{% endif %}>
+        {% for t in asset_types %}{% if t.tracking_mode == 'serial' %}<option value="{{ t.id }}" {% if unit and unit.asset_type_id == t.id %}selected{% endif %}>{{ t.name }} ({{ t.code }})</option>{% endif %}{% endfor %}
+    </select>
+</div>
+<div class="grid gap-3 sm:grid-cols-2">
+    <div class="form-group">
+        <label>Depot *</label>
+        <select name="depot_id" required>{% for d in depots %}<option value="{{ d.id }}" {% if unit and unit.depot_id == d.id %}selected{% endif %}>{{ d.name }}</option>{% endfor %}</select>
+    </div>
+    <div class="form-group">
+        <label>Site restriction</label>
+        <select name="site_id">
+            <option value="">Any site</option>
+            {% for site in sites %}<option value="{{ site.id }}" {% if unit and unit.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}
+        </select>
+    </div>
+</div>
+<div class="grid gap-3 sm:grid-cols-2">
+    <div class="form-group">
+        <label>Asset tag *</label>
+        <input name="asset_tag" required value="{% if unit %}{{ unit.asset_tag }}{% endif %}" class="font-mono">
+    </div>
+    <div class="form-group">
+        <label>Serial number</label>
+        <input name="serial_number" value="{% if unit %}{{ unit.serial_number }}{% endif %}">
+    </div>
+</div>
+{% if unit %}
+<div class="form-group">
+    <label>Status</label>
+    <select name="status">{% for value,label in unit_statuses %}<option value="{{ value }}" {% if unit.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+</div>
+{% endif %}
+<div class="form-group">
+    <label>Notes</label>
+    <textarea name="notes" rows="2" class="w-full">{% if unit %}{{ unit.notes }}{% endif %}</textarea>
+</div>

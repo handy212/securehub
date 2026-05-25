@@ -1,54 +1,57 @@
 Watching for file changes with StatReloader
-INFO 2026-05-11 21:48:52,879 autoreload 3611 Watching for file changes with StatReloader
-INFO 2026-05-11 21:48:56,913 views 3611 Webhook GET Handshake: timestamp=1778536134896, batch_id=6195ead3-f29a-4525-8129-1d17a72c77ec -> signature generated
-DEBUG 2026-05-11 21:49:16,916 views 3611 Webhook Verification: signature=sha256=f684f971915dc031dbe71f456251cebfcdc3e15f8352e1c9293644b8d5613564 timestamp=1778536155802 batch_id=981ee8f9dcad4b779ce9ac25f06c5983
-INFO 2026-05-11 21:49:16,916 views 3611 Webhook Verification: signature MATCHED for message: b'1778536155802.981ee8f9dcad4b779ce9ac25f06c5983'
-INFO 2026-05-11 21:49:16,917 views 3611 WEBHOOK[2905befa]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:49:23,009 views 3611 Webhook Verification: signature=sha256=c080f7190c8e0736ea6a4aef2d7a2188cb1eedb7d397c1e3b9b1a4d9a21dada9 timestamp=1778536161536 batch_id=870f3e50f23746ddad3e29b471d50f8b
-INFO 2026-05-11 21:49:23,009 views 3611 Webhook Verification: signature MATCHED for message: b'1778536161536.870f3e50f23746ddad3e29b471d50f8b'
-INFO 2026-05-11 21:49:23,009 views 3611 WEBHOOK[7a59da62]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:49:26,872 views 3611 Webhook Verification: signature=sha256=cd7a672e0718df8edef4bceed206f9a4299c3444ad7511168b75c2627dd09ea7 timestamp=1778536165139 batch_id=756ec79923a6438daf7e5f09dbad08d6
-INFO 2026-05-11 21:49:26,872 views 3611 Webhook Verification: signature MATCHED for message: b'1778536165139.756ec79923a6438daf7e5f09dbad08d6'
-INFO 2026-05-11 21:49:26,872 views 3611 WEBHOOK[891c1eee]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:50:17,071 views 3611 Webhook Verification: signature=sha256=8992b778604cd0123446fab0232ca97244b9d53baa3a13e62b42a5897c109909 timestamp=1778536215987 batch_id=91acacb71db54e8693f0939068f2bcbb
-INFO 2026-05-11 21:50:17,072 views 3611 Webhook Verification: signature MATCHED for message: b'1778536215987.91acacb71db54e8693f0939068f2bcbb'
-INFO 2026-05-11 21:50:17,072 views 3611 WEBHOOK[a023e5a7]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:50:25,805 views 3611 Webhook Verification: signature=sha256=41b40a25e9c71a6010ea8a0c9f195249e5ddb005011b24c32fb9b16b13f9ad05 timestamp=1778536224190 batch_id=db40babf6b7045e0a3baa9573964931e
-INFO 2026-05-11 21:50:25,806 views 3611 Webhook Verification: signature MATCHED for message: b'1778536224190.db40babf6b7045e0a3baa9573964931e'
-INFO 2026-05-11 21:50:25,806 views 3611 WEBHOOK[46687490]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:51:16,890 views 3611 Webhook Verification: signature=sha256=259155bc85cab4e78eb327cfe60d16f0db2c659f82e8fec90bd822c7a37e4d39 timestamp=1778536275740 batch_id=e113fe677b1e4472b1822ff7c24d5b49
-INFO 2026-05-11 21:51:16,890 views 3611 Webhook Verification: signature MATCHED for message: b'1778536275740.e113fe677b1e4472b1822ff7c24d5b49'
-INFO 2026-05-11 21:51:16,890 views 3611 WEBHOOK[ff279ac3]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:52:17,221 views 3611 Webhook Verification: signature=sha256=1cb7ff086a6f7a8635e19bac644d98cf2af4b695a6e9353e9114cee71769dfe4 timestamp=1778536336186 batch_id=e325fdd5b0624d06a37a043bbd1ddeb9
-INFO 2026-05-11 21:52:17,221 views 3611 Webhook Verification: signature MATCHED for message: b'1778536336186.e325fdd5b0624d06a37a043bbd1ddeb9'
-INFO 2026-05-11 21:52:17,222 views 3611 WEBHOOK[460b7f0d]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:53:16,954 views 3611 Webhook Verification: signature=sha256=5f921cff26d86899b16e0d6223690f6c012d0e7de617f97a375133a5cacf4c66 timestamp=1778536395877 batch_id=f2bd90156d5e475282f02349bb490815
-INFO 2026-05-11 21:53:16,954 views 3611 Webhook Verification: signature MATCHED for message: b'1778536395877.f2bd90156d5e475282f02349bb490815'
-INFO 2026-05-11 21:53:16,955 views 3611 WEBHOOK[a68df8d4]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:53:35,953 views 3611 Webhook Verification: signature=sha256=9c411a863f33e688d40a51dc8d58053cc31cd9429cf4c3e24084dece2ca5469b timestamp=1778536415545 batch_id=a48a8e86168146debbd2f44d0eda0573
-INFO 2026-05-11 21:53:35,953 views 3611 Webhook Verification: signature MATCHED for message: b'1778536415545.a48a8e86168146debbd2f44d0eda0573'
-INFO 2026-05-11 21:53:35,953 views 3611 WEBHOOK[bb2286c9]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:54:16,143 views 3611 Webhook Verification: signature=sha256=bf20d21a2211d9aed4dfe71c8b70ac2565bc838e760f1302ce57a7b259c9a8ff timestamp=1778536455318 batch_id=6f256bfcb4ae4d868de4bbbe44e1faaf
-INFO 2026-05-11 21:54:16,143 views 3611 Webhook Verification: signature MATCHED for message: b'1778536455318.6f256bfcb4ae4d868de4bbbe44e1faaf'
-INFO 2026-05-11 21:54:16,143 views 3611 WEBHOOK[065303ab]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:54:26,554 views 3611 Webhook Verification: signature=sha256=6af305888c4f2ccbdedf1e3f3bbb97115a9e9295d6e1bf2b2245d7c18101f21d timestamp=1778536465045 batch_id=f89e2a1782614e65b36a406707514c18
-INFO 2026-05-11 21:54:26,554 views 3611 Webhook Verification: signature MATCHED for message: b'1778536465045.f89e2a1782614e65b36a406707514c18'
-INFO 2026-05-11 21:54:26,554 views 3611 WEBHOOK[324db6cd]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:54:33,416 views 3611 Webhook Verification: signature=sha256=853d9ef6decfd2340679a536f31890038edc88261976cf41cdc5f61d32b79bb7 timestamp=1778536471516 batch_id=931e537e52eb473a8886656729367542
-INFO 2026-05-11 21:54:33,416 views 3611 Webhook Verification: signature MATCHED for message: b'1778536471516.931e537e52eb473a8886656729367542'
-INFO 2026-05-11 21:54:33,416 views 3611 WEBHOOK[26b0a01f]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:54:33,864 views 3611 Webhook Verification: signature=sha256=c5976aa2363c14a0b22f0fe49eadbe37396142b65e41c2f4c2519af0413cd178 timestamp=1778536473619 batch_id=654d4767e7b74ccaa3b3376ee842428c
-INFO 2026-05-11 21:54:33,864 views 3611 Webhook Verification: signature MATCHED for message: b'1778536473619.654d4767e7b74ccaa3b3376ee842428c'
-INFO 2026-05-11 21:54:33,865 views 3611 WEBHOOK[46507c06]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:55:16,758 views 3611 Webhook Verification: signature=sha256=9c569da7ae01775c29e61d91df0446d72602412215dc60f227051c02a6918255 timestamp=1778536515719 batch_id=1139aef202c948b0b87600e849fb60c5
-INFO 2026-05-11 21:55:16,758 views 3611 Webhook Verification: signature MATCHED for message: b'1778536515719.1139aef202c948b0b87600e849fb60c5'
-INFO 2026-05-11 21:55:16,758 views 3611 WEBHOOK[0d56bc90]: received batch of 1 message(s)
-/home/dev/SecureHub/backend/apps/guarding/models.py changed, reloading.
-INFO 2026-05-11 21:55:18,709 autoreload 3611 /home/dev/SecureHub/backend/apps/guarding/models.py changed, reloading.
+INFO 2026-05-24 20:05:19,808 autoreload 370941 Watching for file changes with StatReloader
+INFO 2026-05-24 20:05:23,249 views 370941 Webhook GET Handshake: timestamp=1779653123362, batch_id=dce66f59-5ff5-44cd-8da2-808c60380e91 -> signature generated
+DEBUG 2026-05-24 20:05:31,371 views 370941 Webhook Verification: signature=sha256=7fd0f357a5dc7846f5db579fe9aded2737c349a7e00f7bfa8a41652e7cc2973c timestamp=1779653131432 batch_id=519d159c7e1c4ac9bbd89fa25305f7aa
+INFO 2026-05-24 20:05:31,372 views 370941 Webhook Verification: signature MATCHED for message: b'1779653131432.519d159c7e1c4ac9bbd89fa25305f7aa'
+INFO 2026-05-24 20:05:31,372 views 370941 WEBHOOK[9e703096]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:06:26,263 views 370941 Webhook Verification: signature=sha256=abcafcb61acf7535cfeaf1ca39641819748246cc95d3954d093b7b191fa83782 timestamp=1779653186426 batch_id=68d8d6de0a7b426ab5a7e7f8bdef77e7
+INFO 2026-05-24 20:06:26,264 views 370941 Webhook Verification: signature MATCHED for message: b'1779653186426.68d8d6de0a7b426ab5a7e7f8bdef77e7'
+INFO 2026-05-24 20:06:26,264 views 370941 WEBHOOK[22992067]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:06:28,098 views 370941 Webhook Verification: signature=sha256=a9cbfb65dd49293d19af97738c341cc0f96708ebbef18b867d028bd798378e29 timestamp=1779653188315 batch_id=3ca293def984490fbc9a7bcc4a574601
+INFO 2026-05-24 20:06:28,098 views 370941 Webhook Verification: signature MATCHED for message: b'1779653188315.3ca293def984490fbc9a7bcc4a574601'
+INFO 2026-05-24 20:06:28,099 views 370941 WEBHOOK[72338bd9]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:07:30,167 views 370941 Webhook Verification: signature=sha256=5fbe2a99e3a0e7632e688d0fb0f5d9871974cbd6d0c8bfc790001714b8836c64 timestamp=1779653250497 batch_id=2369c1f1680d4c88b289fc456ee349ab
+INFO 2026-05-24 20:07:30,167 views 370941 Webhook Verification: signature MATCHED for message: b'1779653250497.2369c1f1680d4c88b289fc456ee349ab'
+INFO 2026-05-24 20:07:30,168 views 370941 WEBHOOK[4d501df8]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:07:56,248 views 370941 Webhook Verification: signature=sha256=b17e453465f011112be28b063ce3f4191b959ff16ceb04711cc77dc7f295f16e timestamp=1779653276881 batch_id=999741fdda644a05b14c3158a33ac08a
+INFO 2026-05-24 20:07:56,248 views 370941 Webhook Verification: signature MATCHED for message: b'1779653276881.999741fdda644a05b14c3158a33ac08a'
+INFO 2026-05-24 20:07:56,251 views 370941 WEBHOOK[06d53d8a]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:08:27,672 views 370941 Webhook Verification: signature=sha256=03ca0c379b8b55a8f8a2db9916dddaefd132952483d4fed985c6c6b424164f4e timestamp=1779653307919 batch_id=ed1c7dc338144461862f0841c4fb86d2
+INFO 2026-05-24 20:08:27,673 views 370941 Webhook Verification: signature MATCHED for message: b'1779653307919.ed1c7dc338144461862f0841c4fb86d2'
+INFO 2026-05-24 20:08:27,673 views 370941 WEBHOOK[b0e25e6e]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:09:30,055 views 370941 Webhook Verification: signature=sha256=8f43502f8276655b1e0f42709516f8bb2e3059225cf0c8808f5492d9c35e6184 timestamp=1779653370242 batch_id=2aef133891474c7ba085c307ba2ca52c
+INFO 2026-05-24 20:09:30,055 views 370941 Webhook Verification: signature MATCHED for message: b'1779653370242.2aef133891474c7ba085c307ba2ca52c'
+INFO 2026-05-24 20:09:30,055 views 370941 WEBHOOK[d6b3ab70]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:09:51,724 views 370941 Webhook Verification: signature=sha256=c9e6abcfc83ef2be2acf73035a628e71715d87c22c3c5e4e286e27ba99f56a5a timestamp=1779653391751 batch_id=0ce39609396847ca8dfac97c1d6b7b92
+INFO 2026-05-24 20:09:51,725 views 370941 Webhook Verification: signature MATCHED for message: b'1779653391751.0ce39609396847ca8dfac97c1d6b7b92'
+INFO 2026-05-24 20:09:51,725 views 370941 WEBHOOK[94a4ce19]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:10:17,157 views 370941 Webhook Verification: signature=sha256=da9b1d7cb71d526dc3e68c1b0640b232ebfd06d5989c6fd537e6fb0a5511bf6a timestamp=1779653417078 batch_id=244180dac6ec4ab79d8e2474df187091
+INFO 2026-05-24 20:10:17,157 views 370941 Webhook Verification: signature MATCHED for message: b'1779653417078.244180dac6ec4ab79d8e2474df187091'
+INFO 2026-05-24 20:10:17,157 views 370941 WEBHOOK[36becbbe]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:10:28,083 views 370941 Webhook Verification: signature=sha256=8090504c875f8f0402df334d27e66f13d76e2e1a6c8aa54ce21154e3c9ea83c2 timestamp=1779653428095 batch_id=1c2e0dfa9b564646b4fab25354d5c4c2
+INFO 2026-05-24 20:10:28,083 views 370941 Webhook Verification: signature MATCHED for message: b'1779653428095.1c2e0dfa9b564646b4fab25354d5c4c2'
+INFO 2026-05-24 20:10:28,083 views 370941 WEBHOOK[9dcfaae3]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:10:29,341 views 370941 Webhook Verification: signature=sha256=1fc0b1063b269b4912eeba647669978f98544e160447a4c1c8b9bacd71b74a8b timestamp=1779653429379 batch_id=29fe8fe026b8410490466bb46b28c89a
+INFO 2026-05-24 20:10:29,342 views 370941 Webhook Verification: signature MATCHED for message: b'1779653429379.29fe8fe026b8410490466bb46b28c89a'
+INFO 2026-05-24 20:10:29,342 views 370941 WEBHOOK[fdd4543f]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:11:16,765 views 370941 Webhook Verification: signature=sha256=61b8f16de09656958992f8e9f0bac6b2e26da350d12aa6f53cab714ca973e662 timestamp=1779653477148 batch_id=d13659c5ce304efd84dd1695e079e0da
+INFO 2026-05-24 20:11:16,765 views 370941 Webhook Verification: signature MATCHED for message: b'1779653477148.d13659c5ce304efd84dd1695e079e0da'
+INFO 2026-05-24 20:11:16,765 views 370941 WEBHOOK[1127d9c1]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:11:28,762 views 370941 Webhook Verification: signature=sha256=efbcc046aa02585ce26667642001708798ac2952d10e637e4ac11064928c5de7 timestamp=1779653488736 batch_id=b056bbf5f59e4146ab97ec942c4cfee8
+INFO 2026-05-24 20:11:28,762 views 370941 Webhook Verification: signature MATCHED for message: b'1779653488736.b056bbf5f59e4146ab97ec942c4cfee8'
+INFO 2026-05-24 20:11:28,762 views 370941 WEBHOOK[b6b11800]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:12:20,948 views 370941 Webhook Verification: signature=sha256=909f3f58a3033ce0421600f3ed5bc669022c8185c8ebed290ea42adf9efed763 timestamp=1779653541364 batch_id=68eef11f14d4419b84a360ba04a3b3ef
+INFO 2026-05-24 20:12:20,948 views 370941 Webhook Verification: signature MATCHED for message: b'1779653541364.68eef11f14d4419b84a360ba04a3b3ef'
+INFO 2026-05-24 20:12:20,948 views 370941 WEBHOOK[776329ea]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:12:28,499 views 370941 Webhook Verification: signature=sha256=c5dc8ab2b7c472c5df18cf4c85781c8f990c65e3e251ef05743cefe458518892 timestamp=1779653548429 batch_id=8e80c3dd5a4b4c56b22864a6f80db95c
+INFO 2026-05-24 20:12:28,499 views 370941 Webhook Verification: signature MATCHED for message: b'1779653548429.8e80c3dd5a4b4c56b22864a6f80db95c'
+INFO 2026-05-24 20:12:28,499 views 370941 WEBHOOK[5851b547]: received batch of 1 message(s)
+/home/dev/SecureHub/backend/apps/dashboard/console_docs.py changed, reloading.
+INFO 2026-05-24 20:12:41,467 autoreload 370941 /home/dev/SecureHub/backend/apps/dashboard/console_docs.py changed, reloading.
 Performing system checks...
 
 System check identified no issues (0 silenced).
-May 11, 2026 - 21:48:53
+May 24, 2026 - 20:05:20
 Django version 5.2.12, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8000/
 Quit the server with CONTROL-C.
@@ -56,13 +59,13 @@ Quit the server with CONTROL-C.
 WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
 For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
 Watching for file changes with StatReloader
-INFO 2026-05-11 21:55:19,086 autoreload 9766 Watching for file changes with StatReloader
-/home/dev/SecureHub/backend/apps/guarding/admin.py changed, reloading.
-INFO 2026-05-11 21:55:32,617 autoreload 9766 /home/dev/SecureHub/backend/apps/guarding/admin.py changed, reloading.
+INFO 2026-05-24 20:12:42,202 autoreload 374495 Watching for file changes with StatReloader
+/home/dev/SecureHub/backend/apps/dashboard/console_docs.py changed, reloading.
+INFO 2026-05-24 20:12:47,855 autoreload 374495 /home/dev/SecureHub/backend/apps/dashboard/console_docs.py changed, reloading.
 Performing system checks...
 
 System check identified no issues (0 silenced).
-May 11, 2026 - 21:55:19
+May 24, 2026 - 20:12:42
 Django version 5.2.12, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8000/
 Quit the server with CONTROL-C.
@@ -70,175 +73,37 @@ Quit the server with CONTROL-C.
 WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
 For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
 Watching for file changes with StatReloader
-INFO 2026-05-11 21:55:32,929 autoreload 10024 Watching for file changes with StatReloader
-DEBUG 2026-05-11 21:56:15,591 views 10024 Webhook Verification: signature=sha256=0ee02a08957f462e1a83c714f7bf923c7c5010f6ee0c53f7d961b72b22ce8d78 timestamp=1778536574850 batch_id=c1a34c85e01a4572a699bef1d79c8bb8
-INFO 2026-05-11 21:56:15,591 views 10024 Webhook Verification: signature MATCHED for message: b'1778536574850.c1a34c85e01a4572a699bef1d79c8bb8'
-INFO 2026-05-11 21:56:15,592 views 10024 WEBHOOK[7d55c4bd]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:56:18,208 views 10024 Webhook Verification: signature=sha256=0d65f62aa354f196e9513487819804f1e0dc08c607efe1e62e641f880e362124 timestamp=1778536577268 batch_id=a3e268c496154dbb9be366a7cd488b4b
-INFO 2026-05-11 21:56:18,208 views 10024 Webhook Verification: signature MATCHED for message: b'1778536577268.a3e268c496154dbb9be366a7cd488b4b'
-INFO 2026-05-11 21:56:18,209 views 10024 WEBHOOK[0a5756f4]: received batch of 1 message(s)
-/home/dev/SecureHub/backend/config/settings.py changed, reloading.
-INFO 2026-05-11 21:56:24,352 autoreload 10024 /home/dev/SecureHub/backend/config/settings.py changed, reloading.
-Performing system checks...
-
-System check identified no issues (0 silenced).
-
-You have 1 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): guarding.
-Run 'python manage.py migrate' to apply them.
-May 11, 2026 - 21:55:33
-Django version 5.2.12, using settings 'config.settings'
-Starting development server at http://0.0.0.0:8000/
-Quit the server with CONTROL-C.
-
-WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
-For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
-Watching for file changes with StatReloader
-INFO 2026-05-11 21:56:24,748 autoreload 10722 Watching for file changes with StatReloader
-DEBUG 2026-05-11 21:57:17,987 views 10722 Webhook Verification: signature=sha256=6992eb080a58c7db36cf0519a9816e5bb4679b5456e6641457769f7d56c84bce timestamp=1778536636945 batch_id=1d5a804f6ef84a30b7d88877776b5c67
-INFO 2026-05-11 21:57:17,987 views 10722 Webhook Verification: signature MATCHED for message: b'1778536636945.1d5a804f6ef84a30b7d88877776b5c67'
-INFO 2026-05-11 21:57:17,987 views 10722 WEBHOOK[abf84a27]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:57:57,976 views 10722 Webhook Verification: signature=sha256=5812b0bd4724486b9407d733c865f10383a556344dd2591f68724062a0117049 timestamp=1778536676422 batch_id=6ff33073e11b42778519cde15d001b30
-INFO 2026-05-11 21:57:57,976 views 10722 Webhook Verification: signature MATCHED for message: b'1778536676422.6ff33073e11b42778519cde15d001b30'
-INFO 2026-05-11 21:57:57,976 views 10722 WEBHOOK[e92653f3]: received batch of 1 message(s)
-/home/dev/SecureHub/backend/apps/guarding/serializers.py changed, reloading.
-INFO 2026-05-11 21:57:58,470 autoreload 10722 /home/dev/SecureHub/backend/apps/guarding/serializers.py changed, reloading.
-Performing system checks...
-
-System check identified no issues (0 silenced).
-
-You have 1 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): guarding.
-Run 'python manage.py migrate' to apply them.
-May 11, 2026 - 21:56:24
-Django version 5.2.12, using settings 'config.settings'
-Starting development server at http://0.0.0.0:8000/
-Quit the server with CONTROL-C.
-
-WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
-For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
-Watching for file changes with StatReloader
-INFO 2026-05-11 21:57:58,793 autoreload 11938 Watching for file changes with StatReloader
-/home/dev/SecureHub/backend/apps/guarding/serializers.py changed, reloading.
-INFO 2026-05-11 21:58:04,164 autoreload 11938 /home/dev/SecureHub/backend/apps/guarding/serializers.py changed, reloading.
-Performing system checks...
-
-System check identified no issues (0 silenced).
-
-You have 1 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): guarding.
-Run 'python manage.py migrate' to apply them.
-May 11, 2026 - 21:57:59
-Django version 5.2.12, using settings 'config.settings'
-Starting development server at http://0.0.0.0:8000/
-Quit the server with CONTROL-C.
-
-WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
-For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
-Watching for file changes with StatReloader
-INFO 2026-05-11 21:58:04,494 autoreload 12096 Watching for file changes with StatReloader
-/home/dev/SecureHub/backend/apps/guarding/views.py changed, reloading.
-INFO 2026-05-11 21:58:10,996 autoreload 12096 /home/dev/SecureHub/backend/apps/guarding/views.py changed, reloading.
-Performing system checks...
-
-System check identified no issues (0 silenced).
-
-You have 1 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): guarding.
-Run 'python manage.py migrate' to apply them.
-May 11, 2026 - 21:58:04
-Django version 5.2.12, using settings 'config.settings'
-Starting development server at http://0.0.0.0:8000/
-Quit the server with CONTROL-C.
-
-WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
-For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
-Watching for file changes with StatReloader
-INFO 2026-05-11 21:58:11,319 autoreload 12269 Watching for file changes with StatReloader
-/home/dev/SecureHub/backend/apps/guarding/urls.py changed, reloading.
-INFO 2026-05-11 21:58:14,700 autoreload 12269 /home/dev/SecureHub/backend/apps/guarding/urls.py changed, reloading.
-Performing system checks...
-
-System check identified no issues (0 silenced).
-
-You have 1 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): guarding.
-Run 'python manage.py migrate' to apply them.
-May 11, 2026 - 21:58:11
-Django version 5.2.12, using settings 'config.settings'
-Starting development server at http://0.0.0.0:8000/
-Quit the server with CONTROL-C.
-
-WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
-For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
-Watching for file changes with StatReloader
-INFO 2026-05-11 21:58:15,003 autoreload 12386 Watching for file changes with StatReloader
-DEBUG 2026-05-11 21:58:17,997 views 12386 Webhook Verification: signature=sha256=2796dd5920fc4bf07663b52856dec3fe6875b8d7b086b5f3ff3b22219b88c477 timestamp=1778536697048 batch_id=dcaa32d3ff3545cab3222c515ded9271
-INFO 2026-05-11 21:58:17,997 views 12386 Webhook Verification: signature MATCHED for message: b'1778536697048.dcaa32d3ff3545cab3222c515ded9271'
-INFO 2026-05-11 21:58:17,997 views 12386 WEBHOOK[8b7e5418]: received batch of 1 message(s)
-/home/dev/SecureHub/backend/apps/dashboard/views.py changed, reloading.
-INFO 2026-05-11 21:58:20,448 autoreload 12386 /home/dev/SecureHub/backend/apps/dashboard/views.py changed, reloading.
-Performing system checks...
-
-System check identified no issues (0 silenced).
-
-You have 1 unapplied migration(s). Your project may not work properly until you apply the migrations for app(s): guarding.
-Run 'python manage.py migrate' to apply them.
-May 11, 2026 - 21:58:15
-Django version 5.2.12, using settings 'config.settings'
-Starting development server at http://0.0.0.0:8000/
-Quit the server with CONTROL-C.
-
-WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
-For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
-Watching for file changes with StatReloader
-INFO 2026-05-11 21:58:20,815 autoreload 12504 Watching for file changes with StatReloader
-DEBUG 2026-05-11 21:58:39,787 views 12504 Webhook Verification: signature=sha256=b7133e12f59cd428ae7950e43da11f3599a3489314637e1ccd532e68f5574d7b timestamp=1778536719351 batch_id=800f9a4701fb47e4a339c79591262ba4
-INFO 2026-05-11 21:58:39,787 views 12504 Webhook Verification: signature MATCHED for message: b'1778536719351.800f9a4701fb47e4a339c79591262ba4'
-INFO 2026-05-11 21:58:39,787 views 12504 WEBHOOK[0dfcf6c7]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:59:07,932 views 12504 Webhook Verification: signature=sha256=d79e804689eea71b480ac59701cdc64d01625d4853f40e8e76ef5333b994173d timestamp=1778536747541 batch_id=d04d3d8b2caa45db923601bd6ca94882
-INFO 2026-05-11 21:59:07,932 views 12504 Webhook Verification: signature MATCHED for message: b'1778536747541.d04d3d8b2caa45db923601bd6ca94882'
-INFO 2026-05-11 21:59:07,932 views 12504 WEBHOOK[581c20e6]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:59:10,679 views 12504 Webhook Verification: signature=sha256=3056965a4742f5ce92b475581c44f7086a1ca96f7598ce0d684efa9b3733a651 timestamp=1778536750085 batch_id=a6aab8cf6ad44944a1c09f09db76d4f6
-INFO 2026-05-11 21:59:10,679 views 12504 Webhook Verification: signature MATCHED for message: b'1778536750085.a6aab8cf6ad44944a1c09f09db76d4f6'
-INFO 2026-05-11 21:59:10,679 views 12504 WEBHOOK[08b6f28c]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:59:13,806 views 12504 Webhook Verification: signature=sha256=9a2e93d5e84ad28a1d5c7e445fae8d7777709f80bb560f54bd1378b4bedc9e79 timestamp=1778536753114 batch_id=978f8dd766ab48eaaddb8c31ff281061
-INFO 2026-05-11 21:59:13,806 views 12504 Webhook Verification: signature MATCHED for message: b'1778536753114.978f8dd766ab48eaaddb8c31ff281061'
-INFO 2026-05-11 21:59:13,806 views 12504 WEBHOOK[035e6ea1]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:59:17,665 views 12504 Webhook Verification: signature=sha256=af1939d650d074cef77ddfb3ca87dadf6f33ad57a867fed4a571def548593a02 timestamp=1778536756676 batch_id=447cd43126874932aa114e08fe0ee1a4
-INFO 2026-05-11 21:59:17,666 views 12504 Webhook Verification: signature MATCHED for message: b'1778536756676.447cd43126874932aa114e08fe0ee1a4'
-INFO 2026-05-11 21:59:17,666 views 12504 WEBHOOK[731c5cd5]: received batch of 1 message(s)
-DEBUG 2026-05-11 21:59:37,230 views 12504 Webhook Verification: signature=sha256=e4b7eb2b014f2ab61583d549b1b4114a5415a967b656d66687e57d8ad0d5b4ca timestamp=1778536777128 batch_id=d6cc695e578e40dcb8a701249b8fa303
-INFO 2026-05-11 21:59:37,230 views 12504 Webhook Verification: signature MATCHED for message: b'1778536777128.d6cc695e578e40dcb8a701249b8fa303'
-INFO 2026-05-11 21:59:37,231 views 12504 WEBHOOK[004a6506]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:00:17,674 views 12504 Webhook Verification: signature=sha256=63f462f00cb5a71adee15f4f76fcddace52fc6c8ad2ebdfad150eef03397f439 timestamp=1778536816844 batch_id=5427acd367f8471983d7ea728dc1ff0f
-INFO 2026-05-11 22:00:17,674 views 12504 Webhook Verification: signature MATCHED for message: b'1778536816844.5427acd367f8471983d7ea728dc1ff0f'
-INFO 2026-05-11 22:00:17,674 views 12504 WEBHOOK[6bcb465f]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:00:25,264 views 12504 Webhook Verification: signature=sha256=74b76160d11c90b2f391bb96f3caabf2294f22701a7fb54410f09fcb59abed12 timestamp=1778536823932 batch_id=f76bd751b680430ba68adb60cdace926
-INFO 2026-05-11 22:00:25,264 views 12504 Webhook Verification: signature MATCHED for message: b'1778536823932.f76bd751b680430ba68adb60cdace926'
-INFO 2026-05-11 22:00:25,264 views 12504 WEBHOOK[a81fbd7c]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:00:49,647 views 12504 Webhook Verification: signature=sha256=69bfeb07936c71ff666c8acf5be2f601d20a2166c1ea0261e404c61a429552fe timestamp=1778536848629 batch_id=f3732249f27c48c0b14ad01aa42e1362
-INFO 2026-05-11 22:00:49,648 views 12504 Webhook Verification: signature MATCHED for message: b'1778536848629.f3732249f27c48c0b14ad01aa42e1362'
-INFO 2026-05-11 22:00:49,649 views 12504 WEBHOOK[bbed849d]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:00:59,063 views 12504 Webhook Verification: signature=sha256=4e3bc4db826070437b1f0c7e9b88fa0d46008c356d4e7881b36bde08bce9e590 timestamp=1778536857378 batch_id=cd777820da31490db53a3d99b281198d
-INFO 2026-05-11 22:00:59,063 views 12504 Webhook Verification: signature MATCHED for message: b'1778536857378.cd777820da31490db53a3d99b281198d'
-INFO 2026-05-11 22:00:59,063 views 12504 WEBHOOK[f7e5bc1a]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:01:02,598 views 12504 Webhook Verification: signature=sha256=e027b878a4f721130f014831b75ab06090e0d4ca80a6aa44ca8afc5ba4909ff9 timestamp=1778536860640 batch_id=4650e695cf7840c9916040d4cab7f942
-INFO 2026-05-11 22:01:02,598 views 12504 Webhook Verification: signature MATCHED for message: b'1778536860640.4650e695cf7840c9916040d4cab7f942'
-INFO 2026-05-11 22:01:02,598 views 12504 WEBHOOK[393b32f5]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:01:18,142 views 12504 Webhook Verification: signature=sha256=5abd967eb648cd03d518bcdcca20253d9c107d3e0ddbf6d4624d2909c2907535 timestamp=1778536877249 batch_id=d42cb3dd869c419aba8324c3bcf850ea
-INFO 2026-05-11 22:01:18,142 views 12504 Webhook Verification: signature MATCHED for message: b'1778536877249.d42cb3dd869c419aba8324c3bcf850ea'
-INFO 2026-05-11 22:01:18,142 views 12504 WEBHOOK[b1e8d699]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:02:18,868 views 12504 Webhook Verification: signature=sha256=bbb0a253919da9bc9fc5cf3644039bebdd0c8539d90080fa1b0e2a0f1780b824 timestamp=1778536938031 batch_id=6a41796c41124f8a99d7c5b86a0c353d
-INFO 2026-05-11 22:02:18,868 views 12504 Webhook Verification: signature MATCHED for message: b'1778536938031.6a41796c41124f8a99d7c5b86a0c353d'
-INFO 2026-05-11 22:02:18,868 views 12504 WEBHOOK[b682e5b9]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:03:10,680 views 12504 Webhook Verification: signature=sha256=8a9aa333ea6ef1c26c08b8f0bc6bcb154a1407ee210618c773803b8aa0c8297a timestamp=1778536990227 batch_id=a01efa924f3c40e08f56f39e2cf4afa4
-INFO 2026-05-11 22:03:10,680 views 12504 Webhook Verification: signature MATCHED for message: b'1778536990227.a01efa924f3c40e08f56f39e2cf4afa4'
-INFO 2026-05-11 22:03:10,681 views 12504 WEBHOOK[72c65c82]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:03:17,799 views 12504 Webhook Verification: signature=sha256=9b051f4c26f3767e17ca4f5ca3a107ee9a261e81f982ea9f713c5476072ef3cc timestamp=1778536996975 batch_id=0c5bd92c1385442587a1971f9713ed77
-INFO 2026-05-11 22:03:17,800 views 12504 Webhook Verification: signature MATCHED for message: b'1778536996975.0c5bd92c1385442587a1971f9713ed77'
-INFO 2026-05-11 22:03:17,800 views 12504 WEBHOOK[b5ca00be]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:04:15,814 views 12504 Webhook Verification: signature=sha256=20eb979c859d70af7db593009ac639bff7461e30866a35d63e18a037e8a1f464 timestamp=1778537055187 batch_id=f258698f7c2a438ab7fe209a63c63dec
-INFO 2026-05-11 22:04:15,814 views 12504 Webhook Verification: signature MATCHED for message: b'1778537055187.f258698f7c2a438ab7fe209a63c63dec'
-INFO 2026-05-11 22:04:15,815 views 12504 WEBHOOK[e23aabc0]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:04:17,290 views 12504 Webhook Verification: signature=sha256=4cb3ce86361dbe7c22f0663ed7c5aeb3fc77ca2ee31e823ed8354e7abbfa783d timestamp=1778537056548 batch_id=c68eb8d747e043daa59c024bbc96b40d
-INFO 2026-05-11 22:04:17,290 views 12504 Webhook Verification: signature MATCHED for message: b'1778537056548.c68eb8d747e043daa59c024bbc96b40d'
-INFO 2026-05-11 22:04:17,290 views 12504 WEBHOOK[34e934bf]: received batch of 1 message(s)
-DEBUG 2026-05-11 22:05:19,062 views 12504 Webhook Verification: signature=sha256=f09f5160cd905322659d70dd88d23f40c3473af96be435b20aed00263e243e6f timestamp=1778537118368 batch_id=d35d209e82c3492ca1db5e44f0a11863
-INFO 2026-05-11 22:05:19,062 views 12504 Webhook Verification: signature MATCHED for message: b'1778537118368.d35d209e82c3492ca1db5e44f0a11863'
-INFO 2026-05-11 22:05:19,062 views 12504 WEBHOOK[4bcecfa9]: received batch of 1 message(s)
+INFO 2026-05-24 20:12:48,276 autoreload 374579 Watching for file changes with StatReloader
+DEBUG 2026-05-24 20:12:49,711 views 374579 Webhook Verification: signature=sha256=c9ae44fc9f8c6d35597ee89f8042f3d8707ab403da5fee3f6f9fcff3fbdabbbe timestamp=1779653570124 batch_id=52937c42147c4f8fa3d57433789f719b
+INFO 2026-05-24 20:12:49,711 views 374579 Webhook Verification: signature MATCHED for message: b'1779653570124.52937c42147c4f8fa3d57433789f719b'
+INFO 2026-05-24 20:12:49,711 views 374579 WEBHOOK[b6621bef]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:12:51,617 views 374579 Webhook Verification: signature=sha256=885b2273c2ba92eb8cc26360cd4a5db9ee1b7fc36f667a8ef02e73ddcd77b03f timestamp=1779653571937 batch_id=61e519deb4e04ce09b2363ef69e25ecb
+INFO 2026-05-24 20:12:51,618 views 374579 Webhook Verification: signature MATCHED for message: b'1779653571937.61e519deb4e04ce09b2363ef69e25ecb'
+INFO 2026-05-24 20:12:51,618 views 374579 WEBHOOK[82bd367e]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:13:00,105 views 374579 Webhook Verification: signature=sha256=f267430e8f2f7842e83cfeb95bae8f315ecce590cf38696d7dbc9950c32491b5 timestamp=1779653580630 batch_id=b9e73edfdc044c6d8db4ec56e48858ed
+INFO 2026-05-24 20:13:00,105 views 374579 Webhook Verification: signature MATCHED for message: b'1779653580630.b9e73edfdc044c6d8db4ec56e48858ed'
+INFO 2026-05-24 20:13:00,105 views 374579 WEBHOOK[22d3d407]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:13:27,530 views 374579 Webhook Verification: signature=sha256=c9e016024938247e4e2088b87e67f5d7a4498b07f323a6ae625fffa5a54847a4 timestamp=1779653608034 batch_id=9321fd3e573e4f4da78ccee0a48c4850
+INFO 2026-05-24 20:13:27,530 views 374579 Webhook Verification: signature MATCHED for message: b'1779653608034.9321fd3e573e4f4da78ccee0a48c4850'
+INFO 2026-05-24 20:13:27,530 views 374579 WEBHOOK[10f5a8f5]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:13:50,793 views 374579 Webhook Verification: signature=sha256=80db0c913a0554a40f42147ee67104c0a23704d3d09fed7711efcbbdf976c012 timestamp=1779653630597 batch_id=4fe3b768484246279f37c64bc5916fa0
+INFO 2026-05-24 20:13:50,794 views 374579 Webhook Verification: signature MATCHED for message: b'1779653630597.4fe3b768484246279f37c64bc5916fa0'
+INFO 2026-05-24 20:13:50,794 views 374579 WEBHOOK[d2d3f7b3]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:14:28,691 views 374579 Webhook Verification: signature=sha256=0050dfd31eb21f1abd1e34da53a57963b5b1e5292c9e47f703e77507cee5a0a2 timestamp=1779653668639 batch_id=1a0355c89c624100913154baaec901ec
+INFO 2026-05-24 20:14:28,691 views 374579 Webhook Verification: signature MATCHED for message: b'1779653668639.1a0355c89c624100913154baaec901ec'
+INFO 2026-05-24 20:14:28,692 views 374579 WEBHOOK[4212074b]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:14:48,581 views 374579 Webhook Verification: signature=sha256=6ce44657f4dd2fdae3f2c0a95b32a4ea0b62b9f0224a298753fa320631a5ffa3 timestamp=1779653688983 batch_id=892d27a9245545f3b98ba929ca02d61e
+INFO 2026-05-24 20:14:48,581 views 374579 Webhook Verification: signature MATCHED for message: b'1779653688983.892d27a9245545f3b98ba929ca02d61e'
+INFO 2026-05-24 20:14:48,582 views 374579 WEBHOOK[2d3e4d0f]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:15:06,969 views 374579 Webhook Verification: signature=sha256=c2956dc95fc547375de574d3143d3424f9d7ccc552909abc8bf9ebe6c3d6df85 timestamp=1779653707192 batch_id=bc9b7226019e45389ac70092d4b8f2ad
+INFO 2026-05-24 20:15:06,970 views 374579 Webhook Verification: signature MATCHED for message: b'1779653707192.bc9b7226019e45389ac70092d4b8f2ad'
+INFO 2026-05-24 20:15:06,970 views 374579 WEBHOOK[eb20ab6d]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:15:12,696 views 374579 Webhook Verification: signature=sha256=7011b1b01d3be4f80d3c46b11c5fa5092ad8ae7665fd20fc9efc5cd75283dd65 timestamp=1779653713042 batch_id=5b9f27ff0e8d4c5c932eec9f79659510
+INFO 2026-05-24 20:15:12,696 views 374579 Webhook Verification: signature MATCHED for message: b'1779653713042.5b9f27ff0e8d4c5c932eec9f79659510'
+INFO 2026-05-24 20:15:12,696 views 374579 WEBHOOK[5672e5e3]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:15:29,395 views 374579 Webhook Verification: signature=sha256=122d305dee5101c03be9c04ff4b47fcc8c81a4a973215505b9497d45f309d3cb timestamp=1779653729322 batch_id=ee91d75a03ca4d889532c178d8e0a3f2
+INFO 2026-05-24 20:15:29,395 views 374579 Webhook Verification: signature MATCHED for message: b'1779653729322.ee91d75a03ca4d889532c178d8e0a3f2'
+INFO 2026-05-24 20:15:29,395 views 374579 WEBHOOK[c257cde0]: received batch of 1 message(s)
+DEBUG 2026-05-24 20:16:28,550 views 374579 Webhook Verification: signature=sha256=6fa97557df5d77ac44e9f8f7a3dd5ecc71ed5cda0e97f13e16aac07291cbf0ce timestamp=1779653788836 batch_id=586400e74f2949c29c2cdd44b7ff17ee
+INFO 2026-05-24 20:16:28,551 views 374579 Webhook Verification: signature MATCHED for message: b'1779653788836.586400e74f2949c29c2cdd44b7ff17ee'
+INFO 2026-05-24 20:16:28,551 views 374579 WEBHOOK[b84b8ccf]: received batch of 1 message(s)
