@@ -39,6 +39,7 @@ services:
       DJANGO_DB_HOST: db
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+      DJANGO_CACHE_URL: redis://redis:6379/1
     volumes:
       - static_files:/app/staticfiles
       - firebase_creds:/run/secrets:ro
@@ -47,8 +48,7 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    ports:
-      - "172.16.20.245:8000:8000"
+    # Traffic enters via nginx only — do not publish Gunicorn to the host.
 
   celery-worker:
     build:
@@ -61,6 +61,7 @@ services:
       DJANGO_DB_HOST: db
       CELERY_BROKER_URL: redis://redis:6379/0
       CELERY_RESULT_BACKEND: redis://redis:6379/0
+      DJANGO_CACHE_URL: redis://redis:6379/1
     volumes:
       - firebase_creds:/run/secrets:ro
     depends_on:

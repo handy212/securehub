@@ -19,9 +19,11 @@ backend/*.sqlite3-journal
 backend/firebase/*.json
 
 
-mobile/.dart_tool/
-mobile/.flutter-plugins
-mobile/.flutter-plugins-dependencies
-mobile/.packages
-mobile/build/
-mobile/.idea/
+backups/
+
+securehub_mobile/.dart_tool/
+securehub_mobile/.flutter-plugins
+securehub_mobile/.flutter-plugins-dependencies
+securehub_mobile/.packages
+securehub_mobile/build/
+securehub_mobile/.idea/

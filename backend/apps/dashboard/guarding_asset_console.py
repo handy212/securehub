@@ -37,12 +37,9 @@ from apps.guarding.asset_services import (
 from apps.guarding.models import GuardPost, ShiftAssignment
 from apps.sites.models import Site
 
+from .mixins import GuardingOverviewMixin
+from .parsers import parse_decimal_field, parse_int_field
 from .permissions import StaffRequiredMixin
-from .views import (
-    GuardingOverviewMixin,
-    _parse_int_field,
-    _parse_decimal_field,
-)
 
 MANIFEST_ACTIONS = frozenset(
     {
@@ -188,7 +185,7 @@ class GuardingAssetsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                     requires_return=not bool(request.POST.get("no_return")),
                     is_active=not bool(request.POST.get("inactive")),
                     replacement_cost=(
-                        _parse_decimal_field(request.POST.get("replacement_cost"), label="Replacement cost")
+                        parse_decimal_field(request.POST.get("replacement_cost"), label="Replacement cost")
                         if request.POST.get("replacement_cost")
                         else None
                     ),
@@ -205,7 +202,7 @@ class GuardingAssetsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                 asset_type.requires_return = not bool(request.POST.get("no_return"))
                 asset_type.is_active = not bool(request.POST.get("inactive"))
                 asset_type.replacement_cost = (
-                    _parse_decimal_field(request.POST.get("replacement_cost"), label="Replacement cost")
+                    parse_decimal_field(request.POST.get("replacement_cost"), label="Replacement cost")
                     if request.POST.get("replacement_cost")
                     else None
                 )
@@ -312,7 +309,7 @@ class GuardingAssetsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                 asset_type = get_object_or_404(GuardAssetType, pk=request.POST.get("asset_type_id"))
                 depot = get_object_or_404(GuardAssetDepot, pk=request.POST.get("depot_id"))
                 stock, _ = GuardAssetStock.objects.get_or_create(asset_type=asset_type, depot=depot)
-                stock.quantity_on_hand = _parse_int_field(
+                stock.quantity_on_hand = parse_int_field(
                     request.POST.get("quantity_on_hand") or 0,
                     label="Quantity on hand",
                     min_value=0,
@@ -321,12 +318,12 @@ class GuardingAssetsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                 messages.success(request, "Stock level updated.")
             elif action == "update_stock":
                 stock = get_object_or_404(GuardAssetStock, pk=request.POST.get("stock_id"))
-                stock.quantity_on_hand = _parse_int_field(
+                stock.quantity_on_hand = parse_int_field(
                     request.POST.get("quantity_on_hand") or 0,
                     label="Quantity on hand",
                     min_value=0,
                 )
-                stock.quantity_reserved = _parse_int_field(
+                stock.quantity_reserved = parse_int_field(
                     request.POST.get("quantity_reserved") or 0,
                     label="Quantity reserved",
                     min_value=0,
@@ -369,7 +366,7 @@ class GuardingAssetsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
                     kit=kit,
                     asset_type=get_object_or_404(GuardAssetType, pk=request.POST.get("asset_type_id")),
                     defaults={
-                        "quantity_required": _parse_int_field(
+                        "quantity_required": parse_int_field(
                             request.POST.get("quantity_required") or 1,
                             label="Quantity",
                             min_value=1,
@@ -381,7 +378,7 @@ class GuardingAssetsView(StaffRequiredMixin, GuardingOverviewMixin, TemplateView
             elif action == "update_kit_line":
                 line = get_object_or_404(PostAssetKitLine, pk=request.POST.get("kit_line_id"))
                 line.asset_type = get_object_or_404(GuardAssetType, pk=request.POST.get("asset_type_id"))
-                line.quantity_required = _parse_int_field(
+                line.quantity_required = parse_int_field(
                     request.POST.get("quantity_required") or 1,
                     label="Quantity",
                     min_value=1,
@@ -446,7 +443,7 @@ def handle_shifts_asset_action(request):
         add_manifest_line(
             manifest,
             asset_type=get_object_or_404(GuardAssetType, pk=request.POST.get("asset_type_id")),
-            expected_qty=_parse_int_field(request.POST.get("expected_qty") or 1, label="Expected qty", min_value=1),
+            expected_qty=parse_int_field(request.POST.get("expected_qty") or 1, label="Expected qty", min_value=1),
             notes=request.POST.get("notes", "").strip(),
         )
         messages.success(request, "Manifest line added.")
@@ -456,7 +453,7 @@ def handle_shifts_asset_action(request):
         line = get_object_or_404(ShiftAssetManifestLine, pk=request.POST.get("line_id"))
         update_manifest_line(
             line,
-            expected_qty=_parse_int_field(request.POST.get("expected_qty") or 1, label="Expected qty", min_value=1),
+            expected_qty=parse_int_field(request.POST.get("expected_qty") or 1, label="Expected qty", min_value=1),
             notes=request.POST.get("notes", "").strip(),
         )
         messages.success(request, "Manifest line updated.")
@@ -489,7 +486,7 @@ def handle_shifts_asset_action(request):
         issue_manifest_line(
             line,
             asset_unit=unit,
-            quantity=_parse_int_field(request.POST.get("quantity") or 1, label="Quantity", min_value=1),
+            quantity=parse_int_field(request.POST.get("quantity") or 1, label="Quantity", min_value=1),
             condition_out=request.POST.get("condition_out", "").strip(),
             issued_by=request.user,
             depot=depot,
@@ -500,7 +497,7 @@ def handle_shifts_asset_action(request):
         qty_raw = request.POST.get("quantity")
         return_manifest_line(
             line,
-            quantity=_parse_int_field(qty_raw, label="Quantity", min_value=1) if qty_raw else None,
+            quantity=parse_int_field(qty_raw, label="Quantity", min_value=1) if qty_raw else None,
             condition_in=request.POST.get("condition_in", "").strip(),
             status=request.POST.get("line_status") or None,
             returned_by=request.user,
@@ -564,7 +561,7 @@ def handle_posts_asset_action(request):
             kit=kit,
             asset_type=get_object_or_404(GuardAssetType, pk=request.POST.get("asset_type_id")),
             defaults={
-                "quantity_required": _parse_int_field(
+                "quantity_required": parse_int_field(
                     request.POST.get("quantity_required") or 1,
                     label="Quantity",
                     min_value=1,

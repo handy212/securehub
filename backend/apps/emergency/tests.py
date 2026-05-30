@@ -14,6 +14,8 @@ from apps.emergency.models import (
     EmergencyServicePlan,
     SiteEmergencyService,
 )
+from apps.accounts.models import StaffOperatorProfile
+from apps.accounts.rbac import OperatorRole
 from apps.sites.models import CustomerSiteAccess, Site, Subscription, SubscriptionPackage
 
 
@@ -30,6 +32,7 @@ class EmergencyApiTests(APITestCase):
             email="operator@example.com",
             is_staff=True,
         )
+        StaffOperatorProfile.objects.create(user=self.staff, role=OperatorRole.PLATFORM_ADMIN)
         self.site = Site.objects.create(
             name="Main Residence",
             hik_site_id="site-001",
@@ -251,7 +254,7 @@ class EmergencyApiTests(APITestCase):
         response = self.client.get(reverse("dashboard:emergency-services"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertContains(response, "Emergency Add-ons")
+        self.assertContains(response, "Emergency add-ons")
 
     def test_emergency_console_is_incident_queue_without_embedded_map(self):
         EmergencyRequest.objects.create(
@@ -265,9 +268,9 @@ class EmergencyApiTests(APITestCase):
         response = self.client.get(reverse("dashboard:emergency"))
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertContains(response, "Emergency Dispatch")
+        self.assertContains(response, "Emergency dispatch")
         self.assertContains(response, "Incident Queue")
-        self.assertContains(response, "Client Map")
+        self.assertContains(response, "Open client map")
         self.assertNotContains(response, "Map System")
         self.assertNotContains(response, 'id="map"')
         self.assertNotContains(response, 'id="sites-data"')

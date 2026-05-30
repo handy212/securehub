@@ -3,6 +3,8 @@ import uuid
 from django.conf import settings
 from django.db import models
 
+from apps.accounts.rbac import OperatorRole
+
 
 class CustomerGroup(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -49,24 +51,7 @@ class CustomerProfile(models.Model):
 class StaffOperatorProfile(models.Model):
     """Role-based access for operator console staff (is_staff users)."""
 
-    class Role:
-        PLATFORM_ADMIN = "platform_admin"
-        OPERATIONS = "operations"
-        GUARDING = "guarding"
-        DISPATCHER = "dispatcher"
-        BILLING = "billing"
-        SUPPORT = "support"
-        AUDITOR = "auditor"
-
-        CHOICES = (
-            (PLATFORM_ADMIN, "Platform administrator"),
-            (OPERATIONS, "Operations"),
-            (GUARDING, "Guarding"),
-            (DISPATCHER, "Dispatcher"),
-            (BILLING, "Billing"),
-            (SUPPORT, "Support"),
-            (AUDITOR, "Auditor (read-only)"),
-        )
+    Role = OperatorRole
 
     @staticmethod
     def default_role_for_user(user) -> str:
@@ -79,7 +64,11 @@ class StaffOperatorProfile(models.Model):
         on_delete=models.CASCADE,
         related_name="operator_profile",
     )
-    role = models.CharField(max_length=32, choices=Role.CHOICES, default=Role.OPERATIONS)
+    role = models.CharField(
+        max_length=32,
+        choices=OperatorRole.CHOICES,
+        default=OperatorRole.OPERATIONS,
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

@@ -6,10 +6,10 @@ This workspace currently contains the Hik-Partner Pro API guide and a proposed p
 
 The workspace now includes:
 
-- [backend](/home/dev/SecureHub/backend) with a Django + Django REST Framework scaffold
-- [mobile](/home/dev/SecureHub/mobile) with a Flutter app scaffold
+- [backend](/home/dev/SecureHub/backend) with a Django + Django REST Framework API and staff console
+- [securehub_mobile](/home/dev/SecureHub/securehub_mobile) with the Flutter mobile app
 - [backend/README.md](/home/dev/SecureHub/backend/README.md) with backend setup notes
-- [mobile/README.md](/home/dev/SecureHub/mobile/README.md) with mobile integration notes
+- [securehub_mobile/README.md](/home/dev/SecureHub/securehub_mobile/README.md) with mobile integration notes
 
 ## Documentation
 

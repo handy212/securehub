@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../auth/token_storage.dart';
 import 'auth_interceptor.dart';
+import 'certificate_pinning.dart';
 import 'exceptions.dart';
 
 part 'api_client.g.dart';
@@ -58,6 +59,11 @@ Dio dio(Ref ref) {
       receiveTimeout: const Duration(seconds: 30),
       headers: {'Content-Type': 'application/json'},
     ),
+  );
+
+  configureCertificatePinning(
+    dioInstance,
+    baseUri: Uri.parse(_baseUrl),
   );
 
   dioInstance.interceptors.add(

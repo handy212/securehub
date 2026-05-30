@@ -153,6 +153,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "EXCEPTION_HANDLER": "config.exceptions.securehub_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
@@ -187,6 +188,37 @@ SPECTACULAR_SETTINGS = {
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+
+# Shared cache (login lockout, site panic capability, etc.). Use Redis in production
+# so counts are consistent across Gunicorn workers. Celery uses DB 0; cache uses DB 1.
+_CACHE_URL = os.getenv("DJANGO_CACHE_URL", "").strip()
+if not _CACHE_URL and not TESTING and not USE_SQLITE:
+    _redis_base = CELERY_BROKER_URL.rsplit("/", 1)[0]
+    _CACHE_URL = f"{_redis_base}/1"
+
+if TESTING:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "securehub-test",
+        }
+    }
+elif _CACHE_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _CACHE_URL,
+            "OPTIONS": {
+                "socket_connect_timeout": 5,
+            },
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
@@ -200,8 +232,15 @@ CELERY_TASK_ROUTES = {
     "apps.alarms.tasks.process_webhook_messages": {"queue": "webhook"},
 }
 # Set CELERY_TASK_ALWAYS_EAGER=True in .env to run tasks synchronously (no worker needed — dev only).
-CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "False").lower() == "true"
+CELERY_TASK_ALWAYS_EAGER = os.getenv(
+    "CELERY_TASK_ALWAYS_EAGER",
+    "True" if TESTING else "False",
+).lower() == "true"
 CELERY_TASK_EAGER_PROPAGATES = CELERY_TASK_ALWAYS_EAGER
+if TESTING:
+    CELERY_BROKER_URL = "memory://"
+    CELERY_RESULT_BACKEND = "cache+memory://"
+    CELERY_TASK_STORE_EAGER_RESULT = True
 
 HIK_DELIVERY_MODE = os.getenv("HIK_PARTNER_DELIVERY_MODE", "mq").lower()
 HIK_MQ_POLL_INTERVAL_SECONDS = float(os.getenv("HIK_MQ_POLL_INTERVAL_SECONDS", "25"))

@@ -17,7 +17,7 @@ from apps.sites.permissions import HasSiteAccess
 from apps.alarms.models import AlarmEvent
 from apps.hik_adapter.services import HikPartnerService
 from apps.dashboard.event_presenters import serialize_console_event
-from apps.dashboard.views import _build_active_faults, _visible_console_events
+from apps.dashboard.site_helpers import build_active_faults, visible_console_events
 from apps.guarding.services import build_command_center_snapshot
 from apps.guarding.models import SiteGuardDispatchPolicy
 
@@ -136,8 +136,8 @@ class SiteStatusPollView(APIView):
         site_status = service.get_site_status(site=site)
         
         # Get most recent events
-        recent_events = _visible_console_events(site, limit=15)
-        active_faults = _build_active_faults(site)
+        recent_events = visible_console_events(site, limit=15)
+        active_faults = build_active_faults(site)
 
         return Response({
             "siteId": str(site.id),

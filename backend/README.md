@@ -51,6 +51,23 @@ There are two supported local Celery modes:
 
 For safe local Hikvision testing, set `HIK_PARTNER_DRY_RUN=True`. With `HIK_PARTNER_DRY_RUN=False`, periodic tasks and command actions will call the live Hik-Partner API.
 
+## Production deploy
+
+From the repository root on the server:
+
+```bash
+./deploy.sh          # pull, build, migrate, check --deploy, collectstatic
+./deploy.sh --full   # rebuild images without cache
+```
+
+- Copy `backend/.env.example` to `backend/.env.production` and set secrets (`DJANGO_SECRET_KEY`, Hik, Hubtel, Firebase path, `HIK_PARTNER_WEBHOOK_SIGN_SECRET`, etc.).
+- Set `DJANGO_CACHE_URL=redis://redis:6379/1` (included in `docker-compose.prod.yml` for `web`).
+- Set `ENABLE_API_DOCS=False` unless you intentionally expose OpenAPI on the public host.
+- Gunicorn is **not** published on the host; use Nginx on ports 80/443 only.
+- Schedule PostgreSQL backups: `cron` running `./scripts/backup_postgres.sh` (writes to `./backups/` by default).
+
+`GET /healthz/` returns database and Redis cache status (503 if either is down).
+
 ## PDF-Verified Integration Notes
 
 - `POST /api/hpcgw/v1/token/get` returns an access token and an `areaDomain`; follow-up calls should use that returned area domain.

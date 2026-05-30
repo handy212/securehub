@@ -12,7 +12,7 @@ import json
 
 from apps.alarms.models import AlarmEvent
 from apps.communication.models import BroadcastMessage
-from apps.dashboard.views import CONSOLE_LOGIN_ATTEMPT_LIMIT
+from apps.dashboard.console_auth import CONSOLE_LOGIN_ATTEMPT_LIMIT
 from apps.hik_adapter.exceptions import HikPartnerError
 from apps.accounts.models import StaffOperatorProfile
 from apps.accounts.rbac import OperatorRole
@@ -38,6 +38,30 @@ class DashboardFlowTests(TestCase):
             email="staff-operator@example.com",
             password="Secret123!",
             is_staff=True,
+        )
+        StaffOperatorProfile.objects.get_or_create(
+            user=self.staff,
+            defaults={"role": OperatorRole.OPERATIONS},
+        )
+        self.platform_staff = User.objects.create_user(
+            username="platform-operator",
+            email="platform-operator@example.com",
+            password="Secret123!",
+            is_staff=True,
+        )
+        StaffOperatorProfile.objects.get_or_create(
+            user=self.platform_staff,
+            defaults={"role": OperatorRole.PLATFORM_ADMIN},
+        )
+        self.billing_staff = User.objects.create_user(
+            username="billing-operator",
+            email="billing-operator@example.com",
+            password="Secret123!",
+            is_staff=True,
+        )
+        StaffOperatorProfile.objects.get_or_create(
+            user=self.billing_staff,
+            defaults={"role": OperatorRole.BILLING},
         )
         self.superuser = User.objects.create_user(
             username="super-operator",
@@ -109,16 +133,16 @@ class DashboardFlowTests(TestCase):
         self.assertIn("console.testserver/console/password-reset/", mail.outbox[0].body)
 
     def test_staff_sees_platform_status_and_global_map_labels(self):
-        self.client.force_login(self.staff)
+        self.client.force_login(self.platform_staff)
 
         settings_response = self.client.get(reverse("dashboard:settings"))
         map_response = self.client.get(reverse("dashboard:site-map"))
 
         self.assertContains(settings_response, "Platform Status")
-        self.assertContains(settings_response, "Live Ops")
+        self.assertContains(settings_response, "Live ops")
         self.assertContains(map_response, "Global Map")
-        self.assertContains(map_response, "Fit View")
-        self.assertContains(map_response, "Scene Legend")
+        self.assertContains(map_response, "Fit view")
+        self.assertContains(map_response, "Legend")
 
     def test_logs_filter_uses_event_category_and_display_name(self):
         AlarmEvent.objects.create(
@@ -509,7 +533,7 @@ class DashboardFlowTests(TestCase):
         self.assertContains(response, '@submit="actionBusy = true"')
         self.assertNotContains(response, 'actionBusy = true; panicModal = false')
 
-    @patch("apps.dashboard.views.HikPartnerService.get_site_panic_capability")
+    @patch("apps.dashboard.views_sites.HikPartnerService.get_site_panic_capability")
     def test_site_console_marks_silent_panic_unavailable_when_panel_is_audible_only(self, mock_capability):
         mock_capability.return_value = {
             "audible_enabled": True,
@@ -524,11 +548,11 @@ class DashboardFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "This site supports audible panic only through Hik-Partner Pro.")
-        self.assertContains(response, "Silent Panic Unavailable")
+        self.assertContains(response, "Silent panic unavailable")
         self.assertNotContains(response, 'name="panic_type" value="silent"', html=False)
 
-    @patch("apps.dashboard.views.HikPartnerService.trigger_global_panic")
-    @patch("apps.dashboard.views.HikPartnerService.get_site_panic_capability")
+    @patch("apps.dashboard.views_sites.HikPartnerService.trigger_global_panic")
+    @patch("apps.dashboard.views_sites.HikPartnerService.get_site_panic_capability")
     def test_panic_action_rejects_unsupported_silent_panic_before_dispatch(
         self,
         mock_capability,
@@ -553,7 +577,7 @@ class DashboardFlowTests(TestCase):
         self.assertContains(response, "This site supports audible panic only through Hik-Partner Pro.")
         mock_trigger_global_panic.assert_not_called()
 
-    @patch("apps.dashboard.views.HikPartnerService.geocode_site_location")
+    @patch("apps.dashboard.views_ops.HikPartnerService.geocode_site_location")
     def test_global_map_backfills_coordinates_for_site_with_address(self, mock_geocode):
         self.site.address = "15 Industrial Estate"
         self.site.city = "Accra"
@@ -750,7 +774,7 @@ class DashboardFlowTests(TestCase):
         self.assertFalse(response.context["has_online_control_areas"])
         self.assertContains(response, "Controls paused: no online panels are available.")
 
-    @patch("apps.dashboard.views.HikPartnerService.execute_subsystem_command")
+    @patch("apps.dashboard.views_sites.HikPartnerService.execute_subsystem_command")
     def test_global_arm_treats_hik_unreachable_as_offline_skip(self, mock_execute):
         device = AlarmPanelDevice.objects.create(
             site=self.site,
@@ -855,7 +879,7 @@ class DashboardFlowTests(TestCase):
         self.assertNotIn(response.context["client_password"], email.body)
 
     def test_create_subscription_rejects_invalid_billing_day(self):
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         response = self.client.post(
             reverse("dashboard:subscription-create"),
@@ -873,7 +897,7 @@ class DashboardFlowTests(TestCase):
         self.assertFalse(Subscription.objects.filter(site=self.site).exists())
 
     def test_create_subscription_with_past_due_date_starts_overdue(self):
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         response = self.client.post(
             reverse("dashboard:subscription-create"),
@@ -898,7 +922,7 @@ class DashboardFlowTests(TestCase):
             grace_period_days=7,
             next_due_date=date(2026, 5, 1),
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         response = self.client.post(
             reverse("dashboard:subscription-pay", args=[subscription.pk]),
@@ -930,7 +954,7 @@ class DashboardFlowTests(TestCase):
             period_end=date(2026, 4, 30),
             recorded_by=self.staff,
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         response = self.client.post(
             reverse("dashboard:subscription-pay", args=[subscription.pk]),
@@ -955,7 +979,7 @@ class DashboardFlowTests(TestCase):
             next_due_date=date(2026, 5, 1),
             status=Subscription.STATUS_SUSPENDED,
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         response = self.client.post(
             reverse("dashboard:subscription-suspend", args=[subscription.pk]),
@@ -984,7 +1008,7 @@ class DashboardFlowTests(TestCase):
             next_due_date=date(2026, 5, 1),
             status=Subscription.STATUS_ACTIVE,
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         response = self.client.post(
             reverse("dashboard:subscription-suspend", args=[subscription.pk]),
@@ -1100,7 +1124,7 @@ class DashboardFlowTests(TestCase):
             grace_period_days=7,
             next_due_date=date(2026, 5, 1),
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         update_response = self.client.post(
             reverse("dashboard:subscription-update", args=[subscription.pk]),
@@ -1134,7 +1158,7 @@ class DashboardFlowTests(TestCase):
             grace_period_days=7,
             next_due_date=date(2026, 5, 1),
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         response = self.client.post(
             reverse("dashboard:subscription-cancel", args=[subscription.pk]),
@@ -1152,7 +1176,7 @@ class DashboardFlowTests(TestCase):
             next_due_date=date.today() + timedelta(days=5),
             status=Subscription.STATUS_ACTIVE,
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         response = self.client.post(
             reverse("dashboard:subscription-update", args=[subscription.pk]),
@@ -1302,7 +1326,7 @@ class DashboardFlowTests(TestCase):
             period_end=date(2026, 4, 30),
             recorded_by=self.staff,
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         update_response = self.client.post(
             reverse("dashboard:payment-update", args=[payment.pk]),
@@ -1343,7 +1367,7 @@ class DashboardFlowTests(TestCase):
             status=Subscription.STATUS_SUSPENDED,
             suspended_at=timezone.now(),
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         response = self.client.post(
             reverse("dashboard:subscription-reactivate", args=[subscription.pk]),
@@ -1368,7 +1392,7 @@ class DashboardFlowTests(TestCase):
             status=Subscription.STATUS_CANCELLED,
             suspended_at=timezone.now(),
         )
-        self.client.force_login(self.staff)
+        self.client.force_login(self.billing_staff)
 
         response = self.client.post(
             reverse("dashboard:subscription-reactivate", args=[subscription.pk]),
@@ -1428,6 +1452,10 @@ class OperationsZoneTests(TestCase):
             email="ops-zone@example.com",
             password="Secret123!",
             is_staff=True,
+        )
+        StaffOperatorProfile.objects.get_or_create(
+            user=self.staff,
+            defaults={"role": OperatorRole.OPERATIONS},
         )
         self.auditor = User.objects.create_user(
             username="ops-zone-auditor",
