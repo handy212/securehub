@@ -7,6 +7,7 @@ class SessionProfile {
     required this.accountKind,
     this.guardProfileId = '',
     this.guardEmployeeNumber = '',
+    this.hasGuardingClientAccess = false,
     this.isStaff = false,
   });
 
@@ -14,6 +15,7 @@ class SessionProfile {
   final String accountKind;
   final String guardProfileId;
   final String guardEmployeeNumber;
+  final bool hasGuardingClientAccess;
   final bool isStaff;
 
   bool get isGuard => accountKind == 'guard';
@@ -25,6 +27,8 @@ class SessionProfile {
       accountKind: json['account_kind'] as String? ?? 'customer',
       guardProfileId: json['guard_profile_id'] as String? ?? '',
       guardEmployeeNumber: json['guard_employee_number'] as String? ?? '',
+      hasGuardingClientAccess:
+          json['has_guarding_client_access'] as bool? ?? false,
       isStaff: json['is_staff'] as bool? ?? false,
     );
   }

@@ -17,6 +17,7 @@ import '../../features/sites/screens/camera_live_screen.dart';
 import '../../features/profile/screens/profile_screen.dart';
 import '../../features/devices/screens/device_list_screen.dart';
 import '../../features/activities/screens/activities_screen.dart';
+import '../../features/client_guarding/screens/client_guarding_screen.dart';
 import '../../features/menu/screens/menu_screen.dart';
 import '../../features/profile/screens/notification_settings_screen.dart';
 import '../../features/profile/screens/help_screen.dart';
@@ -60,20 +61,21 @@ GoRouter appRouter(Ref ref) {
     redirect: (context, state) {
       final authState = ref.read(authNotifierProvider);
       final isLoading = authState is AuthLoading;
-      final isAuthenticated = authState is AuthAuthenticated;
+      final authenticated = authState is AuthAuthenticated ? authState : null;
+      final isAuthenticated = authenticated != null;
 
       final isLoginRoute = state.matchedLocation == '/login';
       final isLoadingRoute = state.matchedLocation == '/loading';
 
       if (isLoading && !isLoadingRoute && !isLoginRoute) return '/loading';
       if (!isLoading && !isAuthenticated && !isLoginRoute) return '/login';
-      if (isAuthenticated && (isLoginRoute || isLoadingRoute)) {
-        final authenticated = authState as AuthAuthenticated;
+      if (authenticated != null && (isLoginRoute || isLoadingRoute)) {
         return authenticated.isGuard ? '/guard/home' : '/home';
       }
 
-      final isGuard =
-          isAuthenticated && (authState as AuthAuthenticated).isGuard;
+      final isGuard = authenticated?.isGuard ?? false;
+      final hasGuardingClientAccess =
+          authenticated?.session.hasGuardingClientAccess ?? false;
 
       // Global Account Suspension Check (customer accounts only)
       if (isAuthenticated && !isGuard) {
@@ -98,6 +100,11 @@ GoRouter appRouter(Ref ref) {
 
       if (isGuard && !state.matchedLocation.startsWith('/guard')) {
         return '/guard/home';
+      }
+      if (!isGuard &&
+          state.matchedLocation.startsWith('/guarding') &&
+          !hasGuardingClientAccess) {
+        return '/menu';
       }
 
       // Redirect to specific site if landing on /home
@@ -164,10 +171,22 @@ GoRouter appRouter(Ref ref) {
           assignmentId: state.extra is String ? state.extra as String : null,
         ),
       ),
-      GoRoute(path: '/guard/dispatch', builder: (_, _) => const GuardDispatchScreen()),
-      GoRoute(path: '/guard/panic', builder: (_, _) => const GuardPanicScreen()),
-      GoRoute(path: '/guard/report', builder: (_, _) => const GuardReportScreen()),
-      GoRoute(path: '/guard/welfare', builder: (_, _) => const GuardWelfareScreen()),
+      GoRoute(
+        path: '/guard/dispatch',
+        builder: (_, _) => const GuardDispatchScreen(),
+      ),
+      GoRoute(
+        path: '/guard/panic',
+        builder: (_, _) => const GuardPanicScreen(),
+      ),
+      GoRoute(
+        path: '/guard/report',
+        builder: (_, _) => const GuardReportScreen(),
+      ),
+      GoRoute(
+        path: '/guard/welfare',
+        builder: (_, _) => const GuardWelfareScreen(),
+      ),
       GoRoute(
         path: '/guard/scan',
         builder: (context, state) => GuardPatrolScanScreen(
@@ -202,7 +221,7 @@ GoRouter appRouter(Ref ref) {
                                 color: Colors.grey,
                               ),
                               const SizedBox(height: 16),
-                              Text(
+                              const Text(
                                 'Unable to connect to Secure Hub',
                                 style: TextStyle(fontWeight: FontWeight.bold),
                               ),
@@ -210,14 +229,15 @@ GoRouter appRouter(Ref ref) {
                               Text(
                                 err.toString(),
                                 textAlign: TextAlign.center,
-                                style: TextStyle(
+                                style: const TextStyle(
                                   color: Colors.grey,
                                   fontSize: 12,
                                 ),
                               ),
                               const SizedBox(height: 24),
                               FilledButton.icon(
-                                onPressed: () => ref.invalidate(siteListProvider),
+                                onPressed: () =>
+                                    ref.invalidate(siteListProvider),
                                 icon: const Icon(Icons.refresh),
                                 label: const Text('Retry Connection'),
                               ),
@@ -285,6 +305,11 @@ GoRouter appRouter(Ref ref) {
                 const ActivitiesScreen(key: ValueKey('activities')),
           ),
           GoRoute(
+            path: '/guarding',
+            builder: (_, _) =>
+                const ClientGuardingScreen(key: ValueKey('guarding')),
+          ),
+          GoRoute(
             path: '/menu',
             builder: (_, _) => const MenuScreen(key: ValueKey('menu')),
             routes: [
@@ -304,6 +329,3 @@ GoRouter appRouter(Ref ref) {
     ],
   );
 }
-
-
-

@@ -1277,6 +1277,7 @@ class ClientPortalAccess(models.Model):
     can_view_reports = models.BooleanField(default=True)
     can_view_patrols = models.BooleanField(default=True)
     can_view_attendance = models.BooleanField(default=True)
+    can_view_guards = models.BooleanField(default=False)
     can_acknowledge_reports = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
 

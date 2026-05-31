@@ -9,6 +9,7 @@ abstract final class GuardEndpoints {
   static const String panic = '$base/me/panic/';
   static const String dispatchTasks = '$base/me/dispatch-tasks/';
   static const String welfareChecks = '$base/me/welfare-checks/';
+  static const String clientPortal = '$base/client/portal/';
 
   static String shiftAction(String assignmentId, String action) =>
       '$base/me/shifts/$assignmentId/$action/';
@@ -27,4 +28,7 @@ abstract final class GuardEndpoints {
 
   static String welfareConfirm(String checkId) =>
       '$base/me/welfare-checks/$checkId/confirm/';
+
+  static String clientReportAcknowledge(String reportId) =>
+      '$base/client/reports/$reportId/acknowledge/';
 }

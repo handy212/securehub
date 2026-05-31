@@ -321,8 +321,8 @@ class GuardInvoiceLineAdmin(admin.ModelAdmin):
 
 @admin.register(ClientPortalAccess)
 class ClientPortalAccessAdmin(admin.ModelAdmin):
-    list_display = ("user", "site", "role", "can_view_reports", "can_view_patrols", "can_view_attendance")
-    list_filter = ("role", "can_view_reports", "can_view_patrols", "can_view_attendance")
+    list_display = ("user", "site", "role", "can_view_reports", "can_view_patrols", "can_view_attendance", "can_view_guards")
+    list_filter = ("role", "can_view_reports", "can_view_patrols", "can_view_attendance", "can_view_guards")
     search_fields = ("user__username", "user__email", "site__name")
 
 

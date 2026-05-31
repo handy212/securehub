@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../core/auth/auth_notifier.dart';
 import '../../core/theme/app_theme.dart';
 import '../../features/messages/providers/messages_provider.dart';
 import '../../features/sites/providers/selected_site_provider.dart';
@@ -17,7 +18,10 @@ class MainScaffold extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final location = GoRouterState.of(context).matchedLocation;
-    final selectedIndex = _getSelectedIndex(location);
+    final auth = ref.watch(authNotifierProvider);
+    final hasGuardingClientAccess =
+        auth is AuthAuthenticated && auth.session.hasGuardingClientAccess;
+    final selectedIndex = _getSelectedIndex(location, hasGuardingClientAccess);
     final header = _headerFor(location);
     final currentSiteId = ref.watch(currentSiteIdProvider);
     final selectedSiteName = ref.watch(
@@ -68,7 +72,7 @@ class MainScaffold extends ConsumerWidget {
           children: [
             Text(
               location.startsWith('/home') ? 'Secure Hub' : header.title,
-              style: TextStyle(
+              style: const TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w900,
                 letterSpacing: -0.7,
@@ -154,15 +158,30 @@ class MainScaffold extends ConsumerWidget {
                   },
                 ),
                 _NavButton(
-                  icon: Icons.manage_accounts_outlined,
-                  activeIcon: Icons.manage_accounts_rounded,
-                  label: 'Account',
+                  icon: hasGuardingClientAccess
+                      ? Icons.security_outlined
+                      : Icons.manage_accounts_outlined,
+                  activeIcon: hasGuardingClientAccess
+                      ? Icons.security_rounded
+                      : Icons.manage_accounts_rounded,
+                  label: hasGuardingClientAccess ? 'Guarding' : 'Account',
                   isActive: selectedIndex == 3,
                   onTap: () {
                     HapticFeedback.selectionClick();
-                    context.go('/menu');
+                    context.go(hasGuardingClientAccess ? '/guarding' : '/menu');
                   },
                 ),
+                if (hasGuardingClientAccess)
+                  _NavButton(
+                    icon: Icons.manage_accounts_outlined,
+                    activeIcon: Icons.manage_accounts_rounded,
+                    label: 'Account',
+                    isActive: selectedIndex == 4,
+                    onTap: () {
+                      HapticFeedback.selectionClick();
+                      context.go('/menu');
+                    },
+                  ),
               ],
             ),
           ),
@@ -171,12 +190,13 @@ class MainScaffold extends ConsumerWidget {
     );
   }
 
-  int _getSelectedIndex(String location) {
+  int _getSelectedIndex(String location, bool hasGuardingClientAccess) {
     if (location.startsWith('/home')) return 0;
     if (location.startsWith('/devices')) return 1;
     if (location.startsWith('/activities')) return 2;
+    if (hasGuardingClientAccess && location.startsWith('/guarding')) return 3;
     if (location.startsWith('/menu') || location.startsWith('/messages')) {
-      return 3;
+      return hasGuardingClientAccess ? 4 : 3;
     }
     return 0;
   }
@@ -187,6 +207,9 @@ class MainScaffold extends ConsumerWidget {
     }
     if (location.startsWith('/activities')) {
       return const _ScaffoldHeader('Activity', 'Recent events and actions');
+    }
+    if (location.startsWith('/guarding')) {
+      return const _ScaffoldHeader('Guarding', 'Coverage and patrol proof');
     }
     if (location.startsWith('/menu')) {
       return const _ScaffoldHeader('Account', 'Settings and support');
@@ -331,7 +354,7 @@ class _NavButton extends StatelessWidget {
                       padding: const EdgeInsets.only(left: 8),
                       child: Text(
                         label,
-                        style: TextStyle(
+                        style: const TextStyle(
                           fontSize: 11,
                           fontWeight: FontWeight.w800,
                           color: AppTheme.primary,
@@ -346,4 +369,3 @@ class _NavButton extends StatelessWidget {
     );
   }
 }
-

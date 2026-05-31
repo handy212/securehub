@@ -6,6 +6,9 @@ from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import HasConsolePermission
+from apps.accounts.rbac import Perm
+
 from .asset_models import (
     GuardAssetDepot,
     GuardAssetMaintenanceLog,
@@ -217,7 +220,8 @@ class ShiftAssetManifestLineViewSet(StaffGuardingViewSet):
 
 
 class ShiftAssetManifestBuildView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, HasConsolePermission]
+    required_console_permission = Perm.MANAGE_GUARDING
 
     @extend_schema(request=None, responses=ShiftAssetManifestSerializer)
     def post(self, request, assignment_id):

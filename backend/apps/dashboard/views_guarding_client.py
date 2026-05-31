@@ -9,7 +9,7 @@ from decimal import Decimal
 from django.contrib import messages
 from django.contrib.auth.models import User
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, Prefetch, Q, Sum
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
@@ -121,6 +121,9 @@ class GuardingClientPortalView(GuardingClientRequiredMixin, TemplateView):
         acknowledge_site_ids = [access.site_id for access in access_records if access.can_acknowledge_reports]
         patrol_site_ids = [access.site_id for access in access_records if access.can_view_patrols]
         attendance_site_ids = [access.site_id for access in access_records if access.can_view_attendance]
+        guard_site_ids = [access.site_id for access in access_records if access.can_view_guards]
+        today = timezone.localdate()
+        guard_window_end = today + timedelta(days=7)
         reports = (
             FieldReport.objects.select_related("site", "post", "guard")
             .prefetch_related("client_acknowledgements")
@@ -148,6 +151,27 @@ class GuardingClientPortalView(GuardingClientRequiredMixin, TemplateView):
             .filter(shift__post__site_id__in=attendance_site_ids)
             .order_by("-shift__starts_at")[:100]
         )
+        known_guard_assignments = list(
+            ShiftAssignment.objects.select_related("guard", "shift", "shift__post", "shift__post__site")
+            .prefetch_related(
+                Prefetch(
+                    "guard__credentials",
+                    queryset=GuardCredential.objects.filter(verified=True).order_by("credential_type", "name"),
+                    to_attr="verified_client_credentials",
+                )
+            )
+            .filter(
+                shift__post__site_id__in=guard_site_ids,
+                shift__starts_at__date__gte=today,
+                shift__starts_at__date__lte=guard_window_end,
+                status__in=[
+                    ShiftAssignment.Status.ASSIGNED,
+                    ShiftAssignment.Status.ACCEPTED,
+                    ShiftAssignment.Status.CLOCKED_IN,
+                ],
+            )
+            .order_by("shift__starts_at", "shift__post__site__name", "shift__post__name", "guard__last_name")[:100]
+        )
         timesheets = (
             GuardTimesheet.objects.select_related("guard", "site", "post")
             .filter(
@@ -167,6 +191,7 @@ class GuardingClientPortalView(GuardingClientRequiredMixin, TemplateView):
                 "reports": reports,
                 "patrol_rounds": patrol_rounds,
                 "assignments": assignments,
+                "known_guard_assignments": known_guard_assignments,
                 "timesheets": timesheets,
                 "can_export_reports": bool(report_site_ids),
                 "acknowledge_site_ids": acknowledge_site_ids,
@@ -175,6 +200,7 @@ class GuardingClientPortalView(GuardingClientRequiredMixin, TemplateView):
                     "reports": reports.count(),
                     "patrols": patrol_rounds.count(),
                     "assignments": assignments.count(),
+                    "guards": len({assignment.guard_id for assignment in known_guard_assignments}),
                 },
             }
         )
@@ -224,5 +250,4 @@ class GuardingClientReportExportView(GuardingClientRequiredMixin, View):
             ["site", "post", "guard", "type", "title", "body", "submitted_at"],
             rows,
         )
-
 

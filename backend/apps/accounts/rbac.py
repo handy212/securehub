@@ -183,6 +183,7 @@ CONSOLE_ROUTE_PERMISSIONS: dict[str, str] = {
     "guarding-analytics": Perm.VIEW_GUARDING,
     "guarding-applicants": Perm.VIEW_GUARDING,
     "guarding-applicant-hire": Perm.MANAGE_GUARDING,
+    "guarding-applicant-pdf": Perm.VIEW_GUARDING,
     "guarding-guards": Perm.VIEW_GUARDING,
     "guarding-assets": Perm.VIEW_GUARDING,
     "guarding-posts": Perm.VIEW_GUARDING,

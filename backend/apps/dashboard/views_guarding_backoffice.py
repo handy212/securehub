@@ -159,7 +159,7 @@ class GuardingBackOfficeView(StaffRequiredMixin, GuardingOverviewMixin, Template
         context["sites"] = Site.objects.order_by("name")
         context["posts"] = GuardPost.objects.select_related("site").order_by("site__name", "name")
         context["guards"] = GuardProfile.objects.order_by("last_name", "first_name")
-        context["users"] = User.objects.order_by("username")
+        context["users"] = User.objects.filter(is_staff=False, is_superuser=False).order_by("username")
         context["assignments"] = ShiftAssignment.objects.select_related("guard", "shift", "shift__post").order_by("-shift__starts_at")[:200]
         context["contract_statuses"] = GuardContract.Status.choices
         context["availability_types"] = GuardAvailability.AvailabilityType.choices
@@ -354,11 +354,14 @@ class GuardingBackOfficeView(StaffRequiredMixin, GuardingOverviewMixin, Template
                     else ClientPortalAccess()
                 )
                 access.user = get_object_or_404(User, pk=request.POST.get("user_id"))
+                if access.user.is_staff or access.user.is_superuser:
+                    raise ValueError("Operator accounts cannot be assigned guarding client portal access.")
                 access.site = get_object_or_404(Site, pk=request.POST.get("site_id"))
                 access.role = request.POST.get("role") or ClientPortalAccess.Role.VIEWER
                 access.can_view_reports = bool(request.POST.get("can_view_reports"))
                 access.can_view_patrols = bool(request.POST.get("can_view_patrols"))
                 access.can_view_attendance = bool(request.POST.get("can_view_attendance"))
+                access.can_view_guards = bool(request.POST.get("can_view_guards"))
                 access.can_acknowledge_reports = bool(request.POST.get("can_acknowledge_reports"))
                 access.full_clean()
                 access.save()
@@ -486,5 +489,3 @@ class GuardingTimesheetExportView(StaffRequiredMixin, View):
             ],
             rows,
         )
-
-

@@ -4,7 +4,8 @@ from django.urls import reverse
 
 from apps.accounts.models import StaffOperatorProfile
 from apps.accounts.permissions import user_has_console_permission
-from apps.accounts.rbac import OperatorRole, Perm
+from apps.accounts.rbac import CONSOLE_ROUTE_PERMISSIONS, OperatorRole, Perm, permissions_for_role
+from apps.dashboard.urls import urlpatterns as dashboard_urlpatterns
 
 
 class ConsoleRBACTests(TestCase):
@@ -100,3 +101,59 @@ class ConsoleRBACTests(TestCase):
         self.assertEqual(response.status_code, 302)
         created = User.objects.get(username="dispatcher1")
         self.assertEqual(created.operator_profile.role, OperatorRole.DISPATCHER)
+
+    def test_dashboard_routes_are_mapped_or_explicitly_exempt(self):
+        auth_routes = {
+            "login",
+            "logout",
+            "password-reset",
+            "password-reset-done",
+            "password-reset-confirm",
+            "password-reset-complete",
+        }
+        non_staff_routes = {
+            "client-guarding",
+            "client-guarding-report-acknowledge",
+            "client-guarding-reports-export",
+        }
+        route_names = {pattern.name for pattern in dashboard_urlpatterns if getattr(pattern, "name", None)}
+        missing = route_names - set(CONSOLE_ROUTE_PERMISSIONS) - auth_routes - non_staff_routes
+
+        self.assertEqual(missing, set())
+
+    def test_operator_role_permission_matrix(self):
+        expected = {
+            OperatorRole.PLATFORM_ADMIN: {
+                Perm.MANAGE_STAFF,
+                Perm.MANAGE_SETTINGS,
+                Perm.MANAGE_GUARDING,
+                Perm.MANAGE_BILLING,
+            },
+            OperatorRole.OPERATIONS: {
+                Perm.MANAGE_SITES,
+                Perm.MANAGE_CUSTOMERS,
+                Perm.MANAGE_EMERGENCY,
+                Perm.MANAGE_BROADCAST,
+                Perm.GLOBAL_SYNC,
+            },
+            OperatorRole.GUARDING: {Perm.VIEW_GUARDING, Perm.MANAGE_GUARDING},
+            OperatorRole.DISPATCHER: {Perm.VIEW_GUARDING, Perm.MANAGE_GUARDING, Perm.MANAGE_EMERGENCY},
+            OperatorRole.BILLING: {Perm.VIEW_BILLING, Perm.MANAGE_BILLING},
+            OperatorRole.SUPPORT: {Perm.VIEW_CUSTOMERS, Perm.MANAGE_CUSTOMERS, Perm.VIEW_LOGS},
+            OperatorRole.AUDITOR: {Perm.VIEW_SITES, Perm.VIEW_GUARDING, Perm.VIEW_BILLING, Perm.VIEW_LOGS},
+        }
+        forbidden = {
+            OperatorRole.OPERATIONS: {Perm.MANAGE_STAFF, Perm.MANAGE_SETTINGS, Perm.MANAGE_BILLING},
+            OperatorRole.GUARDING: {Perm.MANAGE_STAFF, Perm.MANAGE_BILLING, Perm.MANAGE_SITES},
+            OperatorRole.DISPATCHER: {Perm.MANAGE_STAFF, Perm.MANAGE_BILLING, Perm.MANAGE_CUSTOMERS},
+            OperatorRole.BILLING: {Perm.MANAGE_STAFF, Perm.MANAGE_GUARDING, Perm.MANAGE_SITES},
+            OperatorRole.SUPPORT: {Perm.MANAGE_STAFF, Perm.MANAGE_SITES, Perm.MANAGE_GUARDING},
+            OperatorRole.AUDITOR: {Perm.MANAGE_STAFF, Perm.MANAGE_SITES, Perm.MANAGE_GUARDING},
+        }
+
+        for role, permissions in expected.items():
+            granted = permissions_for_role(role)
+            self.assertTrue(permissions.issubset(granted), role)
+        for role, permissions in forbidden.items():
+            granted = permissions_for_role(role)
+            self.assertTrue(granted.isdisjoint(permissions), role)

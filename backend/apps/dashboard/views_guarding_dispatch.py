@@ -78,6 +78,7 @@ from apps.guarding.models import (
     ShiftAssignment,
     ShiftSwapRequest,
     ShiftTemplate,
+    SiteGuardDispatchPolicy,
     WelfareCheck,
 )
 from apps.guarding.services import (
@@ -332,4 +333,3 @@ class GuardingDispatchActionView(StaffRequiredMixin, View):
         except Exception as exc:
             messages.error(request, str(exc))
         return redirect(f"{reverse('dashboard:guarding-dispatch')}?tab=tasks")
-

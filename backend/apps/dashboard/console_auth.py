@@ -15,6 +15,7 @@ from django.views import View
 
 from apps.accounts.permissions import ensure_operator_profile, user_can_access_console
 from apps.accounts.serializers import resolve_username_for_login
+from apps.guarding.models import ClientPortalAccess
 
 CONSOLE_LOGIN_ATTEMPT_LIMIT = 5
 CONSOLE_LOGIN_LOCKOUT_SECONDS = 300
@@ -89,11 +90,27 @@ def generate_compliant_password(*, user: User) -> str:
     )
 
 
+def user_has_guarding_client_access(user: User) -> bool:
+    return bool(
+        user.is_authenticated
+        and not user.is_staff
+        and ClientPortalAccess.objects.filter(user=user).exists()
+    )
+
+
+def guarding_client_login_target(next_url: str) -> str:
+    if next_url.startswith("/console/client/guarding/"):
+        return next_url
+    return "/console/client/guarding/"
+
+
 class ConsoleLoginView(View):
     template_name = "dashboard/auth/login.html"
 
     def get(self, request):
         if request.user.is_authenticated:
+            if user_has_guarding_client_access(request.user):
+                return redirect(guarding_client_login_target(request.GET.get("next", "")))
             return redirect("dashboard:home")
         return render(request, self.template_name, {"next": request.GET.get("next", "/console/")})
 
@@ -118,10 +135,17 @@ class ConsoleLoginView(View):
             )
         auth_username = resolve_username_for_login(username)
         user = authenticate(request, username=auth_username, password=password)
-        if user is not None and user.is_staff and user_can_access_console(user):
-            ensure_operator_profile(user)
+        has_console_access = bool(user is not None and user.is_staff and user_can_access_console(user))
+        has_guarding_client_access = bool(
+            user is not None and user_has_guarding_client_access(user)
+        )
+        if has_console_access or has_guarding_client_access:
+            if has_console_access:
+                ensure_operator_profile(user)
             clear_console_login_failures(request, username)
             login(request, user)
+            if has_guarding_client_access and not has_console_access:
+                return redirect(guarding_client_login_target(next_url))
             return redirect(next_url)
         record_console_login_failure(request, username)
         return render(

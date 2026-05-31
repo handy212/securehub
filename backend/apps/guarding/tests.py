@@ -10,6 +10,8 @@ from rest_framework.test import APITestCase
 from .applicant_intake import validate_public_application
 
 from apps.sites.models import Site
+from apps.accounts.models import StaffOperatorProfile
+from apps.accounts.rbac import OperatorRole
 
 from .models import (
     Checkpoint,
@@ -178,6 +180,7 @@ class GuardingApiTests(APITestCase):
             password="StrongPass123!",
             is_staff=True,
         )
+        StaffOperatorProfile.objects.create(user=self.staff, role=OperatorRole.GUARDING)
         self.guard_user = User.objects.create_user(
             username="guard1",
             password="StrongPass123!",
@@ -794,6 +797,101 @@ class GuardingApiTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertEqual(report.client_acknowledgements.count(), 1)
 
+    def test_client_portal_snapshot_exposes_safe_mobile_payload(self):
+        client_user = User.objects.create_user(username="mobile-client", password="StrongPass123!")
+        ClientPortalAccess.objects.create(
+            user=client_user,
+            site=self.site,
+            can_view_reports=True,
+            can_view_patrols=True,
+            can_view_attendance=True,
+            can_view_guards=True,
+            can_acknowledge_reports=True,
+        )
+        FieldReport.objects.create(
+            site=self.site,
+            post=self.post,
+            assignment=self.assignment,
+            guard=self.guard,
+            report_type=FieldReport.ReportType.DAILY_ACTIVITY,
+            title="Mobile DAR",
+            body="Visible operational summary.",
+            status=FieldReport.Status.APPROVED,
+            visible_to_client=True,
+        )
+        route = PatrolRoute.objects.create(post=self.post, name="Perimeter")
+        checkpoint = Checkpoint.objects.create(post=self.post, name="Gate", code="GATE")
+        PatrolRouteCheckpoint.objects.create(route=route, checkpoint=checkpoint, sequence=1)
+        round_ = PatrolRound.objects.create(
+            route=route,
+            assignment=self.assignment,
+            scheduled_start=timezone.now(),
+            scheduled_end=timezone.now() + timezone.timedelta(minutes=30),
+        )
+        CheckpointScan.objects.create(patrol_round=round_, checkpoint=checkpoint, guard=self.guard)
+        self.authenticate(client_user)
+
+        response = self.client.get(reverse("guard-client-portal"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["counts"]["guards"], 1)
+        self.assertEqual(response.data["known_guards"][0]["guard_name"], "Ama Mensah")
+        self.assertEqual(response.data["known_guards"][0]["employee_number"], "G-001")
+        self.assertEqual(response.data["known_guards"][0]["verified_credentials"], ["Security License"])
+        self.assertEqual(response.data["reports"][0]["title"], "Mobile DAR")
+        payload = str(response.data)
+        self.assertNotIn("+233200000001", payload)
+        self.assertNotIn("Emergency Contact", payload)
+        self.assertNotIn("+233200000099", payload)
+
+    def test_client_portal_snapshot_requires_client_access(self):
+        user = User.objects.create_user(username="no-client-access", password="StrongPass123!")
+        self.authenticate(user)
+
+        response = self.client.get(reverse("guard-client-portal"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_guarding_staff_api_requires_guarding_console_permission(self):
+        operations_user = User.objects.create_user(
+            username="ops-api-user",
+            password="StrongPass123!",
+            is_staff=True,
+        )
+        StaffOperatorProfile.objects.create(user=operations_user, role=OperatorRole.OPERATIONS)
+
+        self.authenticate(operations_user)
+        denied_response = self.client.get(reverse("guard-profile-list"))
+        self.assertEqual(denied_response.status_code, status.HTTP_403_FORBIDDEN)
+
+        self.authenticate(self.staff)
+        allowed_response = self.client.get(reverse("guard-profile-list"))
+        self.assertEqual(allowed_response.status_code, status.HTTP_200_OK)
+
+    def test_guard_mobile_user_cannot_access_staff_guarding_api(self):
+        self.authenticate(self.guard_user)
+
+        response = self.client.get(reverse("guard-profile-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_client_access_api_rejects_operator_accounts(self):
+        self.authenticate(self.staff)
+
+        response = self.client.post(
+            reverse("guard-client-access-list"),
+            {
+                "user": self.staff.pk,
+                "site": self.site.pk,
+                "role": ClientPortalAccess.Role.VIEWER,
+                "can_view_reports": True,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertFalse(ClientPortalAccess.objects.filter(user=self.staff, site=self.site).exists())
+
     def test_staff_can_generate_invoice_from_approved_timesheet(self):
         GuardContract.objects.create(
             site=self.site,
@@ -911,6 +1009,7 @@ class GuardingApiTests(APITestCase):
 class GuardAssetManagementTests(APITestCase):
     def setUp(self):
         self.staff = User.objects.create_user(username="assetop", password="pass", is_staff=True)
+        StaffOperatorProfile.objects.create(user=self.staff, role=OperatorRole.GUARDING)
         self.guard_user = User.objects.create_user(username="assetguard", password="pass")
         self.site = Site.objects.create(name="Asset Site", hik_site_id="asset-site-1")
         self.guard = GuardProfile.objects.create(

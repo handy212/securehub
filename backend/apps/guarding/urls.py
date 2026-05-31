@@ -77,6 +77,7 @@ urlpatterns = [
     path("me/patrol-rounds/<uuid:patrol_round_id>/scan/", views.MyCheckpointScanCreateView.as_view(), name="guard-my-scan"),
     path("me/patrol-rounds/<uuid:patrol_round_id>/complete/", views.MyPatrolRoundCompleteView.as_view(), name="guard-my-patrol-complete"),
     path("me/reports/", views.MyFieldReportListCreateView.as_view(), name="guard-my-reports"),
+    path("client/portal/", views.ClientPortalSnapshotView.as_view(), name="guard-client-portal"),
     path("client/reports/<uuid:report_id>/acknowledge/", views.ClientFieldReportAcknowledgeView.as_view(), name="guard-client-report-acknowledge"),
     path("me/location/", views.MyLocationPingCreateView.as_view(), name="guard-my-location"),
     path("me/panic/", views.MyPanicAlertCreateView.as_view(), name="guard-my-panic"),

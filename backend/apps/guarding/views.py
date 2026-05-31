@@ -1,4 +1,7 @@
+from datetime import timedelta
+
 from django.db import models
+from django.db.models import Prefetch
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 from drf_spectacular.utils import extend_schema, inline_serializer
@@ -9,6 +12,8 @@ from rest_framework.generics import ListAPIView, ListCreateAPIView
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from apps.accounts.permissions import HasConsolePermission
+from apps.accounts.rbac import Perm
 from apps.sites.models import Site
 
 from .models import (
@@ -132,7 +137,8 @@ def get_guard_for_user(user):
 
 
 class StaffGuardingViewSet(viewsets.ModelViewSet):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, HasConsolePermission]
+    required_console_permission = Perm.MANAGE_GUARDING
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     query_param_filters = {}
 
@@ -611,7 +617,8 @@ class FieldReportViewSet(StaffGuardingViewSet):
 
 
 class FieldReportAcknowledgementViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, HasConsolePermission]
+    required_console_permission = Perm.VIEW_GUARDING
     serializer_class = FieldReportAcknowledgementSerializer
     queryset = FieldReportAcknowledgement.objects.select_related("report", "report__site", "user")
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -721,7 +728,8 @@ class GuardInvoiceViewSet(StaffGuardingViewSet):
 
 
 class GuardInvoiceLineViewSet(viewsets.ReadOnlyModelViewSet):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, HasConsolePermission]
+    required_console_permission = Perm.MANAGE_GUARDING
     serializer_class = GuardInvoiceLineSerializer
     queryset = GuardInvoiceLine.objects.select_related("invoice", "timesheet", "timesheet__guard")
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -813,7 +821,8 @@ class DispatchTaskViewSet(StaffGuardingViewSet):
 
 
 class CommandCenterSnapshotView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, HasConsolePermission]
+    required_console_permission = Perm.VIEW_GUARDING
 
     @extend_schema(responses={200: dict})
     def get(self, request):
@@ -821,7 +830,8 @@ class CommandCenterSnapshotView(APIView):
 
 
 class DispatchSuggestGuardsView(APIView):
-    permission_classes = [permissions.IsAdminUser]
+    permission_classes = [permissions.IsAuthenticated, HasConsolePermission]
+    required_console_permission = Perm.MANAGE_GUARDING
 
     @extend_schema(responses={200: list})
     def get(self, request, task_id):
@@ -1114,6 +1124,147 @@ class ClientFieldReportAcknowledgeView(APIView):
         report = get_object_or_404(FieldReport, id=report_id)
         acknowledgement = acknowledge_field_report(report, user=request.user, comment=request.data.get("comment", ""))
         return Response(FieldReportAcknowledgementSerializer(acknowledgement).data)
+
+
+class ClientPortalSnapshotView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(responses={200: dict})
+    def get(self, request):
+        access_records = list(ClientPortalAccess.objects.select_related("site").filter(user=request.user))
+        if not access_records:
+            raise PermissionDenied("Your account does not have guarding client portal access.")
+
+        site_ids = [access.site_id for access in access_records]
+        report_site_ids = [access.site_id for access in access_records if access.can_view_reports]
+        acknowledge_site_ids = {access.site_id for access in access_records if access.can_acknowledge_reports}
+        patrol_site_ids = [access.site_id for access in access_records if access.can_view_patrols]
+        attendance_site_ids = [access.site_id for access in access_records if access.can_view_attendance]
+        guard_site_ids = [access.site_id for access in access_records if access.can_view_guards]
+        today = timezone.localdate()
+        guard_window_end = today + timedelta(days=7)
+
+        reports = (
+            FieldReport.objects.select_related("site", "post", "guard")
+            .prefetch_related("client_acknowledgements")
+            .filter(site_id__in=report_site_ids, visible_to_client=True, status=FieldReport.Status.APPROVED)
+            .order_by("-submitted_at")[:100]
+        )
+        patrol_rounds = (
+            PatrolRound.objects.select_related("route", "route__post", "route__post__site", "assignment", "assignment__guard")
+            .prefetch_related("scans")
+            .filter(route__post__site_id__in=patrol_site_ids)
+            .order_by("-scheduled_start")[:100]
+        )
+        assignments = (
+            ShiftAssignment.objects.select_related("guard", "shift", "shift__post", "shift__post__site")
+            .filter(shift__post__site_id__in=attendance_site_ids)
+            .order_by("-shift__starts_at")[:100]
+        )
+        known_guards = list(
+            ShiftAssignment.objects.select_related("guard", "shift", "shift__post", "shift__post__site")
+            .prefetch_related(
+                Prefetch(
+                    "guard__credentials",
+                    queryset=GuardCredential.objects.filter(verified=True).order_by("credential_type", "name"),
+                    to_attr="verified_client_credentials",
+                )
+            )
+            .filter(
+                shift__post__site_id__in=guard_site_ids,
+                shift__starts_at__date__gte=today,
+                shift__starts_at__date__lte=guard_window_end,
+                status__in=[
+                    ShiftAssignment.Status.ASSIGNED,
+                    ShiftAssignment.Status.ACCEPTED,
+                    ShiftAssignment.Status.CLOCKED_IN,
+                ],
+            )
+            .order_by("shift__starts_at", "shift__post__site__name", "shift__post__name", "guard__last_name")[:100]
+        )
+
+        return Response(
+            {
+                "counts": {
+                    "sites": len(site_ids),
+                    "reports": len(reports),
+                    "patrols": len(patrol_rounds),
+                    "assignments": len(assignments),
+                    "guards": len({assignment.guard_id for assignment in known_guards}),
+                },
+                "access": [
+                    {
+                        "site_id": str(access.site_id),
+                        "site_name": access.site.name,
+                        "role": access.role,
+                        "can_view_reports": access.can_view_reports,
+                        "can_view_patrols": access.can_view_patrols,
+                        "can_view_attendance": access.can_view_attendance,
+                        "can_view_guards": access.can_view_guards,
+                        "can_acknowledge_reports": access.can_acknowledge_reports,
+                    }
+                    for access in access_records
+                ],
+                "reports": [
+                    {
+                        "id": str(report.id),
+                        "title": report.title,
+                        "report_type": report.get_report_type_display(),
+                        "body": report.body,
+                        "site_name": report.site.name,
+                        "post_name": report.post.name if report.post else "",
+                        "guard_name": report.guard.full_name if report.guard else "",
+                        "submitted_at": report.submitted_at,
+                        "acknowledgement_count": report.client_acknowledgements.count(),
+                        "can_acknowledge": report.site_id in acknowledge_site_ids,
+                    }
+                    for report in reports
+                ],
+                "patrol_rounds": [
+                    {
+                        "id": str(patrol.id),
+                        "route_name": patrol.route.name,
+                        "site_name": patrol.route.post.site.name,
+                        "post_name": patrol.route.post.name,
+                        "guard_name": patrol.assignment.guard.full_name if patrol.assignment and patrol.assignment.guard else "",
+                        "status": patrol.get_status_display(),
+                        "scan_count": patrol.scans.count(),
+                        "scheduled_start": patrol.scheduled_start,
+                    }
+                    for patrol in patrol_rounds
+                ],
+                "assignments": [
+                    {
+                        "id": str(assignment.id),
+                        "guard_name": assignment.guard.full_name,
+                        "site_name": assignment.shift.post.site.name,
+                        "post_name": assignment.shift.post.name,
+                        "status": assignment.get_status_display(),
+                        "starts_at": assignment.shift.starts_at,
+                        "ends_at": assignment.shift.ends_at,
+                    }
+                    for assignment in assignments
+                ],
+                "known_guards": [
+                    {
+                        "assignment_id": str(assignment.id),
+                        "guard_name": assignment.guard.full_name,
+                        "employee_number": assignment.guard.employee_number,
+                        "guard_status": assignment.guard.get_status_display(),
+                        "site_name": assignment.shift.post.site.name,
+                        "post_name": assignment.shift.post.name,
+                        "starts_at": assignment.shift.starts_at,
+                        "ends_at": assignment.shift.ends_at,
+                        "assignment_status": assignment.get_status_display(),
+                        "verified_credentials": [
+                            credential.name
+                            for credential in getattr(assignment.guard, "verified_client_credentials", [])
+                        ],
+                    }
+                    for assignment in known_guards
+                ],
+            }
+        )
 
 
 class MyLocationPingCreateView(APIView):

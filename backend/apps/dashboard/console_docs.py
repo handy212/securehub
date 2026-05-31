@@ -35,6 +35,7 @@ HELP_SECTIONS: list[dict] = [
     {
         "title": "Technical reference",
         "pages": [
+            {"slug": "access-control-matrix", "title": "Access control matrix", "file": "access-control-matrix.md"},
             {"slug": "operator-rbac", "title": "Operator RBAC", "file": "operator-rbac.md"},
             {"slug": "guard-mobile-api", "title": "Guard mobile API", "file": "guard-mobile-api.md"},
             {"slug": "emergency-addon-runbook", "title": "Emergency add-on runbook", "file": "emergency-addon-runbook.md"},

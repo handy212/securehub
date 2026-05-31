@@ -23,6 +23,7 @@ Django `is_superuser` still bypasses all console checks. `is_staff` is required 
 | `auditor` | Read-only across allowed modules |
 
 Permissions are defined in `apps/accounts/rbac.py` (`Perm` + `CONSOLE_ROUTE_PERMISSIONS`).
+For the full cross-product matrix, see [access-control-matrix.md](access-control-matrix.md).
 
 ## Managing staff
 

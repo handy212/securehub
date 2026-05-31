@@ -10,8 +10,8 @@ from django.contrib import messages
 from django.contrib.auth.models import User
 from django.core.cache import cache
 from django.db import transaction
-from django.db.models import Count, Q, Sum
-from django.shortcuts import get_object_or_404, redirect
+from django.db.models import Count, Prefetch, Q, Sum
+from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
 from django.views.generic import ListView, TemplateView, View
@@ -812,7 +812,21 @@ class MapZoneListView(StaffRequiredMixin, View):
     template_name = "dashboard/ops/map_zones.html"
 
     def get(self, request):
-        zones = OperationsZone.objects.annotate(site_count=Count("sites")).order_by("sort_order", "name")
+        zone_sites = Site.objects.only(
+            "id",
+            "name",
+            "address",
+            "city",
+            "country",
+            "hik_site_id",
+            "is_active",
+            "operations_zone",
+        ).order_by("name")
+        zones = (
+            OperationsZone.objects.annotate(site_count=Count("sites"))
+            .prefetch_related(Prefetch("sites", queryset=zone_sites))
+            .order_by("sort_order", "name")
+        )
         return render(request, self.template_name, {"zones": zones})
 
     def post(self, request):

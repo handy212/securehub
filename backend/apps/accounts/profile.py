@@ -44,5 +44,14 @@ def build_user_profile_payload(user: User) -> dict:
     data["account_kind"] = account_kind
     data["guard_profile_id"] = guard_profile_id
     data["guard_employee_number"] = guard_employee_number
+    data["has_guarding_client_access"] = _has_guarding_client_access(user)
     data["is_staff"] = bool(user.is_staff or user.is_superuser)
     return data
+
+
+def _has_guarding_client_access(user: User) -> bool:
+    if user.is_staff or user.is_superuser:
+        return False
+    from apps.guarding.models import ClientPortalAccess
+
+    return ClientPortalAccess.objects.filter(user=user).exists()

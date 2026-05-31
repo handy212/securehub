@@ -13,6 +13,15 @@ import json
 from apps.alarms.models import AlarmEvent
 from apps.communication.models import BroadcastMessage
 from apps.dashboard.console_auth import CONSOLE_LOGIN_ATTEMPT_LIMIT
+from apps.guarding.models import (
+    ClientPortalAccess,
+    GuardCredential,
+    GuardDocument,
+    GuardPost,
+    GuardProfile,
+    Shift,
+    ShiftAssignment,
+)
 from apps.hik_adapter.exceptions import HikPartnerError
 from apps.accounts.models import StaffOperatorProfile
 from apps.accounts.rbac import OperatorRole
@@ -119,6 +128,54 @@ class DashboardFlowTests(TestCase):
 
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response["Location"], reverse("dashboard:home"))
+
+    def test_console_login_accepts_guarding_client_portal_user(self):
+        client_user = User.objects.create_user(
+            username="guarding-client-login",
+            email="guarding-client-login@example.com",
+            password="Secret123!",
+        )
+        ClientPortalAccess.objects.create(
+            user=client_user,
+            site=self.site,
+            can_view_guards=True,
+        )
+
+        response = self.client.post(
+            reverse("dashboard:login"),
+            {
+                "username": "guarding-client-login@example.com",
+                "password": "Secret123!",
+                "next": reverse("dashboard:client-guarding"),
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("dashboard:client-guarding"))
+
+    def test_console_login_defaults_guarding_client_to_client_portal(self):
+        client_user = User.objects.create_user(
+            username="guarding-client-default",
+            email="guarding-client-default@example.com",
+            password="Secret123!",
+        )
+        ClientPortalAccess.objects.create(
+            user=client_user,
+            site=self.site,
+            can_view_guards=True,
+        )
+
+        response = self.client.post(
+            reverse("dashboard:login"),
+            {
+                "username": "guarding-client-default@example.com",
+                "password": "Secret123!",
+                "next": "/console/",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response["Location"], reverse("dashboard:client-guarding"))
 
     def test_console_password_reset_sends_email(self):
         response = self.client.post(
@@ -1091,8 +1148,19 @@ class DashboardFlowTests(TestCase):
             email="site-client@example.com",
             password="Secret123!",
         )
+        backup_owner = User.objects.create_user(
+            username="site-owner-backup",
+            email="site-owner-backup@example.com",
+            password="Secret123!",
+        )
         access = CustomerSiteAccess.objects.create(
             user=client_user,
+            site=self.site,
+            role=CustomerSiteAccess.ROLE_OWNER,
+            can_control_alarm=True,
+        )
+        CustomerSiteAccess.objects.create(
+            user=backup_owner,
             site=self.site,
             role=CustomerSiteAccess.ROLE_OWNER,
             can_control_alarm=True,
@@ -1115,6 +1183,34 @@ class DashboardFlowTests(TestCase):
         )
         self.assertEqual(delete_response.status_code, 302)
         self.assertFalse(CustomerSiteAccess.objects.filter(pk=access.pk).exists())
+
+    def test_site_access_cannot_downgrade_or_remove_last_owner(self):
+        client_user = User.objects.create_user(
+            username="last-owner-client",
+            email="last-owner-client@example.com",
+            password="Secret123!",
+        )
+        access = CustomerSiteAccess.objects.create(
+            user=client_user,
+            site=self.site,
+            role=CustomerSiteAccess.ROLE_OWNER,
+            can_control_alarm=True,
+        )
+        self.client.force_login(self.staff)
+
+        update_response = self.client.post(
+            reverse("dashboard:site-access-update", args=[self.site.pk, access.pk]),
+            {"role": CustomerSiteAccess.ROLE_VIEWER},
+        )
+        self.assertEqual(update_response.status_code, 302)
+        access.refresh_from_db()
+        self.assertEqual(access.role, CustomerSiteAccess.ROLE_OWNER)
+
+        delete_response = self.client.post(
+            reverse("dashboard:site-access-delete", args=[self.site.pk, access.pk]),
+        )
+        self.assertEqual(delete_response.status_code, 302)
+        self.assertTrue(CustomerSiteAccess.objects.filter(pk=access.pk).exists())
 
     def test_subscription_can_be_updated_and_cancelled(self):
         subscription = Subscription.objects.create(
@@ -1445,6 +1541,195 @@ class DashboardFlowTests(TestCase):
         mock_delay.assert_called_once()
 
 
+class GuardingDispatchConsoleTests(TestCase):
+    def setUp(self):
+        self.staff = User.objects.create_user(
+            username="guarding-dispatch-staff",
+            email="guarding-dispatch@example.com",
+            password="Secret123!",
+            is_staff=True,
+        )
+        StaffOperatorProfile.objects.create(user=self.staff, role=OperatorRole.DISPATCHER)
+        self.site = Site.objects.create(name="Dispatch Site", hik_site_id="hik-dispatch-1")
+
+    def test_dispatch_console_renders_policy_context(self):
+        self.client.force_login(self.staff)
+
+        response = self.client.get(reverse("dashboard:guarding-dispatch"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dispatch Site")
+
+
+class GuardingClientPortalTransparencyTests(TestCase):
+    def setUp(self):
+        self.client_user = User.objects.create_user(username="client-portal", password="Secret123!")
+        self.staff = User.objects.create_user(
+            username="guarding-backoffice-staff",
+            password="Secret123!",
+            is_staff=True,
+        )
+        StaffOperatorProfile.objects.create(user=self.staff, role=OperatorRole.GUARDING)
+        self.site = Site.objects.create(name="Client Site", hik_site_id="hik-client-site")
+        self.other_site = Site.objects.create(name="Other Client Site", hik_site_id="hik-other-client-site")
+        self.post = GuardPost.objects.create(site=self.site, name="Main Gate")
+        self.other_post = GuardPost.objects.create(site=self.other_site, name="Warehouse")
+        self.guard = GuardProfile.objects.create(
+            employee_number="KY037",
+            first_name="Ama",
+            last_name="Mensah",
+            status=GuardProfile.Status.ACTIVE,
+            phone_number="+233000000000",
+            email="ama@example.com",
+            home_address="Private home address",
+            notes="Private internal notes",
+        )
+        self.other_guard = GuardProfile.objects.create(
+            employee_number="KY999",
+            first_name="Hidden",
+            last_name="Guard",
+            status=GuardProfile.Status.ACTIVE,
+        )
+        starts_at = timezone.now() + timedelta(days=1)
+        self.shift = Shift.objects.create(
+            post=self.post,
+            starts_at=starts_at,
+            ends_at=starts_at + timedelta(hours=8),
+            status=Shift.Status.PUBLISHED,
+        )
+        self.other_shift = Shift.objects.create(
+            post=self.other_post,
+            starts_at=starts_at,
+            ends_at=starts_at + timedelta(hours=8),
+            status=Shift.Status.PUBLISHED,
+        )
+        self.assignment = ShiftAssignment.objects.create(
+            shift=self.shift,
+            guard=self.guard,
+            status=ShiftAssignment.Status.ASSIGNED,
+        )
+        ShiftAssignment.objects.create(
+            shift=self.other_shift,
+            guard=self.other_guard,
+            status=ShiftAssignment.Status.ASSIGNED,
+        )
+        GuardCredential.objects.create(
+            guard=self.guard,
+            credential_type=GuardCredential.CredentialType.LICENSE,
+            name="Verified Security License",
+            verified=True,
+        )
+        GuardCredential.objects.create(
+            guard=self.guard,
+            credential_type=GuardCredential.CredentialType.TRAINING,
+            name="Unverified Tactical Course",
+            verified=False,
+        )
+        GuardDocument.objects.create(
+            guard=self.guard,
+            document_type=GuardDocument.DocumentType.ID,
+            title="Private ID Scan",
+        )
+
+    def test_client_with_guard_access_sees_safe_known_guard_profile(self):
+        ClientPortalAccess.objects.create(
+            user=self.client_user,
+            site=self.site,
+            can_view_guards=True,
+        )
+        self.client.force_login(self.client_user)
+
+        response = self.client.get(reverse("dashboard:client-guarding"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Know your guard")
+        self.assertContains(response, "Ama Mensah")
+        self.assertContains(response, "KY037")
+        self.assertContains(response, "Main Gate")
+        self.assertContains(response, "Verified Security License")
+        self.assertNotContains(response, "Unverified Tactical Course")
+        self.assertNotContains(response, "Private ID Scan")
+        self.assertNotContains(response, "+233000000000")
+        self.assertNotContains(response, "ama@example.com")
+        self.assertNotContains(response, "Private home address")
+        self.assertNotContains(response, "Private internal notes")
+
+    def test_client_without_guard_access_does_not_see_guard_rows(self):
+        ClientPortalAccess.objects.create(
+            user=self.client_user,
+            site=self.site,
+            can_view_guards=False,
+            can_view_attendance=False,
+        )
+        self.client.force_login(self.client_user)
+
+        response = self.client.get(reverse("dashboard:client-guarding"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "Ama Mensah")
+        self.assertNotContains(response, "KY037")
+
+    def test_client_cannot_see_guard_assigned_to_another_site(self):
+        ClientPortalAccess.objects.create(
+            user=self.client_user,
+            site=self.site,
+            can_view_guards=True,
+        )
+        self.client.force_login(self.client_user)
+
+        response = self.client.get(reverse("dashboard:client-guarding"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Ama Mensah")
+        self.assertNotContains(response, "Hidden Guard")
+        self.assertNotContains(response, "KY999")
+
+    def test_backoffice_client_access_saves_guard_visibility_toggle(self):
+        self.client.force_login(self.staff)
+
+        response = self.client.post(
+            reverse("dashboard:guarding-backoffice"),
+            {
+                "action": "client_access",
+                "user_id": str(self.client_user.pk),
+                "site_id": str(self.site.pk),
+                "role": ClientPortalAccess.Role.VIEWER,
+                "can_view_reports": "on",
+                "can_view_patrols": "on",
+                "can_view_attendance": "on",
+                "can_view_guards": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        access = ClientPortalAccess.objects.get(user=self.client_user, site=self.site)
+        self.assertTrue(access.can_view_guards)
+
+    def test_backoffice_client_access_rejects_operator_accounts(self):
+        operator = User.objects.create_user(
+            username="operator-client-access",
+            email="operator-client-access@example.com",
+            password="Secret123!",
+            is_staff=True,
+        )
+        StaffOperatorProfile.objects.create(user=operator, role=OperatorRole.GUARDING)
+        self.client.force_login(self.staff)
+
+        response = self.client.post(
+            reverse("dashboard:guarding-backoffice"),
+            {
+                "action": "client_access",
+                "user_id": str(operator.pk),
+                "site_id": str(self.site.pk),
+                "role": ClientPortalAccess.Role.VIEWER,
+                "can_view_reports": "on",
+            },
+        )
+
+        self.assertEqual(response.status_code, 302)
+        self.assertFalse(ClientPortalAccess.objects.filter(user=operator, site=self.site).exists())
+
+
 class OperationsZoneTests(TestCase):
     def setUp(self):
         self.staff = User.objects.create_user(
@@ -1511,6 +1796,22 @@ class OperationsZoneTests(TestCase):
         self.assertEqual(update_response.status_code, 302)
         self.site.refresh_from_db()
         self.assertEqual(self.site.operations_zone_id, zone.pk)
+
+    def test_map_zone_list_includes_related_sites(self):
+        zone = OperationsZone.objects.create(name="North Ridge", color="#10b981")
+        self.site.operations_zone = zone
+        self.site.city = "Accra"
+        self.site.country = "Ghana"
+        self.site.save(update_fields=["operations_zone", "city", "country"])
+
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("dashboard:map-zones"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, 'id="zone-sites-')
+        self.assertContains(response, "Zone Test Site")
+        self.assertContains(response, "Accra")
+        self.assertContains(response, self.site.hik_site_id)
 
     def test_map_zone_duplicate_name_rejected(self):
         OperationsZone.objects.create(name="Duplicate")

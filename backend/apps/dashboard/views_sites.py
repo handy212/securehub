@@ -825,6 +825,14 @@ class SiteAccessUpdateView(StaffRequiredMixin, View):
         if role not in valid_roles:
             messages.error(request, "Please choose a valid access role.")
             return redirect("dashboard:onboard-client", pk=pk)
+        if access.role == CustomerSiteAccess.ROLE_OWNER and role != CustomerSiteAccess.ROLE_OWNER:
+            other_owner_exists = CustomerSiteAccess.objects.filter(
+                site=site,
+                role=CustomerSiteAccess.ROLE_OWNER,
+            ).exclude(pk=access.pk).exists()
+            if not other_owner_exists:
+                messages.error(request, "Assign another owner before changing the last owner.")
+                return redirect("dashboard:onboard-client", pk=pk)
         if role == CustomerSiteAccess.ROLE_VIEWER:
             can_control = False
 
@@ -840,6 +848,14 @@ class SiteAccessDeleteView(StaffRequiredMixin, View):
 
         site = get_object_or_404(Site, pk=pk)
         access = get_object_or_404(CustomerSiteAccess, pk=access_id, site=site)
+        if access.role == CustomerSiteAccess.ROLE_OWNER:
+            other_owner_exists = CustomerSiteAccess.objects.filter(
+                site=site,
+                role=CustomerSiteAccess.ROLE_OWNER,
+            ).exclude(pk=access.pk).exists()
+            if not other_owner_exists:
+                messages.error(request, "Assign another owner before removing the last owner.")
+                return redirect("dashboard:onboard-client", pk=pk)
         username = access.user.username
         access.delete()
         messages.success(request, f"Removed '{username}' from {site.name}.")

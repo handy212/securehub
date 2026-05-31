@@ -669,6 +669,11 @@ class ClientPortalAccessSerializer(serializers.ModelSerializer):
         fields = "__all__"
         read_only_fields = ("id", "site_name", "username", "created_at")
 
+    def validate_user(self, user):
+        if user.is_staff or user.is_superuser:
+            raise serializers.ValidationError("Operator accounts cannot be assigned guarding client portal access.")
+        return user
+
 
 class WelfareCheckSerializer(serializers.ModelSerializer):
     class Meta:

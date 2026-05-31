@@ -40,6 +40,7 @@ Technical setup remains in [README.md](../README.md) (root) and [backend/README.
 | Document | Description |
 |----------|-------------|
 | [operator-rbac.md](operator-rbac.md) | Console roles and permission codenames |
+| [access-control-matrix.md](access-control-matrix.md) | Roles, site access, guarding client flags, and API permission layers |
 | [guard-mobile-api.md](guard-mobile-api.md) | Guard REST API reference |
 | [emergency-addon-runbook.md](emergency-addon-runbook.md) | Emergency add-on billing and ops |
 | [guard-monitoring-system-roadmap.md](guard-monitoring-system-roadmap.md) | Guard monitoring roadmap |
