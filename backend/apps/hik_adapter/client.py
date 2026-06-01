@@ -105,18 +105,20 @@ class HikPartnerClient:
     ) -> requests.Response:
         """
         Wrap requests.request with simple linear backoff retry.
-        Only retries on connect-level errors (ConnectTimeout, ConnectionError).
-        ReadTimeout is NOT retried: the server may have already processed a
-        state-changing request and retrying would send the command twice.
+        Read timeouts are retried only for safe read methods so slow status
+        polling can recover without replaying panel commands.
         """
-        _retryable = (
+        retryable = (
             requests.exceptions.ConnectTimeout,
             requests.exceptions.ConnectionError,
         )
+        if method.upper() in {"GET", "HEAD", "OPTIONS"}:
+            retryable = (*retryable, requests.exceptions.ReadTimeout)
+
         for attempt in range(retries):
             try:
                 return requests.request(method=method, url=url, **kwargs)
-            except _retryable as exc:
+            except retryable as exc:
                 if attempt == retries - 1:
                     raise
                 delay = attempt + 1  # 1s, 2s, 3s …

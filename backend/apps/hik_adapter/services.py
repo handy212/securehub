@@ -902,10 +902,17 @@ class HikPartnerService:
                     subsystem__device=device,
                     device_type=Zone.DEVICE_TYPE_ZONE,
                 ).exclude(id__in=touched_zone_ids).delete()
-                self._sync_outputs_via_isapi(device)
             except Exception as exc:
                 logger.warning(
                     "sync_alarm_status: zone sync failed for %s: %s",
+                    device.serial_number,
+                    exc,
+                )
+            try:
+                self._sync_outputs_via_isapi(device)
+            except Exception as exc:
+                logger.warning(
+                    "sync_alarm_status: output sync failed for %s: %s",
                     device.serial_number,
                     exc,
                 )
