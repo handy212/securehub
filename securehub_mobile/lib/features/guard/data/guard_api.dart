@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../core/api/api_client.dart';
-import '../../../core/api/api_client.dart';
 import '../../../core/api/guard_endpoints.dart';
 import '../models/guard_models.dart';
 import 'offline_queue.dart';
@@ -16,8 +15,8 @@ final guardApiProvider = Provider<GuardApi>((ref) {
 
 class GuardApi {
   GuardApi({required Dio dio, required GuardOfflineQueue offlineQueue})
-      : _dio = dio,
-        _offline = offlineQueue;
+    : _dio = dio,
+      _offline = offlineQueue;
 
   final Dio _dio;
   final GuardOfflineQueue _offline;
@@ -108,7 +107,9 @@ class GuardApi {
         GuardEndpoints.patrolScan(patrolRoundId),
         data: payload,
       );
-      return GuardScanResult.fromJson(Map<String, dynamic>.from(resp.data as Map));
+      return GuardScanResult.fromJson(
+        Map<String, dynamic>.from(resp.data as Map),
+      );
     } on DioException catch (e) {
       if (_isOfflineError(e)) {
         await _offline.enqueueScan(
@@ -161,7 +162,11 @@ class GuardApi {
     );
   }
 
-  Future<void> transitionDispatch(String taskId, String action, {String note = ''}) async {
+  Future<void> transitionDispatch(
+    String taskId,
+    String action, {
+    String note = '',
+  }) async {
     try {
       await _dio.post(
         GuardEndpoints.dispatchAction(taskId, action),

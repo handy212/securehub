@@ -4,7 +4,6 @@ import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:uuid/uuid.dart';
 
 import '../data/guard_api.dart';
-import '../models/guard_models.dart';
 import '../providers/guard_ops_provider.dart';
 import '../utils/checkpoint_qr.dart';
 
@@ -14,7 +13,8 @@ class GuardPatrolScanScreen extends ConsumerStatefulWidget {
   final String? assignmentId;
 
   @override
-  ConsumerState<GuardPatrolScanScreen> createState() => _GuardPatrolScanScreenState();
+  ConsumerState<GuardPatrolScanScreen> createState() =>
+      _GuardPatrolScanScreenState();
 }
 
 class _GuardPatrolScanScreenState extends ConsumerState<GuardPatrolScanScreen> {
@@ -65,7 +65,9 @@ class _GuardPatrolScanScreenState extends ConsumerState<GuardPatrolScanScreen> {
 
     try {
       final pos = await readGuardPosition();
-      final result = await ref.read(guardApiProvider).scanCheckpoint(
+      final result = await ref
+          .read(guardApiProvider)
+          .scanCheckpoint(
             patrolRoundId: round.id,
             checkpointId: checkpoint.id,
             clientScanId: const Uuid().v4(),
@@ -78,7 +80,8 @@ class _GuardPatrolScanScreenState extends ConsumerState<GuardPatrolScanScreen> {
       _showMessage(
         result.queued ? 'Scan queued offline' : 'Scanned ${checkpoint.name}',
       );
-      if (result.postOrders.isNotEmpty || result.checkpointInstructions.isNotEmpty) {
+      if (result.postOrders.isNotEmpty ||
+          result.checkpointInstructions.isNotEmpty) {
         await showDialog<void>(
           context: context,
           builder: (ctx) => AlertDialog(
@@ -96,7 +99,10 @@ class _GuardPatrolScanScreenState extends ConsumerState<GuardPatrolScanScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(o.title, style: Theme.of(ctx).textTheme.titleSmall),
+                          Text(
+                            o.title,
+                            style: Theme.of(ctx).textTheme.titleSmall,
+                          ),
                           Text(o.body),
                         ],
                       ),
@@ -106,7 +112,10 @@ class _GuardPatrolScanScreenState extends ConsumerState<GuardPatrolScanScreen> {
               ),
             ),
             actions: [
-              TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+              TextButton(
+                onPressed: () => Navigator.pop(ctx),
+                child: const Text('OK'),
+              ),
             ],
           ),
         );
