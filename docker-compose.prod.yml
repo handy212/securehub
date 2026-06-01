@@ -48,7 +48,9 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    # Traffic enters via nginx only — do not publish Gunicorn to the host.
+    ports:
+      - "172.16.20.245:8000:8000"
+    # Traffic enters via Nginx Proxy Manager on the LAN.
 
   celery-worker:
     build:
