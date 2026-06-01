@@ -59,6 +59,7 @@ from .services import (
     ensure_shift_time_order,
     record_clock_event,
 )
+from .location_utils import object_coordinates, object_location_label, object_maps_url
 
 
 class GuardApplicantDocumentSerializer(serializers.ModelSerializer):
@@ -387,10 +388,23 @@ class ShiftSerializer(serializers.ModelSerializer):
 
 
 class ClockEventSerializer(serializers.ModelSerializer):
+    location_label = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
+    map_url = serializers.SerializerMethodField()
+
     class Meta:
         model = ClockEvent
         fields = "__all__"
-        read_only_fields = ("id", "created_at")
+        read_only_fields = ("id", "location_label", "coordinates", "map_url", "created_at")
+
+    def get_location_label(self, obj):
+        return object_location_label(obj)
+
+    def get_coordinates(self, obj):
+        return object_coordinates(obj)
+
+    def get_map_url(self, obj):
+        return object_maps_url(obj)
 
     def validate(self, attrs):
         assignment = attrs.get("assignment", getattr(self.instance, "assignment", None))
@@ -490,12 +504,33 @@ class PatrolRoundMobileSerializer(PatrolRoundSerializer):
 class CheckpointScanSerializer(serializers.ModelSerializer):
     checkpoint_name = serializers.CharField(source="checkpoint.name", read_only=True)
     guard_name = serializers.CharField(source="guard.full_name", read_only=True)
+    location_label = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
+    map_url = serializers.SerializerMethodField()
     client_scan_id = serializers.CharField(required=False, allow_blank=True, write_only=True)
 
     class Meta:
         model = CheckpointScan
         fields = "__all__"
-        read_only_fields = ("id", "checkpoint_name", "guard_name", "guard", "created_at")
+        read_only_fields = (
+            "id",
+            "checkpoint_name",
+            "guard_name",
+            "guard",
+            "location_label",
+            "coordinates",
+            "map_url",
+            "created_at",
+        )
+
+    def get_location_label(self, obj):
+        return object_location_label(obj)
+
+    def get_coordinates(self, obj):
+        return object_coordinates(obj)
+
+    def get_map_url(self, obj):
+        return object_maps_url(obj)
 
     def validate(self, attrs):
         patrol_round = attrs.get("patrol_round", getattr(self.instance, "patrol_round", None))
@@ -545,6 +580,7 @@ class FieldReportSerializer(serializers.ModelSerializer):
     guard_name = serializers.CharField(source="guard.full_name", read_only=True)
     site_name = serializers.CharField(source="site.name", read_only=True)
     post_name = serializers.CharField(source="post.name", read_only=True)
+    location_label = serializers.SerializerMethodField()
     attachments = FieldReportAttachmentSerializer(many=True, read_only=True)
     client_acknowledgements = FieldReportAcknowledgementSerializer(many=True, read_only=True)
 
@@ -556,6 +592,7 @@ class FieldReportSerializer(serializers.ModelSerializer):
             "guard_name",
             "site_name",
             "post_name",
+            "location_label",
             "attachments",
             "client_acknowledgements",
             "reviewed_by",
@@ -591,12 +628,37 @@ class FieldReportSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({"status": "Reports must be reviewed before approval or rejection."})
         return attrs
 
+    def get_location_label(self, obj):
+        return object_location_label(obj)
+
 
 class GuardLocationPingSerializer(serializers.ModelSerializer):
+    guard_name = serializers.CharField(source="guard.full_name", read_only=True)
+    location_label = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
+    map_url = serializers.SerializerMethodField()
+
     class Meta:
         model = GuardLocationPing
         fields = "__all__"
-        read_only_fields = ("id", "guard", "created_at")
+        read_only_fields = (
+            "id",
+            "guard",
+            "guard_name",
+            "location_label",
+            "coordinates",
+            "map_url",
+            "created_at",
+        )
+
+    def get_location_label(self, obj):
+        return object_location_label(obj)
+
+    def get_coordinates(self, obj):
+        return object_coordinates(obj)
+
+    def get_map_url(self, obj):
+        return object_maps_url(obj)
 
     def validate(self, attrs):
         assignment = attrs.get("assignment")
@@ -714,6 +776,9 @@ class WelfareCheckMobileSerializer(serializers.ModelSerializer):
 class GuardPanicAlertSerializer(serializers.ModelSerializer):
     guard_name = serializers.CharField(source="guard.full_name", read_only=True)
     site_name = serializers.CharField(source="site.name", read_only=True)
+    location_label = serializers.SerializerMethodField()
+    coordinates = serializers.SerializerMethodField()
+    map_url = serializers.SerializerMethodField()
 
     class Meta:
         model = GuardPanicAlert
@@ -723,6 +788,9 @@ class GuardPanicAlertSerializer(serializers.ModelSerializer):
             "guard",
             "guard_name",
             "site_name",
+            "location_label",
+            "coordinates",
+            "map_url",
             "acknowledged_by",
             "acknowledged_at",
             "resolved_by",
@@ -730,6 +798,15 @@ class GuardPanicAlertSerializer(serializers.ModelSerializer):
             "created_at",
             "updated_at",
         )
+
+    def get_location_label(self, obj):
+        return object_location_label(obj)
+
+    def get_coordinates(self, obj):
+        return object_coordinates(obj)
+
+    def get_map_url(self, obj):
+        return object_maps_url(obj)
 
     def validate(self, attrs):
         assignment = attrs.get("assignment", getattr(self.instance, "assignment", None))

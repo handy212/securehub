@@ -1,11 +1,11 @@
 {% extends "dashboard/base.html" %}
+{% load guarding_location %}
 {% block title %}Patrols | SecureHub{% endblock %}
 {% block header_title %}Patrol Monitoring{% endblock %}
 {% block content %}
 {% include "dashboard/guarding/_nav.html" %}
 <div class="space-y-3" x-data="{ checkpointModal: false, routeModal: false, roundModal: false, scanModal: false, editCheckpointId: null, editRouteId: null, editRoundId: null, editScanId: null }">
     <div class="console-page-toolbar !mb-0 !pb-2">
-    {% include "dashboard/guarding/_kpi_strip.html" %}
         <div class="min-w-0 flex-1">
             {% include "dashboard/partials/console/page_header.html" with page_title="Checkpoints & routes" page_subtitle="QR/GPS patrol proof" %}
         </div>
@@ -17,6 +17,7 @@
             <button type="button" @click="scanModal = true" class="btn-console-secondary">Scan</button>
         </div>
     </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
     <div class="grid gap-4 xl:grid-cols-3">
         <div class="console-table-card">
             <div class="console-card-section-title">Checkpoints</div>
@@ -103,7 +104,16 @@
                     <td class="console-td">{{ scan.patrol_round.route.name }}</td>
                     <td class="console-td">{{ scan.guard.full_name|default:"-" }}</td>
                     <td class="console-td whitespace-nowrap">{{ scan.scanned_at|date:"Y-m-d H:i" }}</td>
-                    <td class="console-td font-mono text-xs">{{ scan.latitude|default:"-" }}, {{ scan.longitude|default:"-" }}</td>
+                    <td class="console-td">
+                        <div class="console-meta">{{ scan|decoded_location }}</div>
+                        {% with url=scan|maps_url coords=scan|coordinates %}
+                        {% if url %}
+                        <a href="{{ url }}" target="_blank" rel="noopener" class="console-text-link text-[11px]">{{ coords }}</a>
+                        {% else %}
+                        <span class="console-meta">No coordinates</span>
+                        {% endif %}
+                        {% endwith %}
+                    </td>
                     <td class="console-td">{% if scan.within_geofence %}<span class="badge-console badge-console-emerald">In fence</span>{% else %}<span class="badge-console badge-console-amber">Verify</span>{% endif %}</td>
                     <td class="console-td text-right">
                         <button type="button" class="btn-console-secondary" @click="editScanId = '{{ scan.id }}'">Edit</button>

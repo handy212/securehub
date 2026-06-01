@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../data/guard_api.dart';
 import '../models/guard_models.dart';
 import '../providers/guard_ops_provider.dart';
@@ -17,49 +18,59 @@ class GuardWelfareBanner extends ConsumerWidget {
 
     final check = urgent.first;
     final dueLabel = DateFormat.Hm().format(check.dueAt.toLocal());
-    final color = check.isOverdue ? Colors.red.shade700 : Colors.orange.shade800;
+    final color = check.isOverdue ? AppTheme.error : Colors.orange.shade800;
+    final bgColor = check.isOverdue ? AppTheme.errorContainer.withValues(alpha: 0.5) : Colors.orange.shade50;
 
-    return Card(
-      margin: const EdgeInsets.fromLTRB(16, 16, 16, 0),
-      color: check.isOverdue ? Colors.red.shade50 : Colors.orange.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Row(
-              children: [
-                Icon(Icons.health_and_safety_outlined, color: color),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: Text(
-                    check.isOverdue ? 'Welfare check overdue' : 'Welfare check due soon',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(color: color),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: bgColor,
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: color.withValues(alpha: 0.2)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Row(
+            children: [
+              Icon(Icons.health_and_safety_rounded, color: color, size: 20),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  check.isOverdue ? 'Safety check overdue' : 'Safety check required',
+                  style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    color: color,
+                    fontWeight: FontWeight.w800,
                   ),
                 ),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text(
-              '${check.siteName} · ${check.postName} — due $dueLabel',
-              style: Theme.of(context).textTheme.bodySmall,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                FilledButton(
+              ),
+              Text(
+                dueLabel,
+                style: Theme.of(context).textTheme.labelSmall?.copyWith(
+                  color: color.withValues(alpha: 0.7),
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton(
+                  style: FilledButton.styleFrom(
+                    backgroundColor: color,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
                   onPressed: () => _confirm(context, ref, check),
-                  child: const Text('I am OK'),
+                  child: const Text('I am Safe & OK'),
                 ),
-                const SizedBox(width: 8),
-                TextButton(
-                  onPressed: () => context.push('/guard/welfare'),
-                  child: const Text('View all'),
-                ),
-              ],
-            ),
-          ],
-        ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

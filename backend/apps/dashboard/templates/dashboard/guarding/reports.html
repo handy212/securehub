@@ -5,8 +5,6 @@
 {% include "dashboard/guarding/_nav.html" %}
 <div class="space-y-3" x-data="{ createModal: false, attachmentModal: false, editReportId: null, editAttachmentId: null }">
     <div class="console-page-toolbar !mb-0 !pb-2">
-    {% include "dashboard/guarding/_kpi_strip.html" %}
-
         <div class="min-w-0 flex-1">
             {% include "dashboard/partials/console/page_header.html" with page_title="Reports" page_subtitle="Daily activity, incidents, maintenance, visitor logs, and evidence" %}
         </div>
@@ -16,6 +14,7 @@
             <button type="button" @click="createModal = true" class="btn-console">New Report</button>
         </div>
     </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
 
     {% include "dashboard/partials/console/data_table_start.html" with table_scrollable=True table_min_width_class="min-w-[1100px]" %}
             <thead class="console-thead">

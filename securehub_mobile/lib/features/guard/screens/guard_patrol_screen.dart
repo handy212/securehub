@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../data/guard_api.dart';
 import '../models/guard_models.dart';
 import '../providers/guard_ops_provider.dart';
@@ -15,41 +16,41 @@ class GuardPatrolScreen extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final roundsAsync = ref.watch(guardPatrolRoundsProvider);
+    
     return Scaffold(
+      backgroundColor: AppTheme.surface,
       appBar: AppBar(
-        title: const Text('Patrol rounds'),
-        actions: [
-          IconButton(
-            tooltip: 'Scan QR',
-            icon: const Icon(Icons.qr_code_scanner),
-            onPressed: () => context.push(
-              '/guard/scan',
-              extra: assignmentId,
-            ),
-          ),
-        ],
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push('/guard/scan', extra: assignmentId),
-        icon: const Icon(Icons.qr_code_scanner),
-        label: const Text('Scan QR'),
+        title: const Text('Patrol Operations'),
       ),
       body: roundsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
-        error: (e, _) => Center(child: Text('Error: $e')),
+        error: (e, _) => _ErrorState(onRetry: () => ref.invalidate(guardPatrolRoundsProvider)),
         data: (rounds) {
           final filtered = assignmentId == null
               ? rounds
               : rounds.where((r) => r.assignmentId == assignmentId).toList();
+          
           if (filtered.isEmpty) {
-            return const Center(child: Text('No patrol rounds scheduled.'));
+            return const _EmptyPatrolState();
           }
-          return ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: filtered.length,
-            itemBuilder: (context, index) => _PatrolRoundCard(round: filtered[index]),
+
+          return RefreshIndicator(
+            onRefresh: () async => ref.invalidate(guardPatrolRoundsProvider),
+            child: ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: filtered.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 16),
+              itemBuilder: (context, index) => _PatrolRoundCard(round: filtered[index]),
+            ),
           );
         },
+      ),
+      floatingActionButton: FloatingActionButton.extended(
+        backgroundColor: AppTheme.primary,
+        foregroundColor: AppTheme.onPrimary,
+        onPressed: () => context.push('/guard/scan', extra: assignmentId),
+        icon: const Icon(Icons.qr_code_scanner_rounded),
+        label: const Text('Quick Scan'),
       ),
     );
   }
@@ -57,7 +58,6 @@ class GuardPatrolScreen extends ConsumerWidget {
 
 class _PatrolRoundCard extends ConsumerStatefulWidget {
   const _PatrolRoundCard({required this.round});
-
   final GuardPatrolRound round;
 
   @override
@@ -115,15 +115,16 @@ class _PatrolRoundCardState extends ConsumerState<_PatrolRoundCard> {
             mainAxisSize: MainAxisSize.min,
             children: [
               if (result.checkpointInstructions.isNotEmpty)
-                Text(result.checkpointInstructions),
+                Text(result.checkpointInstructions, style: const TextStyle(fontWeight: FontWeight.w600)),
               ...result.postOrders.map(
                 (order) => Padding(
-                  padding: const EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.only(top: 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(order.title, style: Theme.of(ctx).textTheme.titleSmall),
-                      Text(order.body),
+                      Text(order.title, style: Theme.of(ctx).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w800)),
+                      const SizedBox(height: 4),
+                      Text(order.body, style: Theme.of(ctx).textTheme.bodyMedium),
                     ],
                   ),
                 ),
@@ -132,7 +133,7 @@ class _PatrolRoundCardState extends ConsumerState<_PatrolRoundCard> {
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('OK')),
+          TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Understood')),
         ],
       ),
     );
@@ -162,42 +163,190 @@ class _PatrolRoundCardState extends ConsumerState<_PatrolRoundCard> {
   @override
   Widget build(BuildContext context) {
     final round = widget.round;
-    return Card(
-      margin: const EdgeInsets.only(bottom: 12),
-      child: Padding(
-        padding: const EdgeInsets.all(12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(round.routeName, style: Theme.of(context).textTheme.titleMedium),
-            if (round.siteName.isNotEmpty) Text(round.siteName),
-            Text('Status: ${round.status}'),
-            const SizedBox(height: 8),
-            ...round.route.checkpoints.map((checkpoint) {
-              final done = round.isComplete(checkpoint.id);
-              return ListTile(
-                dense: true,
-                contentPadding: EdgeInsets.zero,
-                leading: Icon(
-                  done ? Icons.check_circle : Icons.radio_button_unchecked,
-                  color: done ? Colors.green : null,
-                  size: 20,
+    final theme = Theme.of(context);
+    final completedCount = round.scannedCheckpointIds.length;
+    final totalCount = round.route.checkpoints.length;
+    final progress = totalCount > 0 ? completedCount / totalCount : 0.0;
+
+    return Container(
+      decoration: BoxDecoration(
+        color: AppTheme.surfaceContainerLowest,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.1)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            round.routeName.toUpperCase(),
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppTheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 1.1,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            round.siteName.isNotEmpty ? round.siteName : 'Unspecified Site',
+                            style: theme.textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w800),
+                          ),
+                        ],
+                      ),
+                    ),
+                    _StatusChip(status: round.status),
+                  ],
                 ),
-                title: Text(checkpoint.name),
-                subtitle: checkpoint.code.isNotEmpty ? Text('Code: ${checkpoint.code}') : null,
-                trailing: TextButton(
-                  onPressed: _busy || done ? null : () => _scan(checkpoint),
-                  child: const Text('Scan'),
+                const SizedBox(height: 20),
+                LinearProgressIndicator(
+                  value: progress,
+                  backgroundColor: AppTheme.surfaceContainerLow,
+                  borderRadius: BorderRadius.circular(100),
+                  minHeight: 8,
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  '$completedCount of $totalCount checkpoints completed',
+                  style: theme.textTheme.labelSmall?.copyWith(color: AppTheme.onSurfaceVariant),
+                ),
+              ],
+            ),
+          ),
+          const Divider(height: 1),
+          ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: round.route.checkpoints.length,
+            separatorBuilder: (_, __) => const Divider(height: 1, indent: 56),
+            itemBuilder: (context, idx) {
+              final checkpoint = round.route.checkpoints[idx];
+              final done = round.isComplete(checkpoint.id);
+              return Material(
+                color: AppTheme.surfaceContainerLowest, // Moved color here from outer container if needed, but this is a list item
+                child: ListTile(
+                  leading: Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                      color: done ? AppTheme.secondary.withValues(alpha: 0.1) : AppTheme.surfaceContainerLow,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Icon(
+                      done ? Icons.check_rounded : Icons.location_on_rounded,
+                      size: 16,
+                      color: done ? AppTheme.secondary : AppTheme.outline,
+                    ),
+                  ),
+                  title: Text(
+                    checkpoint.name,
+                    style: TextStyle(
+                      fontWeight: done ? FontWeight.w600 : FontWeight.w500,
+                      color: done ? AppTheme.onSurface : AppTheme.onSurfaceVariant,
+                    ),
+                  ),
+                  trailing: done 
+                    ? null 
+                    : IconButton(
+                        icon: const Icon(Icons.qr_code_scanner_rounded, size: 20),
+                        onPressed: _busy ? null : () => _scan(checkpoint),
+                      ),
                 ),
               );
-            }),
-            const SizedBox(height: 8),
-            FilledButton(
-              onPressed: _busy ? null : _complete,
-              child: const Text('Complete patrol'),
+            },
+          ),
+          if (progress == 1.0 && round.status != 'completed') ...[
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: FilledButton(
+                onPressed: _busy ? null : _complete,
+                child: const Text('Finish Patrol Round'),
+              ),
             ),
           ],
+          const SizedBox(height: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.status});
+  final String status;
+
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (status) {
+      'completed' => AppTheme.secondary,
+      'in_progress' => Colors.blue,
+      'scheduled' => Colors.orange,
+      _ => AppTheme.onSurfaceVariant,
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(100),
+      ),
+      child: Text(
+        status.toUpperCase(),
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.5,
         ),
+      ),
+    );
+  }
+}
+
+class _EmptyPatrolState extends StatelessWidget {
+  const _EmptyPatrolState();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.route_rounded, size: 64, color: AppTheme.outlineVariant.withValues(alpha: 0.2)),
+          const SizedBox(height: 16),
+          Text(
+            'No active patrol rounds.',
+            style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: AppTheme.onSurfaceVariant),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ErrorState extends StatelessWidget {
+  const _ErrorState({required this.onRetry});
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          const Text('Could not load patrols'),
+          const SizedBox(height: 16),
+          FilledButton.tonal(onPressed: onRetry, child: const Text('Retry')),
+        ],
       ),
     );
   }

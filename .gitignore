@@ -17,7 +17,8 @@ backend/*.sqlite3-shm
 backend/*.sqlite3-wal
 backend/*.sqlite3-journal
 backend/firebase/*.json
-
+backend/guard_applicants/
+backend/guard_documents/
 
 backups/
 

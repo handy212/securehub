@@ -9,6 +9,7 @@
         const fromUrl = new URLSearchParams(window.location.search).get('tab');
         return allowed.includes(fromUrl) ? fromUrl : 'catalog';
     })(),
+    policyScope: 'site',
     createType: false, createUnit: false, createDepot: false, createStock: false, createKit: false, createPolicy: false,
     editTypeId: null, editDepotId: null, editUnitId: null, editStockId: null,
     editKitId: null, editKitLineId: null, editPolicyId: null,
@@ -21,20 +22,20 @@
     }
 }">
     <div class="console-page-toolbar !mb-0 !pb-2">
-        {% include "dashboard/guarding/_kpi_strip.html" %}
         <div class="min-w-0 flex-1">
             {% include "dashboard/partials/console/page_header.html" with page_title="Assets" page_subtitle="Catalog, depots, stock, post kits, policies, and custody" %}
         </div>
         <div class="console-page-actions flex flex-wrap gap-2">
-            <button type="button" class="btn-console" x-show="tab === 'catalog'" @click="createType = true">New type</button>
-            <button type="button" class="btn-console-secondary" x-show="tab === 'catalog'" @click="createUnit = true">Register unit</button>
-            <button type="button" class="btn-console" x-show="tab === 'depots'" @click="createDepot = true">New depot</button>
-            <button type="button" class="btn-console" x-show="tab === 'stock'" @click="createStock = true">Set stock</button>
-            <button type="button" class="btn-console" x-show="tab === 'kits'" @click="createKit = true">New kit</button>
-            <button type="button" class="btn-console" x-show="tab === 'policy'" @click="createPolicy = true">New policy</button>
-            <a href="{% url 'dashboard:guarding-shifts' %}" class="btn-console-secondary" x-show="tab === 'manifests'">Manage on Shifts</a>
+            <button type="button" class="btn-console py-1.5 text-[11px]" x-cloak x-show="tab === 'catalog'" @click="createType = true">New type</button>
+            <button type="button" class="btn-console-secondary py-1.5 text-[11px]" x-cloak x-show="tab === 'catalog'" @click="createUnit = true">Register unit</button>
+            <button type="button" class="btn-console py-1.5 text-[11px]" x-cloak x-show="tab === 'depots'" @click="createDepot = true">New depot</button>
+            <button type="button" class="btn-console py-1.5 text-[11px]" x-cloak x-show="tab === 'stock'" @click="createStock = true">Set stock</button>
+            <button type="button" class="btn-console py-1.5 text-[11px]" x-cloak x-show="tab === 'kits'" @click="createKit = true">New kit</button>
+            <button type="button" class="btn-console py-1.5 text-[11px]" x-cloak x-show="tab === 'policy'" @click="policyScope = 'site'; createPolicy = true">New policy</button>
+            <a href="{% url 'dashboard:guarding-shifts' %}" class="btn-console-secondary py-1.5 text-[11px]" x-cloak x-show="tab === 'manifests'">Manage on Shifts</a>
         </div>
     </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
 
     <div class="console-dash-kpi-strip lg:grid-cols-4">
         <div class="console-kpi-tile"><p class="console-stat-label">Open manifests</p><p class="console-stat-value-xs tabular-nums">{{ asset_summary.open_manifests }}</p></div>
@@ -43,14 +44,14 @@
         <div class="console-kpi-tile"><p class="console-stat-label">Lost (7d)</p><p class="console-stat-value-xs tabular-nums">{{ asset_summary.lost_this_week }}</p></div>
     </div>
 
-    <nav class="guarding-intake-tabs border-b border-slate-200 dark:border-slate-800" aria-label="Asset sections">
-        <button type="button" class="guarding-intake-tabs__btn" :class="tab === 'catalog' && 'is-active'" @click="setTab('catalog')">Catalog</button>
-        <button type="button" class="guarding-intake-tabs__btn" :class="tab === 'depots' && 'is-active'" @click="setTab('depots')">Depots</button>
-        <button type="button" class="guarding-intake-tabs__btn" :class="tab === 'stock' && 'is-active'" @click="setTab('stock')">Stock</button>
-        <button type="button" class="guarding-intake-tabs__btn" :class="tab === 'kits' && 'is-active'" @click="setTab('kits')">Post kits</button>
-        <button type="button" class="guarding-intake-tabs__btn" :class="tab === 'policy' && 'is-active'" @click="setTab('policy')">Policies</button>
-        <button type="button" class="guarding-intake-tabs__btn" :class="tab === 'manifests' && 'is-active'" @click="setTab('manifests')">
-            Open manifests{% if asset_summary.open_manifests %} <span class="ml-1 rounded-full bg-brand/15 px-1.5 py-0.5 text-[10px] text-brand">{{ asset_summary.open_manifests }}</span>{% endif %}
+    <nav class="console-table-card flex gap-1 overflow-x-auto px-2 py-1.5" aria-label="Asset sections">
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'catalog' && 'is-active'" @click="setTab('catalog')">Catalog <span class="console-count-pill ml-1">{{ asset_types|length }}</span></button>
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'depots' && 'is-active'" @click="setTab('depots')">Depots <span class="console-count-pill ml-1">{{ depots|length }}</span></button>
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'stock' && 'is-active'" @click="setTab('stock')">Stock <span class="console-count-pill ml-1">{{ stock_levels|length }}</span></button>
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'kits' && 'is-active'" @click="setTab('kits')">Post kits <span class="console-count-pill ml-1">{{ kits|length }}</span></button>
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'policy' && 'is-active'" @click="setTab('policy')">Policies <span class="console-count-pill ml-1">{{ asset_policies|length }}</span></button>
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'manifests' && 'is-active'" @click="setTab('manifests')">
+            Open manifests{% if asset_summary.open_manifests %}<span class="console-count-pill ml-1">{{ asset_summary.open_manifests }}</span>{% endif %}
         </button>
     </nav>
 
@@ -274,9 +275,12 @@
         <form method="post" class="form-perfex flex flex-col">
             {% csrf_token %}<input type="hidden" name="action" value="asset_policy">
             <div class="space-y-3">
-                <div class="form-group"><label>Site</label><select name="site_id"><option value="">— Select site —</option>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select></div>
-                <div class="form-group"><label>Post (overrides site)</label><select name="post_id"><option value="">— Optional post —</option>{% for post in posts %}<option value="{{ post.id }}">{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select></div>
-                <p class="console-meta">Choose site OR post, not both.</p>
+                <div class="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
+                    <button type="button" class="rounded px-3 py-2 text-[11px] font-semibold transition" :class="policyScope === 'site' ? 'bg-white text-brand shadow-sm dark:bg-slate-800' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'" @click="policyScope = 'site'">Site policy</button>
+                    <button type="button" class="rounded px-3 py-2 text-[11px] font-semibold transition" :class="policyScope === 'post' ? 'bg-white text-brand shadow-sm dark:bg-slate-800' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'" @click="policyScope = 'post'">Post override</button>
+                </div>
+                <div class="form-group" x-show="policyScope === 'site'"><label>Site</label><select name="site_id" :disabled="policyScope !== 'site'" data-modal-initial-focus><option value="">— Select site —</option>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select></div>
+                <div class="form-group" x-show="policyScope === 'post'"><label>Post</label><select name="post_id" :disabled="policyScope !== 'post'"><option value="">— Select post —</option>{% for post in posts %}<option value="{{ post.id }}">{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select></div>
                 <div class="form-group"><label>Default mode</label><select name="default_mode">{% for value,label in enforcement_modes %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
                 <div class="guarding-checkbox-grid">
                     <label class="guarding-check"><input name="enforce_issue_before_clock_in" type="checkbox" checked> Require issue before clock-in</label>
@@ -417,13 +421,20 @@
 
     {% for policy in asset_policies %}
     <template x-if="editPolicyId === '{{ policy.id }}'">
-        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit policy" modal_subtitle=policy.post.name|default:policy.site.name modal_close="editPolicyId = null" modal_max_width="max-w-xl" %}
-        <div class="flex flex-col">
+        {% if policy.post_id %}
+            {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit policy" modal_subtitle=policy.post.name modal_close="editPolicyId = null" modal_max_width="max-w-xl" %}
+        {% else %}
+            {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit policy" modal_subtitle=policy.site.name modal_close="editPolicyId = null" modal_max_width="max-w-xl" %}
+        {% endif %}
+        <div class="flex flex-col" x-data="{ scope: '{% if policy.post_id %}post{% else %}site{% endif %}' }">
             <form id="policy-edit-{{ policy.id }}" method="post" class="form-perfex space-y-3">
                 {% csrf_token %}<input type="hidden" name="action" value="update_asset_policy"><input type="hidden" name="policy_id" value="{{ policy.id }}">
-                <div class="form-group"><label>Site</label><select name="site_id"><option value="">— Select site —</option>{% for site in sites %}<option value="{{ site.id }}" {% if policy.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}</select></div>
-                <div class="form-group"><label>Post (overrides site)</label><select name="post_id"><option value="">— Optional post —</option>{% for post in posts %}<option value="{{ post.id }}" {% if policy.post_id == post.id %}selected{% endif %}>{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select></div>
-                <p class="console-meta">Choose site OR post, not both.</p>
+                <div class="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
+                    <button type="button" class="rounded px-3 py-2 text-[11px] font-semibold transition" :class="scope === 'site' ? 'bg-white text-brand shadow-sm dark:bg-slate-800' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'" @click="scope = 'site'">Site policy</button>
+                    <button type="button" class="rounded px-3 py-2 text-[11px] font-semibold transition" :class="scope === 'post' ? 'bg-white text-brand shadow-sm dark:bg-slate-800' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'" @click="scope = 'post'">Post override</button>
+                </div>
+                <div class="form-group" x-show="scope === 'site'"><label>Site</label><select name="site_id" :disabled="scope !== 'site'"><option value="">— Select site —</option>{% for site in sites %}<option value="{{ site.id }}" {% if policy.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}</select></div>
+                <div class="form-group" x-show="scope === 'post'"><label>Post</label><select name="post_id" :disabled="scope !== 'post'"><option value="">— Select post —</option>{% for post in posts %}<option value="{{ post.id }}" {% if policy.post_id == post.id %}selected{% endif %}>{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select></div>
                 <div class="form-group"><label>Default mode</label><select name="default_mode">{% for value,label in enforcement_modes %}<option value="{{ value }}" {% if policy.default_mode == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
                 <div class="guarding-checkbox-grid">
                     <label class="guarding-check"><input name="enforce_issue_before_clock_in" type="checkbox" {% if policy.enforce_issue_before_clock_in %}checked{% endif %}> Require issue before clock-in</label>

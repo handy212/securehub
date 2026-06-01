@@ -1,6 +1,24 @@
+import json
+
 from apps.sites.models import Site
 from apps.alarms.models import AlarmEvent
 from django.db.models import Count
+
+
+def _web_notification_context(user):
+    from apps.communication.views import serialize_web_notification, user_message_queryset
+
+    queryset = user_message_queryset(user)
+    notifications = [
+        serialize_web_notification(message, user)
+        for message in queryset[:8]
+    ]
+    return {
+        "web_notifications": notifications,
+        "web_notifications_json": json.dumps(notifications),
+        "web_unread_notification_count": queryset.exclude(views__user=user).count(),
+    }
+
 
 def global_dashboard_stats(request):
     if not request.user.is_authenticated:
@@ -39,7 +57,7 @@ def global_dashboard_stats(request):
     total_sites = sites_qs.count()
     health_percentage = round((online_count / total_sites * 100)) if total_sites > 0 else 100
 
-    return {
+    context = {
         'global_sites': sites_data,
         'global_config': {
             'tickerCount': recent_events.count(),
@@ -54,3 +72,5 @@ def global_dashboard_stats(request):
             'blocked': blocked_count
         }
     }
+    context.update(_web_notification_context(request.user))
+    return context

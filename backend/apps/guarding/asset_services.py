@@ -206,6 +206,8 @@ def issue_manifest_line(
         raise ValidationError({"status": "Line cannot be issued in its current state."})
 
     if asset_type.tracking_mode == GuardAssetType.TrackingMode.SERIAL:
+        if line.status == ShiftAssetManifestLine.Status.ISSUED:
+            raise ValidationError({"asset_unit": "Serial-tracked line is already issued."})
         if asset_unit is None:
             raise ValidationError({"asset_unit": "Serial-tracked items require a specific unit."})
         if asset_unit.asset_type_id != asset_type.id:
@@ -223,6 +225,11 @@ def issue_manifest_line(
             raise ValidationError({"depot": "Depot is required for quantity-tracked items."})
         stock = _get_or_create_stock(asset_type, effective_depot)
         qty = max(1, int(quantity))
+        remaining = line.expected_qty - line.issued_qty
+        if remaining <= 0:
+            raise ValidationError({"quantity": "Line has already been fully issued."})
+        if qty > remaining:
+            raise ValidationError({"quantity": f"Cannot issue more than expected (remaining: {remaining})."})
         if stock.quantity_available < qty:
             raise ValidationError({"quantity": f"Insufficient stock (available: {stock.quantity_available})."})
         stock.quantity_on_hand -= qty
@@ -382,6 +389,12 @@ def close_manifest(manifest: ShiftAssetManifest, *, closed_by=None) -> ShiftAsse
     pending = manifest.lines.filter(status=ShiftAssetManifestLine.Status.PENDING)
     if pending.exists():
         raise ValidationError({"manifest": "Cannot close manifest with pending lines."})
+    outstanding_returns = manifest.lines.filter(
+        status=ShiftAssetManifestLine.Status.ISSUED,
+        asset_type__requires_return=True,
+    )
+    if outstanding_returns.exists():
+        raise ValidationError({"manifest": "Cannot close manifest while returnable assets are still issued."})
     manifest.status = ShiftAssetManifest.Status.CLOSED
     manifest.closed_at = timezone.now()
     manifest.closed_by = closed_by

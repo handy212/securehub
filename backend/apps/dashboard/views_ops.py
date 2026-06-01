@@ -827,7 +827,13 @@ class MapZoneListView(StaffRequiredMixin, View):
             .prefetch_related(Prefetch("sites", queryset=zone_sites))
             .order_by("sort_order", "name")
         )
-        return render(request, self.template_name, {"zones": zones})
+        zone_summary = {
+            "active": OperationsZone.objects.filter(is_active=True).count(),
+            "hidden": OperationsZone.objects.filter(is_active=False).count(),
+            "assigned_sites": Site.objects.filter(operations_zone__isnull=False).count(),
+            "unassigned_sites": Site.objects.filter(operations_zone__isnull=True).count(),
+        }
+        return render(request, self.template_name, {"zones": zones, "zone_summary": zone_summary})
 
     def post(self, request):
         name = request.POST.get("name", "").strip()

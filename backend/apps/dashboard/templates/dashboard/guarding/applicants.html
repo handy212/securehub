@@ -5,7 +5,6 @@
 {% include "dashboard/guarding/_nav.html" %}
 <div class="space-y-3" x-data="{ createModal: false, hireModal: null, editApplicantId: null, intakeTab: 'application', docModal: null, eduModal: null, empModal: null, refModal: null, eduEditId: null, empEditId: null, refEditId: null }">
     <div class="console-page-toolbar !mb-0 !pb-2">
-    {% include "dashboard/guarding/_kpi_strip.html" %}
         <div class="min-w-0 flex-1">
             {% include "dashboard/partials/console/page_header.html" with page_title="Applicants" page_subtitle="Full recruitment intake" %}
         </div>
@@ -14,6 +13,7 @@
             <button type="button" @click="createModal = true" class="btn-console">New applicant</button>
         </div>
     </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
 
     {% include "dashboard/guarding/_search_bar.html" with search_placeholder="Search applicants…" current_query=current_query %}
 

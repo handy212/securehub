@@ -90,11 +90,10 @@ class NotificationSettingsScreen extends ConsumerWidget {
             ),
 
             const _SectionHeader(title: 'Delivery Channels'),
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(20),
-              ),
+            Material(
+              color: AppTheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   _NotificationToggle(
@@ -119,11 +118,10 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 32),
             const _SectionHeader(title: 'Security Events'),
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(20),
-              ),
+            Material(
+              color: AppTheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
               child: Column(
                 children: [
                   _NotificationToggle(
@@ -149,11 +147,10 @@ class NotificationSettingsScreen extends ConsumerWidget {
 
             const SizedBox(height: 32),
             const _SectionHeader(title: 'Maintenance'),
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(20),
-              ),
+            Material(
+              color: AppTheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
               child: ListTile(
                 contentPadding:
                     const EdgeInsets.symmetric(horizontal: 20, vertical: 8),

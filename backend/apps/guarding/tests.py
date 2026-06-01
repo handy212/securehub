@@ -27,6 +27,7 @@ from .models import (
     GuardCredential,
     GuardInvoice,
     GuardPanicAlert,
+    GuardLocationPing,
     GuardPost,
     GuardProfile,
     GuardTimesheet,
@@ -52,12 +53,13 @@ from .asset_models import (
 from .asset_services import (
     add_manifest_line,
     build_manifest_for_assignment,
+    close_manifest,
     delete_manifest_line,
     issue_manifest_line,
     rebuild_manifest_for_assignment,
     update_manifest_line,
 )
-from .services import ensure_guard_compliance_ready, guard_compliance_issues, hire_applicant
+from .services import build_command_center_snapshot, ensure_guard_compliance_ready, guard_compliance_issues, hire_applicant
 from .tasks import mark_overdue_patrol_rounds, mark_overdue_welfare_checks
 
 
@@ -262,6 +264,25 @@ class GuardingApiTests(APITestCase):
         self.assertEqual(response.data[0]["id"], str(check.id))
         self.assertEqual(response.data[0]["site_name"], self.site.name)
 
+    def test_guard_can_confirm_recently_missed_welfare_check(self):
+        check = WelfareCheck.objects.create(
+            assignment=self.assignment,
+            due_at=timezone.now() - timezone.timedelta(minutes=10),
+            status=WelfareCheck.Status.MISSED,
+        )
+        self.authenticate(self.guard_user)
+
+        response = self.client.post(
+            reverse("guard-my-welfare-confirm", args=[check.id]),
+            {"note": "Safe"},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        check.refresh_from_db()
+        self.assertEqual(check.status, WelfareCheck.Status.CONFIRMED)
+        self.assertEqual(check.response_note, "Safe")
+
     def test_guard_can_submit_field_report(self):
         self.authenticate(self.guard_user)
         response = self.client.post(
@@ -367,9 +388,20 @@ class GuardingApiTests(APITestCase):
 
         self.assertEqual(accept_response.status_code, status.HTTP_200_OK)
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["location_label"], "Main Gate - Warehouse")
+        self.assertEqual(response.data["coordinates"], "5.603716, -0.186964")
+        self.assertIn("google.com/maps", response.data["map_url"])
         self.assignment.refresh_from_db()
         self.assertEqual(self.assignment.status, ShiftAssignment.Status.CLOCKED_IN)
         self.assertIsNotNone(self.assignment.clocked_in_at)
+        self.assertTrue(
+            GuardLocationPing.objects.filter(
+                guard=self.guard,
+                assignment=self.assignment,
+                latitude="5.603716000",
+                longitude="-0.186964000",
+            ).exists()
+        )
 
     def test_guard_can_submit_field_report_for_assignment(self):
         self.authenticate(self.guard_user)
@@ -409,10 +441,37 @@ class GuardingApiTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["location_label"], "Main Gate - Warehouse")
+        self.assertEqual(response.data["coordinates"], "5.603716, -0.186964")
+        self.assertIn("google.com/maps", response.data["map_url"])
         alert = GuardPanicAlert.objects.get()
         self.assertEqual(alert.guard, self.guard)
         self.assertEqual(alert.site, self.site)
         self.assertEqual(alert.status, GuardPanicAlert.Status.OPEN)
+        ping = GuardLocationPing.objects.get()
+        self.assertEqual(ping.guard, self.guard)
+        self.assertEqual(ping.assignment, self.assignment)
+        self.assertEqual(ping.latitude, alert.latitude)
+        self.assertEqual(ping.longitude, alert.longitude)
+
+    def test_guard_panic_location_places_guard_on_command_map(self):
+        self.authenticate(self.guard_user)
+        response = self.client.post(
+            reverse("guard-my-panic"),
+            {
+                "assignment": str(self.assignment.id),
+                "latitude": "5.603716000",
+                "longitude": "-0.186964000",
+                "note": "Need supervisor support.",
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        snapshot = build_command_center_snapshot()
+        self.assertEqual(len(snapshot["guards"]), 1)
+        self.assertEqual(snapshot["guards"][0]["guard_id"], str(self.guard.id))
+        self.assertEqual(snapshot["guards"][0]["latitude"], GuardPanicAlert.objects.get().latitude)
 
     def test_staff_can_hire_applicant_into_guard_profile(self):
         applicant = GuardApplicant.objects.create(
@@ -1126,6 +1185,35 @@ class GuardAssetManagementTests(APITestCase):
         key_line = manifest.lines.get(asset_type=self.key_type)
         with self.assertRaises(ValidationError):
             issue_manifest_line(key_line, quantity=99, issued_by=self.staff, depot=self.depot)
+
+    def test_cannot_issue_more_than_expected_quantity(self):
+        from django.core.exceptions import ValidationError
+
+        manifest = build_manifest_for_assignment(self.assignment, depot=self.depot)
+        key_line = manifest.lines.get(asset_type=self.key_type)
+        issue_manifest_line(key_line, quantity=2, issued_by=self.staff, depot=self.depot)
+        key_line.refresh_from_db()
+        with self.assertRaises(ValidationError):
+            issue_manifest_line(key_line, quantity=1, issued_by=self.staff, depot=self.depot)
+
+    def test_cannot_reissue_serial_line_or_close_with_returnable_assets_out(self):
+        from django.core.exceptions import ValidationError
+
+        second_unit = GuardAssetUnit.objects.create(
+            asset_type=self.radio_type,
+            depot=self.depot,
+            asset_tag="RAD-002",
+        )
+        manifest = build_manifest_for_assignment(self.assignment, depot=self.depot)
+        radio_line = manifest.lines.get(asset_type=self.radio_type)
+        key_line = manifest.lines.get(asset_type=self.key_type)
+        issue_manifest_line(radio_line, asset_unit=self.unit, issued_by=self.staff)
+        issue_manifest_line(key_line, quantity=2, issued_by=self.staff, depot=self.depot)
+
+        with self.assertRaises(ValidationError):
+            issue_manifest_line(radio_line, asset_unit=second_unit, issued_by=self.staff)
+        with self.assertRaises(ValidationError):
+            close_manifest(manifest, closed_by=self.staff)
 
     def test_rebuild_manifest_replaces_pending_lines(self):
         manifest = build_manifest_for_assignment(self.assignment, depot=self.depot)

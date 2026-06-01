@@ -10,6 +10,17 @@ from django.utils import timezone
 from apps.accounts.models import CustomerProfile, StaffOperatorProfile
 from apps.accounts.rbac import OperatorRole
 from apps.alarms.models import AlarmEvent
+from apps.guarding.asset_models import (
+    GuardAssetDepot,
+    GuardAssetStock,
+    GuardAssetType,
+    GuardAssetUnit,
+    GuardingAssetPolicy,
+    PostAssetKit,
+    PostAssetKitLine,
+    ShiftAssetManifestLine,
+)
+from apps.guarding.asset_services import build_manifest_for_assignment, issue_manifest_line
 from apps.guarding.models import (
     Checkpoint,
     CheckpointScan,
@@ -200,10 +211,19 @@ class Command(BaseCommand):
             defaults={"status": ShiftAssignment.Status.ASSIGNED, "assigned_by": guarding},
         )
         lobby_shift = self._shift(lobby, showroom_shift_start, 8, "Demo showroom shift")
-        ShiftAssignment.objects.update_or_create(
+        backup_assignment, _ = ShiftAssignment.objects.update_or_create(
             shift=lobby_shift,
             guard=backup_guard,
             defaults={"status": ShiftAssignment.Status.ACCEPTED, "assigned_by": guarding, "accepted_at": now},
+        )
+        self._seed_guard_assets(
+            warehouse=warehouse,
+            showroom=showroom,
+            main_gate=main_gate,
+            lobby=lobby,
+            assignment=assignment,
+            backup_assignment=backup_assignment,
+            operator=guarding,
         )
 
         ClientPortalAccess.objects.update_or_create(
@@ -283,6 +303,7 @@ class Command(BaseCommand):
         self.stdout.write("Guard mobile login: guard-ama")
         self.stdout.write("Client portal URL: /console/client/guarding/")
         self.stdout.write("Back office URL: /console/guarding/back-office/?tab=templates")
+        self.stdout.write("Guard assets URL: /console/guarding/assets/")
 
     def _user(self, username, email, *, first_name="", last_name="", is_staff=False, is_superuser=False, reset_password=False):
         user, created = User.objects.get_or_create(
@@ -427,6 +448,188 @@ class Command(BaseCommand):
                 "verified": True,
             },
         )
+
+    def _seed_guard_assets(self, *, warehouse, showroom, main_gate, lobby, assignment, backup_assignment, operator):
+        radio_type, _ = GuardAssetType.objects.update_or_create(
+            code="RADIO-HH",
+            defaults={
+                "name": "Handheld Radio",
+                "category": GuardAssetType.Category.RADIO,
+                "tracking_mode": GuardAssetType.TrackingMode.SERIAL,
+                "requires_return": True,
+                "replacement_cost": Decimal("185.00"),
+                "metadata": {"channel_plan": "Demo Ops 1"},
+                "is_active": True,
+            },
+        )
+        key_type, _ = GuardAssetType.objects.update_or_create(
+            code="SITE-KEY",
+            defaults={
+                "name": "Site Key Bunch",
+                "category": GuardAssetType.Category.KEYS,
+                "tracking_mode": GuardAssetType.TrackingMode.SERIAL,
+                "requires_return": True,
+                "replacement_cost": Decimal("65.00"),
+                "is_active": True,
+            },
+        )
+        vest_type, _ = GuardAssetType.objects.update_or_create(
+            code="HI-VIS-VEST",
+            defaults={
+                "name": "Hi-Vis Vest",
+                "category": GuardAssetType.Category.UNIFORM,
+                "tracking_mode": GuardAssetType.TrackingMode.QUANTITY,
+                "requires_return": False,
+                "default_condition_check": False,
+                "replacement_cost": Decimal("18.00"),
+                "is_active": True,
+            },
+        )
+        torch_type, _ = GuardAssetType.objects.update_or_create(
+            code="TORCH",
+            defaults={
+                "name": "Rechargeable Torch",
+                "category": GuardAssetType.Category.OTHER,
+                "tracking_mode": GuardAssetType.TrackingMode.SERIAL,
+                "requires_return": True,
+                "replacement_cost": Decimal("42.00"),
+                "is_active": True,
+            },
+        )
+
+        central_depot, _ = GuardAssetDepot.objects.update_or_create(
+            name="Central Guard Stores",
+            defaults={"site": None, "is_active": True},
+        )
+        warehouse_depot, _ = GuardAssetDepot.objects.update_or_create(
+            name="Warehouse North Lockup",
+            defaults={"site": warehouse, "is_active": True},
+        )
+        showroom_depot, _ = GuardAssetDepot.objects.update_or_create(
+            name="Showroom Security Locker",
+            defaults={"site": showroom, "is_active": True},
+        )
+
+        radio_issued = self._asset_unit(
+            radio_type,
+            warehouse_depot,
+            "RAD-DEMO-001",
+            "SN-RAD-DEMO-001",
+            site=warehouse,
+        )
+        self._asset_unit(radio_type, warehouse_depot, "RAD-DEMO-002", "SN-RAD-DEMO-002", site=warehouse)
+        self._asset_unit(radio_type, showroom_depot, "RAD-DEMO-003", "SN-RAD-DEMO-003", site=showroom)
+        key_unit = self._asset_unit(key_type, warehouse_depot, "KEY-WH-GATE", "KEY-DEMO-WH-GATE", site=warehouse)
+        self._asset_unit(key_type, showroom_depot, "KEY-RS-LOBBY", "KEY-DEMO-RS-LOBBY", site=showroom)
+        self._asset_unit(
+            torch_type,
+            central_depot,
+            "TORCH-DEMO-001",
+            "SN-TORCH-DEMO-001",
+            status=GuardAssetUnit.Status.MAINTENANCE,
+            notes="Demo unit awaiting battery replacement.",
+        )
+        self._asset_unit(torch_type, warehouse_depot, "TORCH-DEMO-002", "SN-TORCH-DEMO-002", site=warehouse)
+
+        GuardAssetStock.objects.update_or_create(
+            asset_type=vest_type,
+            depot=warehouse_depot,
+            defaults={"quantity_on_hand": 12, "quantity_reserved": 2},
+        )
+        GuardAssetStock.objects.update_or_create(
+            asset_type=vest_type,
+            depot=showroom_depot,
+            defaults={"quantity_on_hand": 8, "quantity_reserved": 0},
+        )
+
+        warehouse_kit = self._post_kit(main_gate, "Main Gate Standard Kit", is_default=True)
+        for asset_type, qty, optional in [
+            (radio_type, 1, False),
+            (key_type, 1, False),
+            (vest_type, 1, False),
+            (torch_type, 1, True),
+        ]:
+            PostAssetKitLine.objects.update_or_create(
+                kit=warehouse_kit,
+                asset_type=asset_type,
+                defaults={"quantity_required": qty, "is_optional": optional},
+            )
+
+        lobby_kit = self._post_kit(lobby, "Lobby Desk Kit", is_default=True)
+        for asset_type, qty, optional in [
+            (radio_type, 1, False),
+            (key_type, 1, False),
+            (vest_type, 1, True),
+        ]:
+            PostAssetKitLine.objects.update_or_create(
+                kit=lobby_kit,
+                asset_type=asset_type,
+                defaults={"quantity_required": qty, "is_optional": optional},
+            )
+
+        GuardingAssetPolicy.objects.update_or_create(
+            post=main_gate,
+            defaults={
+                "site": None,
+                "default_mode": GuardingAssetPolicy.EnforcementMode.STRICT,
+                "enforce_issue_before_clock_in": True,
+                "enforce_return_before_clock_out": True,
+                "allow_supervisor_override": True,
+                "is_active": True,
+            },
+        )
+        GuardingAssetPolicy.objects.update_or_create(
+            site=showroom,
+            defaults={
+                "post": None,
+                "default_mode": GuardingAssetPolicy.EnforcementMode.ADVISORY,
+                "enforce_issue_before_clock_in": True,
+                "enforce_return_before_clock_out": True,
+                "allow_supervisor_override": True,
+                "is_active": True,
+            },
+        )
+
+        manifest = build_manifest_for_assignment(assignment, depot=warehouse_depot, issued_by=operator)
+        for line in manifest.lines.select_related("asset_type", "asset_unit"):
+            if line.status != ShiftAssetManifestLine.Status.PENDING:
+                continue
+            if line.asset_type_id == radio_type.id:
+                issue_manifest_line(line, asset_unit=radio_issued, issued_by=operator)
+            elif line.asset_type_id == key_type.id:
+                issue_manifest_line(line, asset_unit=key_unit, issued_by=operator)
+            elif line.asset_type_id == vest_type.id:
+                issue_manifest_line(line, quantity=1, issued_by=operator, depot=warehouse_depot)
+
+        build_manifest_for_assignment(backup_assignment, depot=showroom_depot, issued_by=operator)
+
+    def _asset_unit(self, asset_type, depot, asset_tag, serial_number, *, site=None, status=None, notes=""):
+        existing = GuardAssetUnit.objects.filter(asset_tag=asset_tag).first()
+        next_status = status or GuardAssetUnit.Status.AVAILABLE
+        if existing and status is None and existing.status == GuardAssetUnit.Status.ISSUED:
+            next_status = existing.status
+        unit, _ = GuardAssetUnit.objects.update_or_create(
+            asset_tag=asset_tag,
+            defaults={
+                "asset_type": asset_type,
+                "depot": depot,
+                "site": site,
+                "serial_number": serial_number,
+                "status": next_status,
+                "notes": notes,
+            },
+        )
+        return unit
+
+    def _post_kit(self, post, name, *, is_default=False):
+        kit, _ = PostAssetKit.objects.update_or_create(
+            post=post,
+            name=name,
+            defaults={"is_default": is_default, "is_active": True},
+        )
+        if is_default:
+            PostAssetKit.objects.filter(post=post, is_default=True).exclude(pk=kit.pk).update(is_default=False)
+        return kit
 
     def _shift(self, post, starts_at, hours, notes):
         shift, _ = Shift.objects.update_or_create(

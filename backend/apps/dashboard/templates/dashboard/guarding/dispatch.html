@@ -1,10 +1,11 @@
 {% extends "dashboard/base.html" %}
+{% load guarding_location %}
 {% block title %}Dispatch / SOS | SecureHub{% endblock %}
 {% block header_title %}Guard Dispatch{% endblock %}
 {% block content %}
 {% include "dashboard/guarding/_nav.html" %}
 {{ dispatch_tab_counts|json_script:"dispatch-poll-data" }}
-<div class="space-y-3" x-data="{
+<div class="space-y-3" @click.window="enableAlertSound()" x-data="{
         tab: (() => {
             const allowed = ['sos', 'tasks', 'policies'];
             const fromUrl = new URLSearchParams(window.location.search).get('tab');
@@ -15,6 +16,10 @@
         pollUrl: '{% url 'dashboard:guarding-dispatch-poll' %}',
         pollHandle: null,
         pollLabel: 'Counts synced',
+        previousOpenPanic: null,
+        audioCtx: null,
+        soundReady: false,
+        lastAlertSoundAt: 0,
         createModal: false,
         panicModal: false,
         editPanicId: null,
@@ -27,7 +32,7 @@
         },
         init() {
             this.refreshDispatchPoll();
-            this.pollHandle = setInterval(() => this.refreshDispatchPoll(), 30000);
+            this.pollHandle = setInterval(() => this.refreshDispatchPoll(), 5000);
         },
         destroy() {
             if (this.pollHandle) clearInterval(this.pollHandle);
@@ -36,25 +41,77 @@
             fetch(this.pollUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
                 .then(r => r.ok ? r.json() : Promise.reject())
                 .then(data => {
-                    if (data.dispatch_tab_counts) this.pollCounts = data.dispatch_tab_counts;
+                    if (data.dispatch_tab_counts) {
+                        const nextOpenPanic = data.dispatch_tab_counts.open_panic || 0;
+                        const increased = this.previousOpenPanic !== null && nextOpenPanic > this.previousOpenPanic;
+                        const repeatDue = nextOpenPanic > 0 && Date.now() - this.lastAlertSoundAt > 10000;
+                        if (increased || repeatDue) {
+                            this.playAlertSound();
+                        }
+                        if (increased) {
+                            window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'New guard SOS received', type: 'error' } }));
+                            this.setTab('sos');
+                        }
+                        this.previousOpenPanic = nextOpenPanic;
+                        this.pollCounts = data.dispatch_tab_counts;
+                    }
                     const t = data.generated_at ? new Date(data.generated_at) : new Date();
                     this.pollLabel = `Counts synced ${t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
                 })
                 .catch(() => { this.pollLabel = 'Count sync failed'; });
         },
+        enableAlertSound() {
+            if (this.soundReady) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                this.audioCtx = this.audioCtx || new AudioCtx();
+                this.audioCtx.resume();
+                this.soundReady = true;
+                if ((this.pollCounts.open_panic || 0) > 0) this.playAlertSound();
+            } catch (_) {}
+        },
+        playAlertSound() {
+            if (!this.soundReady) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = this.audioCtx || new AudioCtx();
+                this.audioCtx = ctx;
+                if (ctx.state === 'suspended') ctx.resume();
+                [0, 180, 360].forEach((offset) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 880;
+                    gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset / 1000);
+                    gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + offset / 1000 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset / 1000 + 0.14);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + offset / 1000);
+                    osc.stop(ctx.currentTime + offset / 1000 + 0.16);
+                });
+                this.lastAlertSoundAt = Date.now();
+            } catch (_) {}
+        },
     }">
     <div class="console-page-toolbar !mb-0 !pb-2">
-        {% include "dashboard/guarding/_kpi_strip.html" %}
         <div class="min-w-0 flex-1">
             {% include "dashboard/partials/console/page_header.html" with page_title="Dispatch / SOS" page_subtitle="Panic response, task queue, and auto-dispatch policies" %}
         </div>
-        <div class="console-page-actions">
-            <span class="hidden text-[10px] font-medium text-slate-400 sm:inline" x-text="pollLabel"></span>
+        <div class="console-page-actions justify-start sm:justify-end">
+            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300" x-text="pollLabel"></span>
+            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                  :class="soundReady ? 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400' : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300'"
+                  x-text="soundReady ? 'Sound armed' : 'Click to enable sound'"></span>
             <a href="{% url 'dashboard:site-map' %}?focus=guards" class="btn-console-secondary py-1.5 text-[11px]">Field map</a>
             <button type="button" @click="panicModal = true; setTab('sos')" class="btn-console-secondary border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30">Manual SOS</button>
             <button type="button" @click="createModal = true; setTab('tasks')" class="btn-console-danger">New dispatch</button>
         </div>
     </div>
+
+    {% include "dashboard/guarding/_kpi_strip.html" %}
 
     {% include "dashboard/guarding/_dispatch_tabs.html" %}
 
@@ -81,7 +138,13 @@
                                 <div class="console-row-title">{{ alert.guard.full_name }}</div>
                                 <div class="console-meta">{{ alert.note|truncatechars:48|default:"No note" }}</div>
                             </td>
-                            <td class="console-td">{{ alert.site.name|default:"—" }}</td>
+                            <td class="console-td">
+                                <div>{{ alert.site.name|default:"—" }}</div>
+                                <div class="console-meta">{{ alert|decoded_location }}</div>
+                                {% with url=alert|maps_url coords=alert|coordinates %}
+                                {% if url %}<a href="{{ url }}" target="_blank" rel="noopener" class="console-text-link text-[11px]">{{ coords }}</a>{% endif %}
+                                {% endwith %}
+                            </td>
                             <td class="console-td"><span class="badge-console badge-console-red">{{ alert.get_status_display }}</span></td>
                             <td class="console-td whitespace-nowrap tabular-nums">{{ alert.created_at|date:"Y-m-d H:i" }}</td>
                             <td class="console-td text-right">

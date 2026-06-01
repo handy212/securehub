@@ -1,12 +1,11 @@
 {% extends "dashboard/base.html" %}
+{% load guarding_location %}
 {% block title %}Guards | SecureHub{% endblock %}
 {% block header_title %}Guard Operations{% endblock %}
 {% block content %}
 {% include "dashboard/guarding/_nav.html" %}
 <div class="space-y-3" x-data="{ createModal: false, credentialModal: false, documentModal: false, locationModal: false, editGuardId: null, editPingId: null, editCredentialId: null, editDocumentId: null }">
     <div class="console-page-toolbar !mb-0 !pb-2">
-    {% include "dashboard/guarding/_kpi_strip.html" %}
-
         <div class="min-w-0 flex-1">
             {% include "dashboard/partials/console/page_header.html" with page_title="Guards" page_subtitle="Field workforce registry" %}
         </div>
@@ -17,6 +16,7 @@
             <button type="button" @click="createModal = true" class="btn-console">New Guard</button>
         </div>
     </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
     {% include "dashboard/guarding/_search_bar.html" with search_placeholder="Search guards…" current_query=current_query %}
 
     {% include "dashboard/partials/console/data_table_start.html" with table_scrollable=True table_min_width_class="min-w-[1100px]" %}
@@ -124,7 +124,14 @@
                     <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                         <div class="min-w-0">
                             <div class="font-semibold text-slate-900 dark:text-slate-100">{{ ping.guard.full_name }}</div>
-                            <div class="console-meta font-mono">{{ ping.latitude }}, {{ ping.longitude }}</div>
+                            <div class="console-meta">{{ ping|decoded_location }}</div>
+                            {% with url=ping|maps_url coords=ping|coordinates %}
+                            {% if url %}
+                            <a href="{{ url }}" target="_blank" rel="noopener" class="console-text-link text-[11px]">{{ coords }}</a>
+                            {% else %}
+                            <div class="console-meta">No coordinates</div>
+                            {% endif %}
+                            {% endwith %}
                             <div class="console-meta mt-1">{{ ping.created_at|date:"Y-m-d H:i" }} · Accuracy {{ ping.accuracy_m|default:"-" }}m</div>
                         </div>
                         <button type="button" class="btn-console-secondary shrink-0" @click="editPingId = '{{ ping.id }}'">Edit</button>

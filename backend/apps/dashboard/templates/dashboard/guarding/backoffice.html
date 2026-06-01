@@ -19,12 +19,11 @@
         },
     }">
     <div class="console-page-toolbar !mb-0 !pb-2">
-    {% include "dashboard/guarding/_kpi_strip.html" %}
-
         <div class="min-w-0 flex-1">
             {% include "dashboard/partials/console/page_header.html" with page_title="Back office" page_subtitle="Contracts, payroll, templates, and people operations" %}
         </div>
     </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
 
     {% include "dashboard/guarding/_backoffice_tabs.html" %}
 

@@ -20,6 +20,7 @@ from apps.dashboard.event_presenters import serialize_console_event
 from apps.dashboard.site_helpers import build_active_faults, visible_console_events
 from apps.guarding.services import build_command_center_snapshot
 from apps.guarding.models import SiteGuardDispatchPolicy
+from apps.guarding.location_utils import format_coordinates, maps_url
 
 
 def build_dispatch_poll_payload():
@@ -56,10 +57,21 @@ def build_guard_map_payload():
         }
     guards_data = []
     for guard in guard_snapshot["guards"]:
-        if guard["latitude"] is None or guard["longitude"] is None:
+        latitude = guard["latitude"] or guard.get("post_latitude") or guard.get("site_latitude")
+        longitude = guard["longitude"] or guard.get("post_longitude") or guard.get("site_longitude")
+        location_source = "gps" if guard["latitude"] is not None and guard["longitude"] is not None else (
+            "post" if guard.get("post_latitude") is not None and guard.get("post_longitude") is not None else "site"
+        )
+        if latitude is None or longitude is None:
             continue
         last_ping = guard["last_ping_at"]
         zone = site_zones.get(guard["site_id"], {})
+        if location_source == "post":
+            location_label = f"Post location - {guard['post_name']}, {guard['site_name']}"
+        elif location_source == "site":
+            location_label = f"Site location - {guard['site_name']}"
+        else:
+            location_label = f"GPS ping - {guard['post_name']}, {guard['site_name']}"
         guards_data.append(
             {
                 "id": guard["guard_id"],
@@ -70,12 +82,16 @@ def build_guard_map_payload():
                 "zone_id": zone.get("zone_id"),
                 "zone_name": zone.get("zone_name", ""),
                 "zone_color": zone.get("zone_color", ""),
-                "lat": float(guard["latitude"]),
-                "lng": float(guard["longitude"]),
+                "lat": float(latitude),
+                "lng": float(longitude),
+                "location_source": location_source,
+                "location_label": location_label,
+                "coordinates": format_coordinates(latitude, longitude),
+                "map_url": maps_url(latitude, longitude),
                 "open_panic": guard["open_panic"],
                 "active_dispatch": guard["active_dispatch"],
                 "last_ping_at": last_ping.isoformat() if last_ping else None,
-                "last_ping_label": f"{timesince(last_ping)} ago" if last_ping else None,
+                "last_ping_label": f"{timesince(last_ping)} ago" if last_ping else "No GPS yet",
                 "dispatch_url": reverse("dashboard:guarding-dispatch"),
             }
         )

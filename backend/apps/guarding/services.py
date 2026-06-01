@@ -566,6 +566,15 @@ def record_clock_event(
         within_geofence=within_geofence,
         device_timestamp=device_timestamp,
     )
+    if latitude is not None and longitude is not None:
+        GuardLocationPing.objects.create(
+            guard=assignment.guard,
+            assignment=assignment,
+            latitude=latitude,
+            longitude=longitude,
+            accuracy_m=accuracy_m,
+            device_timestamp=device_timestamp,
+        )
     if event_type == ClockEvent.EventType.CLOCK_IN:
         assignment.status = ShiftAssignment.Status.CLOCKED_IN
         assignment.clocked_in_at = assignment.clocked_in_at or clock_event.created_at
@@ -697,7 +706,7 @@ def review_field_report(report: FieldReport, *, actor, status: str, note: str = 
 
 
 def respond_to_welfare_check(check: WelfareCheck, *, note: str = "") -> WelfareCheck:
-    if check.status not in {WelfareCheck.Status.PENDING, WelfareCheck.Status.ESCALATED}:
+    if check.status not in {WelfareCheck.Status.PENDING, WelfareCheck.Status.MISSED, WelfareCheck.Status.ESCALATED}:
         raise ValidationError({"status": "This welfare check is already closed."})
     check.status = WelfareCheck.Status.CONFIRMED
     check.responded_at = timezone.now()
@@ -1208,7 +1217,11 @@ def build_command_center_snapshot():
     assignments = (
         ShiftAssignment.objects.select_related("guard", "shift", "shift__post", "shift__post__site")
         .filter(
-            status=ShiftAssignment.Status.CLOCKED_IN,
+            status__in=[
+                ShiftAssignment.Status.ASSIGNED,
+                ShiftAssignment.Status.ACCEPTED,
+                ShiftAssignment.Status.CLOCKED_IN,
+            ],
             shift__starts_at__lte=now,
             shift__ends_at__gte=now,
         )
@@ -1240,6 +1253,10 @@ def build_command_center_snapshot():
                 "site_id": str(row.shift.post.site_id),
                 "site_name": row.shift.post.site.name,
                 "post_name": row.shift.post.name,
+                "post_latitude": row.shift.post.latitude,
+                "post_longitude": row.shift.post.longitude,
+                "site_latitude": row.shift.post.site.latitude,
+                "site_longitude": row.shift.post.site.longitude,
                 "latitude": row.ping_lat,
                 "longitude": row.ping_lng,
                 "last_ping_at": row.ping_at,

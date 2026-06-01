@@ -13,6 +13,7 @@ import json
 from apps.alarms.models import AlarmEvent
 from apps.communication.models import BroadcastMessage
 from apps.dashboard.console_auth import CONSOLE_LOGIN_ATTEMPT_LIMIT
+from apps.guarding.asset_models import GuardingAssetPolicy
 from apps.guarding.models import (
     ClientPortalAccess,
     GuardCredential,
@@ -1558,7 +1559,51 @@ class GuardingDispatchConsoleTests(TestCase):
         response = self.client.get(reverse("dashboard:guarding-dispatch"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dispatch / SOS")
+        self.assertContains(response, "Panic response, task queue, and auto-dispatch policies")
+        self.assertContains(response, "Sound armed")
+        self.assertContains(response, "New dispatch")
+        self.assertContains(response, 'class="console-dash-kpi-strip lg:grid-cols-3 xl:grid-cols-7"')
         self.assertContains(response, "Dispatch Site")
+
+    def test_guarding_pages_keep_kpis_outside_page_toolbar(self):
+        self.client.force_login(self.staff)
+        pages = [
+            ("dashboard:guarding-overview", "Command center"),
+            ("dashboard:guarding-analytics", "Guarding analytics"),
+            ("dashboard:guarding-applicants", "Applicants"),
+            ("dashboard:guarding-guards", "Guards"),
+            ("dashboard:guarding-assets", "Assets"),
+            ("dashboard:guarding-posts", "Posts"),
+            ("dashboard:guarding-shifts", "Shifts"),
+            ("dashboard:guarding-patrols", "Checkpoints & routes"),
+            ("dashboard:guarding-reports", "Reports"),
+            ("dashboard:guarding-backoffice", "Back office"),
+            ("dashboard:guarding-dispatch", "Dispatch / SOS"),
+        ]
+
+        for route_name, page_title in pages:
+            with self.subTest(route_name=route_name):
+                response = self.client.get(reverse(route_name))
+                self.assertEqual(response.status_code, 200)
+                html = response.content.decode()
+                toolbar_index = html.index("console-page-toolbar")
+                kpi_index = html.index("console-dash-kpi-strip", toolbar_index)
+                title_index = html.index(page_title, toolbar_index)
+                self.assertLess(title_index, kpi_index)
+
+    def test_assets_page_renders_site_scoped_asset_policy(self):
+        GuardingAssetPolicy.objects.create(
+            site=self.site,
+            default_mode=GuardingAssetPolicy.EnforcementMode.ADVISORY,
+        )
+        self.client.force_login(self.staff)
+
+        response = self.client.get(reverse("dashboard:guarding-assets"), {"tab": "catalog"})
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Dispatch Site")
+        self.assertContains(response, "Edit policy")
 
 
 class GuardingClientPortalTransparencyTests(TestCase):
@@ -1768,6 +1813,17 @@ class OperationsZoneTests(TestCase):
         self.assertContains(response, "Accra Central")
         self.assertContains(response, "zones-data")
 
+    def test_site_map_keeps_zones_as_filter_not_management(self):
+        OperationsZone.objects.create(name="Accra Central", color="#10b981", sort_order=1)
+
+        self.client.force_login(self.staff)
+        response = self.client.get(reverse("dashboard:site-map"))
+
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Zone filter")
+        self.assertContains(response, "All zones")
+        self.assertNotContains(response, "New zone")
+
     def test_map_zone_create_and_assign_site(self):
         self.client.force_login(self.staff)
         create_response = self.client.post(
@@ -1808,6 +1864,9 @@ class OperationsZoneTests(TestCase):
         response = self.client.get(reverse("dashboard:map-zones"))
 
         self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "Zone management")
+        self.assertContains(response, "New zone")
+        self.assertContains(response, "Assigned sites")
         self.assertContains(response, 'id="zone-sites-')
         self.assertContains(response, "Zone Test Site")
         self.assertContains(response, "Accra")
@@ -1891,3 +1950,45 @@ class OperationsZoneTests(TestCase):
             with patch.object(Site.objects, "filter") as mock_filter:
                 build_guard_map_payload()
                 mock_filter.assert_not_called()
+
+    def test_guard_map_payload_uses_post_or_site_location_when_gps_is_missing(self):
+        from apps.dashboard.api_views import build_guard_map_payload
+
+        self.site.latitude = "5.603716000"
+        self.site.longitude = "-0.186964000"
+        self.site.save(update_fields=["latitude", "longitude"])
+        with patch("apps.dashboard.api_views.build_command_center_snapshot") as mock_snapshot:
+            mock_snapshot.return_value = {
+                "guards": [
+                    {
+                        "guard_id": "guard-1",
+                        "guard_name": "Ama Mensah",
+                        "site_id": str(self.site.id),
+                        "site_name": self.site.name,
+                        "post_name": "Main Gate",
+                        "post_latitude": None,
+                        "post_longitude": None,
+                        "site_latitude": self.site.latitude,
+                        "site_longitude": self.site.longitude,
+                        "latitude": None,
+                        "longitude": None,
+                        "last_ping_at": None,
+                        "open_panic": False,
+                        "active_dispatch": False,
+                    }
+                ],
+                "open_panic_count": 0,
+                "active_dispatch_count": 0,
+                "generated_at": timezone.now().isoformat(),
+            }
+
+            payload = build_guard_map_payload()
+
+        self.assertEqual(payload["snapshot"]["on_duty_count"], 1)
+        self.assertEqual(payload["snapshot"]["on_map_count"], 1)
+        self.assertEqual(payload["guards"][0]["lat"], float(self.site.latitude))
+        self.assertEqual(payload["guards"][0]["location_source"], "site")
+        self.assertEqual(payload["guards"][0]["location_label"], f"Site location - {self.site.name}")
+        self.assertEqual(payload["guards"][0]["coordinates"], "5.603716, -0.186964")
+        self.assertIn("google.com/maps", payload["guards"][0]["map_url"])
+        self.assertEqual(payload["guards"][0]["last_ping_label"], "No GPS yet")

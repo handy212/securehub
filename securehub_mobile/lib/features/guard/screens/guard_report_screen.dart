@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../core/theme/app_theme.dart';
 import '../data/guard_api.dart';
 import '../models/guard_models.dart';
 import '../providers/guard_ops_provider.dart';
@@ -10,22 +11,17 @@ GuardShiftAssignment? _resolveReportAssignment(WidgetRef ref) {
   if (active != null) return active;
   final shifts = ref.read(guardShiftsProvider).valueOrNull;
   if (shifts == null || shifts.isEmpty) return null;
-  for (final shift in shifts) {
-    if (shift.status == 'clocked_in' || shift.status == 'accepted') {
-      return shift;
-    }
-  }
   return shifts.first;
 }
 
-const _reportTypes = <String, String>{
-  'incident': 'Incident',
-  'daily_activity': 'Daily activity',
-  'maintenance': 'Maintenance',
-  'visitor': 'Visitor',
-  'parking': 'Parking',
-  'pass_on': 'Pass-on',
-  'other': 'Other',
+const _reportTypes = <String, Map<String, dynamic>>{
+  'incident': {'label': 'Incident', 'icon': Icons.report_problem_rounded, 'color': AppTheme.error},
+  'daily_activity': {'label': 'Daily Activity', 'icon': Icons.event_note_rounded, 'color': AppTheme.secondary},
+  'maintenance': {'label': 'Maintenance', 'icon': Icons.build_circle_rounded, 'color': Colors.orange},
+  'visitor': {'label': 'Visitor Log', 'icon': Icons.people_alt_rounded, 'color': Colors.blue},
+  'parking': {'label': 'Parking Violation', 'icon': Icons.local_parking_rounded, 'color': Colors.indigo},
+  'pass_on': {'label': 'Pass-on Note', 'icon': Icons.forward_to_inbox_rounded, 'color': Colors.teal},
+  'other': {'label': 'Other', 'icon': Icons.more_horiz_rounded, 'color': AppTheme.onSurfaceVariant},
 };
 
 class GuardReportScreen extends ConsumerStatefulWidget {
@@ -53,17 +49,13 @@ class _GuardReportScreenState extends ConsumerState<GuardReportScreen> {
     final title = _titleController.text.trim();
     final body = _bodyController.text.trim();
     if (title.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Title is required')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Report title is required')));
       return;
     }
 
     final assignment = _resolveReportAssignment(ref);
     if (assignment == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Accept or clock in to a shift before submitting a report')),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Select an assignment first')));
       return;
     }
 
@@ -79,16 +71,12 @@ class _GuardReportScreenState extends ConsumerState<GuardReportScreen> {
             ),
           );
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Report submitted')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Field Report Submitted Successfully')));
         Navigator.of(context).pop();
       }
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Submit failed: $e')),
-        );
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Submission failed: $e')));
       }
     } finally {
       if (mounted) setState(() => _submitting = false);
@@ -97,73 +85,128 @@ class _GuardReportScreenState extends ConsumerState<GuardReportScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     final assignment = ref.watch(guardActiveAssignmentProvider);
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Field report')),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          if (assignment != null)
-            Card(
-              child: ListTile(
-                title: Text(assignment.displayTitle),
-                subtitle: Text('Linked to active shift (${assignment.statusLabel})'),
+      backgroundColor: AppTheme.surface,
+      appBar: AppBar(
+        title: const Text('New Field Report'),
+      ),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.all(24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (assignment != null)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppTheme.surfaceContainerLowest,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppTheme.outlineVariant.withValues(alpha: 0.1)),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.link_rounded, color: AppTheme.secondary),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'LINKED TO ASSIGNMENT',
+                            style: theme.textTheme.labelSmall?.copyWith(
+                              color: AppTheme.onSurfaceVariant,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          Text(
+                            assignment.displayTitle,
+                            style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
               ),
-            )
-          else
-            const Card(
-              child: ListTile(
-                title: Text('No clocked-in shift'),
-                subtitle: Text('Report will be submitted without shift assignment.'),
+            const SizedBox(height: 32),
+            Text(
+              'REPORT DETAILS',
+              style: theme.textTheme.labelSmall?.copyWith(
+                color: AppTheme.onSurfaceVariant,
+                fontWeight: FontWeight.w800,
+                letterSpacing: 1.2,
               ),
             ),
-          const SizedBox(height: 16),
-          DropdownButtonFormField<String>(
-            value: _reportType,
-            decoration: const InputDecoration(
-              labelText: 'Report type',
-              border: OutlineInputBorder(),
+            const SizedBox(height: 16),
+            DropdownButtonFormField<String>(
+              value: _reportType,
+              decoration: const InputDecoration(
+                labelText: 'Category',
+                fillColor: AppTheme.surfaceContainerLowest,
+              ),
+              items: _reportTypes.entries.map((e) {
+                return DropdownMenuItem(
+                  value: e.key,
+                  child: Row(
+                    children: [
+                      Icon(e.value['icon'] as IconData, size: 20, color: e.value['color'] as Color),
+                      const SizedBox(width: 12),
+                      Text(e.value['label'] as String),
+                    ],
+                  ),
+                );
+              }).toList(),
+              onChanged: (v) => setState(() => _reportType = v ?? 'incident'),
             ),
-            items: _reportTypes.entries
-                .map((e) => DropdownMenuItem(value: e.key, child: Text(e.value)))
-                .toList(),
-            onChanged: (v) => setState(() => _reportType = v ?? 'incident'),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _titleController,
-            decoration: const InputDecoration(
-              labelText: 'Title',
-              border: OutlineInputBorder(),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _titleController,
+              decoration: const InputDecoration(
+                labelText: 'Subject / Title',
+                fillColor: AppTheme.surfaceContainerLowest,
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
-          TextField(
-            controller: _bodyController,
-            decoration: const InputDecoration(
-              labelText: 'Details',
-              border: OutlineInputBorder(),
+            const SizedBox(height: 16),
+            TextField(
+              controller: _bodyController,
+              decoration: const InputDecoration(
+                labelText: 'Observations & Details',
+                alignLabelWithHint: true,
+                fillColor: AppTheme.surfaceContainerLowest,
+              ),
+              maxLines: 8,
             ),
-            maxLines: 6,
-          ),
-          const SizedBox(height: 12),
-          SwitchListTile(
-            title: const Text('Visible to client'),
-            value: _visibleToClient,
-            onChanged: (v) => setState(() => _visibleToClient = v),
-          ),
-          const SizedBox(height: 24),
-          FilledButton(
-            onPressed: _submitting ? null : _submit,
-            child: _submitting
-                ? const SizedBox(
-                    height: 22,
-                    width: 22,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : const Text('Submit report'),
-          ),
-        ],
+            const SizedBox(height: 24),
+            Container(
+              decoration: BoxDecoration(
+                color: AppTheme.surfaceContainerLow,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: SwitchListTile(
+                title: Text(
+                  'Visible to Client Portal',
+                  style: theme.textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+                subtitle: const Text('Should the property manager see this report?'),
+                value: _visibleToClient,
+                onChanged: (v) => setState(() => _visibleToClient = v),
+                activeColor: AppTheme.secondary,
+              ),
+            ),
+            const SizedBox(height: 40),
+            FilledButton(
+              onPressed: _submitting ? null : _submit,
+              child: _submitting
+                  ? const CircularProgressIndicator(color: Colors.white)
+                  : const Text('SUBMIT FINAL REPORT'),
+            ),
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }

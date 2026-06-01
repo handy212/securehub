@@ -436,39 +436,10 @@ def _send_generic_fcm_notification(user, title: str, body: str, data: dict = Non
     Core logic to send an FCM push notification to all active devices 
     registered for the user.
     """
-    from apps.accounts.models import FCMDevice
-    from apps.alarms.firebase import get_firebase_messaging
+    from apps.communication.push import send_push_to_user
 
-    messaging = get_firebase_messaging()
-    if messaging is None:
-        return 0
-
-    devices = list(FCMDevice.objects.filter(user=user, is_active=True))
-    if not devices:
-        return 0
-
-    sent = 0
-    for device in devices:
-        try:
-            messaging.send(
-                messaging.Message(
-                    notification=messaging.Notification(title=title, body=body),
-                    data=data or {},
-                    token=device.token,
-                )
-            )
-            sent += 1
-        # messaging.UnregisteredError is the correct name in many firebase-admin versions
-        except Exception as exc:
-            # Check for unregistered token error (platform specific handling)
-            error_code = getattr(exc, "code", "")
-            if error_code == "unregistered" or "registration-token-not-registered" in str(exc):
-                device.is_active = False
-                device.save(update_fields=["is_active", "updated_at"])
-                logger.info("FCM: deactivated stale token for user %s", user.username)
-            else:
-                logger.error("FCM: send failed for user %s: %s", user.username, exc)
-    return sent
+    result = send_push_to_user(user, title=title, body=body, data=data or {})
+    return result.get("sent", 0)
 
 
 def _send_fcm_notification(user, event) -> int:

@@ -403,68 +403,34 @@
 
                     <div class="map-panel-section">
                         <div class="flex items-center justify-between gap-2">
-                            <p class="console-label">Zones</p>
-                            {% if can_manage_zones %}
-                            <a href="{% url 'dashboard:map-zones' %}" class="console-segment-link">Manage</a>
-                            {% endif %}
+                            <p class="console-label">Zone filter</p>
+                            <span class="console-meta" x-text="`${zonesPanel.length} groups`"></span>
                         </div>
                         <template x-if="zonesPanel.length === 0">
-                            <p class="console-empty-state !py-4" x-text="zonePanelEmptyMessage"></p>
+                            <div class="console-empty-state !py-4">
+                                <p x-text="zonePanelEmptyMessage"></p>
+                            </div>
                         </template>
-                        <div class="map-zone-list" x-show="zonesPanel.length > 0">
+                        <div class="space-y-1" x-show="zonesPanel.length > 0">
+                            <button type="button" @click="clearZoneFilter()"
+                                    class="map-filter-row w-full cursor-pointer text-left"
+                                    :class="!activeZoneFilter ? 'border-brand/30 bg-brand/5' : ''">
+                                <span class="console-meta flex items-center gap-2">
+                                    <span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>
+                                    All zones
+                                </span>
+                                <span class="console-row-title tabular-nums" x-text="visibleCount"></span>
+                            </button>
                             <template x-for="zone in zonesPanel" :key="zone.id">
-                                <div class="map-zone-block" :class="activeZoneFilter === zone.id ? 'ring-1 ring-brand/40' : ''">
-                                    <div class="map-zone-header flex items-center gap-1">
-                                        <button type="button" @click="focusZoneOnMap(zone.id)" class="flex min-w-0 flex-1 items-center gap-2 text-left">
-                                            <span class="map-zone-dot" :style="{ backgroundColor: zone.color }"></span>
-                                            <span class="min-w-0 flex-1">
-                                                <span class="console-row-title block truncate" x-text="zone.name"></span>
-                                                <span class="console-meta" x-text="`${zone.sites.length} sites · ${zone.guards.length} guards`"></span>
-                                            </span>
-                                        </button>
-                                        <button type="button" @click.stop="toggleZone(zone.id)" class="p-1 text-slate-400 hover:text-slate-600" title="Expand">
-                                            <svg class="h-3 w-3 transition-transform" :class="isZoneExpanded(zone.id) ? 'rotate-180' : ''" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m6 9 6 6 6-6"/></svg>
-                                        </button>
-                                    </div>
-                                    <div x-show="isZoneExpanded(zone.id)"
-                                         x-transition:enter="transition ease-out duration-150"
-                                         x-transition:enter-start="opacity-0"
-                                         x-transition:enter-end="opacity-100"
-                                         class="map-zone-body">
-                                        <template x-if="zone.sites.length > 0">
-                                            <div class="map-zone-group">
-                                                <p class="map-zone-group-label">Sites</p>
-                                                <template x-for="site in zone.sites" :key="site.id">
-                                                    <button type="button" @click="selectSite(site)" class="map-zone-row">
-                                                        <div class="min-w-0">
-                                                            <p class="console-row-title truncate" x-text="site.name"></p>
-                                                            <p class="console-meta truncate" x-text="[site.city, site.state].filter(Boolean).join(', ') || 'No address'"></p>
-                                                        </div>
-                                                        <span class="badge-console shrink-0"
-                                                              :class="site.is_online ? 'badge-console-emerald' : 'badge-console-red'"
-                                                              x-text="site.is_online ? 'Online' : 'Offline'"></span>
-                                                    </button>
-                                                </template>
-                                            </div>
-                                        </template>
-                                        <template x-if="zone.guards.length > 0">
-                                            <div class="map-zone-group">
-                                                <p class="map-zone-group-label">Guards</p>
-                                                <template x-for="guard in zone.guards" :key="guard.id">
-                                                    <button type="button" @click="focusGuard(guard)" class="map-zone-row">
-                                                        <div class="min-w-0">
-                                                            <p class="console-row-title truncate" x-text="guard.name"></p>
-                                                            <p class="console-meta truncate" x-text="guard.site + ' · ' + guard.post"></p>
-                                                        </div>
-                                                        <span class="badge-console shrink-0"
-                                                              :class="guard.open_panic ? 'badge-console-red' : (guard.active_dispatch ? 'badge-console-amber' : 'badge-console-emerald')"
-                                                              x-text="guard.open_panic ? 'SOS' : (guard.active_dispatch ? 'Dispatch' : 'On post')"></span>
-                                                    </button>
-                                                </template>
-                                            </div>
-                                        </template>
-                                    </div>
-                                </div>
+                                <button type="button" @click="focusZoneOnMap(zone.id)"
+                                        class="map-filter-row w-full cursor-pointer text-left"
+                                        :class="activeZoneFilter === zone.id ? 'border-brand/30 bg-brand/5' : ''">
+                                    <span class="console-meta flex min-w-0 items-center gap-2">
+                                        <span class="map-zone-dot" :style="{ backgroundColor: zone.color }"></span>
+                                        <span class="truncate" x-text="zone.name"></span>
+                                    </span>
+                                    <span class="console-row-title shrink-0 tabular-nums" x-text="`${zone.sites.length} / ${zone.guards.length}`"></span>
+                                </button>
                             </template>
                         </div>
                         <a href="{% url 'dashboard:guarding-dispatch' %}" class="console-panel-link">Dispatch desk →</a>
@@ -1103,7 +1069,9 @@
                         </div>
                         <div class="p-4 space-y-3 bg-white">
                             <p class="text-[11px] font-semibold ${statusClass}">${statusLabel}</p>
+                            <p class="console-meta">${this.escapeHTML(guard.location_label || 'Location pending')}</p>
                             ${guard.last_ping_label ? `<p class="console-meta">Last ping ${this.escapeHTML(guard.last_ping_label)}</p>` : ''}
+                            ${guard.map_url ? `<a href="${this.escapeHTML(guard.map_url)}" target="_blank" rel="noopener" class="console-text-link text-[11px]">Open map location</a>` : ''}
                             <a href="${this.escapeHTML(guard.dispatch_url)}" class="btn-console w-full justify-center py-2 text-[10px]">Dispatch desk</a>
                         </div>
                     </div>

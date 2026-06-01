@@ -5,8 +5,6 @@
 {% include "dashboard/guarding/_nav.html" %}
 <div class="space-y-3" x-data="{ createModal: false, orderModal: false, editPostId: null, editOrderId: null, editKitId: null, editKitLineId: null }">
     <div class="console-page-toolbar !mb-0 !pb-2">
-    {% include "dashboard/guarding/_kpi_strip.html" %}
-
         <div class="min-w-0 flex-1">
             {% include "dashboard/partials/console/page_header.html" with page_title="Posts" page_subtitle="Guardable locations linked to SecureHub sites" %}
         </div>
@@ -15,6 +13,7 @@
             <button type="button" @click="createModal = true" class="btn-console">New post</button>
         </div>
     </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
     {% include "dashboard/guarding/_search_bar.html" with search_placeholder="Search posts…" current_query=current_query %}
 
     {% include "dashboard/partials/console/data_table_start.html" with table_scrollable=True table_min_width_class="min-w-[980px]" %}

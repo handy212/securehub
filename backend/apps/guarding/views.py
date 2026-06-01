@@ -1305,6 +1305,14 @@ class MyPanicAlertCreateView(APIView):
         if site is None and assignment is not None:
             site = assignment.shift.post.site
         alert = serializer.save(guard=guard, site=site)
+        if alert.latitude is not None and alert.longitude is not None:
+            GuardLocationPing.objects.create(
+                guard=guard,
+                assignment=assignment,
+                latitude=alert.latitude,
+                longitude=alert.longitude,
+                accuracy_m=alert.accuracy_m,
+            )
         return Response(GuardPanicAlertSerializer(alert).data, status=status.HTTP_201_CREATED)
 
 

@@ -147,103 +147,107 @@ class MenuScreen extends ConsumerWidget {
           SliverToBoxAdapter(
             child: Padding(
               padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-              child: Container(
-                decoration: BoxDecoration(
-                  color: AppTheme.error.withValues(alpha: 0.04),
-                  borderRadius: BorderRadius.circular(20),
-                  border: Border.all(
-                    color: AppTheme.error.withValues(alpha: 0.1),
-                  ),
-                ),
-                child: ListTile(
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 4,
-                  ),
-                  leading: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
+              child: Material(
+                color: AppTheme.error.withValues(alpha: 0.04),
+                borderRadius: BorderRadius.circular(20),
+                clipBehavior: Clip.antiAlias,
+                child: Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
                       color: AppTheme.error.withValues(alpha: 0.1),
-                      borderRadius: BorderRadius.circular(10),
                     ),
-                    child: const Icon(
-                      Icons.logout_rounded,
-                      color: AppTheme.error,
-                      size: 18,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: ListTile(
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 20,
+                      vertical: 4,
                     ),
-                  ),
-                  title: Text(
-                    'Sign out',
-                    style: TextStyle(
-                      color: AppTheme.error,
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                    ),
-                  ),
-                  trailing: const Icon(
-                    Icons.chevron_right_rounded,
-                    color: AppTheme.error,
-                    size: 20,
-                  ),
-                  onTap: () async {
-                    HapticFeedback.mediumImpact();
-                    final confirmed = await showDialog<bool>(
-                      context: context,
-                      barrierColor: AppTheme.primary.withValues(alpha: 0.4),
-                      builder: (ctx) => AlertDialog(
-                        backgroundColor: AppTheme.surfaceContainerLowest,
-                        surfaceTintColor: Colors.transparent,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(28),
-                        ),
-                        title: Text(
-                          'Sign Out',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: AppTheme.primary,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
-                        content: Text(
-                          'Are you sure you want to sign out on this device?',
-                          style: TextStyle(
-                            color: AppTheme.onSurfaceVariant,
-                            fontSize: 14,
-                            height: 1.4,
-                          ),
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () => Navigator.of(ctx).pop(false),
-                            child: Text(
-                              'CANCEL',
-                              style: TextStyle(
-                                color: AppTheme.onSurfaceVariant,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                          ),
-                          FilledButton(
-                            onPressed: () {
-                              HapticFeedback.mediumImpact();
-                              Navigator.of(ctx).pop(true);
-                            },
-                            style: FilledButton.styleFrom(
-                              backgroundColor: AppTheme.error,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 24,
-                                vertical: 12,
-                              ),
-                            ),
-                            child: const Text('SIGN OUT'),
-                          ),
-                        ],
+                    leading: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: AppTheme.error.withValues(alpha: 0.1),
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                    );
-                    if (confirmed == true && context.mounted) {
-                      await ref.read(authNotifierProvider.notifier).logout();
-                    }
-                  },
+                      child: const Icon(
+                        Icons.logout_rounded,
+                        color: AppTheme.error,
+                        size: 18,
+                      ),
+                    ),
+                    title: Text(
+                      'Sign out',
+                      style: TextStyle(
+                        color: AppTheme.error,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 14,
+                      ),
+                    ),
+                    trailing: const Icon(
+                      Icons.chevron_right_rounded,
+                      color: AppTheme.error,
+                      size: 20,
+                    ),
+                    onTap: () async {
+                      HapticFeedback.mediumImpact();
+                      final confirmed = await showDialog<bool>(
+                        context: context,
+                        barrierColor: AppTheme.primary.withValues(alpha: 0.4),
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: AppTheme.surfaceContainerLowest,
+                          surfaceTintColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
+                          ),
+                          title: Text(
+                            'Sign Out',
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: AppTheme.primary,
+                              letterSpacing: -0.5,
+                            ),
+                          ),
+                          content: Text(
+                            'Are you sure you want to sign out on this device?',
+                            style: TextStyle(
+                              color: AppTheme.onSurfaceVariant,
+                              fontSize: 14,
+                              height: 1.4,
+                            ),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.of(ctx).pop(false),
+                              child: Text(
+                                'CANCEL',
+                                style: TextStyle(
+                                  color: AppTheme.onSurfaceVariant,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            FilledButton(
+                              onPressed: () {
+                                HapticFeedback.mediumImpact();
+                                Navigator.of(ctx).pop(true);
+                              },
+                              style: FilledButton.styleFrom(
+                                backgroundColor: AppTheme.error,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 24,
+                                  vertical: 12,
+                                ),
+                              ),
+                              child: const Text('SIGN OUT'),
+                            ),
+                          ],
+                        ),
+                      );
+                      if (confirmed == true && context.mounted) {
+                        await ref.read(authNotifierProvider.notifier).logout();
+                      }
+                    },
+                  ),
                 ),
               ),
             ),
@@ -277,13 +281,14 @@ class _MenuSection extends StatelessWidget {
             ),
           ),
         ),
-        Container(
-          margin: const EdgeInsets.symmetric(horizontal: 20),
-          decoration: const BoxDecoration(
+        Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 20),
+          child: Material(
             color: AppTheme.surfaceContainerLow,
-            borderRadius: BorderRadius.all(Radius.circular(20)),
+            borderRadius: const BorderRadius.all(Radius.circular(20)),
+            clipBehavior: Clip.antiAlias,
+            child: Column(children: children),
           ),
-          child: Column(children: children),
         ),
       ],
     );
@@ -302,30 +307,33 @@ class _MenuTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(10),
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppTheme.primary, size: 18),
         ),
-        child: Icon(icon, color: AppTheme.primary, size: 18),
-      ),
-      title: Text(
-        label,
-        style: TextStyle(
-          fontWeight: FontWeight.w600,
-          fontSize: 14,
-          color: AppTheme.primary,
+        title: Text(
+          label,
+          style: TextStyle(
+            fontWeight: FontWeight.w600,
+            fontSize: 14,
+            color: AppTheme.primary,
+          ),
         ),
+        trailing: const Icon(
+          Icons.chevron_right_rounded,
+          size: 20,
+          color: AppTheme.outlineVariant,
+        ),
+        onTap: onTap,
       ),
-      trailing: const Icon(
-        Icons.chevron_right_rounded,
-        size: 20,
-        color: AppTheme.outlineVariant,
-      ),
-      onTap: onTap,
     );
   }
 }

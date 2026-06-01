@@ -6,11 +6,11 @@
 {% include "dashboard/guarding/_nav.html" %}
 <div class="space-y-3">
     <div class="console-page-toolbar !mb-0 !pb-2">
-        {% include "dashboard/guarding/_kpi_strip.html" %}
         <div class="min-w-0 flex-1">
             {% include "dashboard/partials/console/page_header.html" with page_title="Guarding analytics" page_subtitle="KPIs for the selected period" %}
         </div>
     </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
     <form method="get" class="console-search-bar console-table-card !rounded-lg !border !border-slate-100 !px-2.5 !py-2 dark:!border-slate-800">
         <label class="console-label flex items-center gap-2 text-slate-500">
             <span class="shrink-0">Period (days)</span>

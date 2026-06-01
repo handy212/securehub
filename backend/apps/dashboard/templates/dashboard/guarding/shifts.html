@@ -1,12 +1,11 @@
 {% extends "dashboard/base.html" %}
+{% load guarding_location %}
 {% block title %}Guard Shifts | SecureHub{% endblock %}
 {% block header_title %}Guard Scheduling{% endblock %}
 {% block content %}
 {% include "dashboard/guarding/_nav.html" %}
 <div class="space-y-3" x-data="{ createModal: false, clockModal: false, welfareModal: false, editShiftId: null, editClockId: null, editWelfareId: null }">
     <div class="console-page-toolbar !mb-0 !pb-2">
-    {% include "dashboard/guarding/_kpi_strip.html" %}
-
         <div class="min-w-0 flex-1">
             {% include "dashboard/partials/console/page_header.html" with page_title="Shifts" page_subtitle="Assignments, attendance, and welfare checks" %}
         </div>
@@ -16,6 +15,7 @@
             <button type="button" @click="createModal = true" class="btn-console">New shift</button>
         </div>
     </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
 
     {% include "dashboard/partials/console/data_table_start.html" with table_scrollable=True table_min_width_class="min-w-[1120px]" %}
             <thead class="console-thead">
@@ -108,7 +108,10 @@
                         <div class="min-w-0">
                             <div class="font-semibold text-slate-900 dark:text-slate-100">{{ event.assignment.guard.full_name }}</div>
                             <div class="console-meta">{{ event.assignment.shift.post.name }} · {{ event.get_event_type_display }}</div>
-                            <div class="console-meta mt-1">{{ event.created_at|date:"Y-m-d H:i" }}{% if event.device_timestamp %} · device {{ event.device_timestamp|date:"Y-m-d H:i" }}{% endif %} · {{ event.latitude|default:"-" }}, {{ event.longitude|default:"-" }}</div>
+                            <div class="console-meta mt-1">{{ event.created_at|date:"Y-m-d H:i" }}{% if event.device_timestamp %} · device {{ event.device_timestamp|date:"Y-m-d H:i" }}{% endif %} · {{ event|decoded_location }}</div>
+                            {% with url=event|maps_url coords=event|coordinates %}
+                            {% if url %}<a href="{{ url }}" target="_blank" rel="noopener" class="console-text-link text-[11px]">{{ coords }}</a>{% endif %}
+                            {% endwith %}
                             {% if event.metadata %}<div class="console-meta font-mono text-[10px]">{{ event.metadata }}</div>{% endif %}
                         </div>
                         <div class="flex shrink-0 flex-col items-end gap-2">

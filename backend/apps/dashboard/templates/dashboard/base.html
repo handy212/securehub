@@ -223,7 +223,7 @@
 
     <!-- Main Content -->
     <main class="flex min-w-0 flex-1 flex-col h-screen overflow-hidden">
-        <header class="h-12 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-30 flex-shrink-0">
+        <header class="h-12 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 z-[1200] flex-shrink-0">
             <div class="flex h-full items-center justify-between gap-3 px-4 sm:px-6">
             <div class="flex min-w-0 items-center gap-3 sm:gap-4">
                 <button @click="window.innerWidth < 1024 ? mobileNavOpen = true : $store.sidebar.toggle()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 transition-all" aria-label="Open navigation">
@@ -233,6 +233,122 @@
                 <h1 class="console-header-context">{% block header_title %}Console{% endblock %}</h1>
             </div>
             <div class="flex items-center gap-2 sm:gap-3">
+                <div class="relative" data-notifications="{{ web_notifications_json|default:'[]'|escape }}" x-data="{
+                    open: false,
+                    unread: {{ web_unread_notification_count|default:0 }},
+                    notes: [],
+                    init() {
+                        this.notes = JSON.parse(this.$el.dataset.notifications || '[]');
+                        this.poll();
+                        setInterval(() => this.poll(), 30000);
+                    },
+                    csrftoken() {
+                        const match = document.cookie.match(/(?:^|; )csrftoken=([^;]*)/);
+                        return match ? decodeURIComponent(match[1]) : '';
+                    },
+                    toneClass(note) {
+                        if (note.is_viewed) return 'bg-slate-300';
+                        if (note.message_type === 'alert') return 'bg-red-500';
+                        if (note.message_type === 'billing') return 'bg-amber-500';
+                        return 'bg-brand';
+                    },
+                    playNoticeSound(type) {
+                        try {
+                            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                            if (!AudioCtx) return;
+                            const ctx = new AudioCtx();
+                            const osc = ctx.createOscillator();
+                            const gain = ctx.createGain();
+                            osc.type = 'sine';
+                            osc.frequency.value = type === 'alert' ? 740 : 520;
+                            gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+                            gain.gain.exponentialRampToValueAtTime(type === 'alert' ? 0.18 : 0.08, ctx.currentTime + 0.02);
+                            gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.16);
+                            osc.connect(gain);
+                            gain.connect(ctx.destination);
+                            osc.start();
+                            osc.stop(ctx.currentTime + 0.18);
+                        } catch (_) {}
+                    },
+                    poll() {
+                        fetch('/api/v1/communication/messages/summary/', {
+                            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+                            credentials: 'same-origin'
+                        }).then((response) => response.ok ? response.json() : null)
+                          .then((payload) => {
+                              if (!payload) return;
+                              const previousLatest = this.notes.length ? this.notes[0].id : null;
+                              this.notes = payload.notifications || [];
+                              this.unread = payload.unread_count || 0;
+                              if (previousLatest && this.notes.length && this.notes[0].id !== previousLatest) {
+                                  this.playNoticeSound(this.notes[0].message_type);
+                                  window.dispatchEvent(new CustomEvent('notify', { detail: { message: this.notes[0].title, type: 'info' } }));
+                              }
+                          }).catch(() => {});
+                    },
+                    markViewed(id, viewed) {
+                        if (viewed) return;
+                        fetch(`/api/v1/communication/messages/${id}/viewed/`, {
+                            method: 'POST',
+                            headers: { 'X-CSRFToken': this.csrftoken(), 'X-Requested-With': 'XMLHttpRequest' },
+                            credentials: 'same-origin'
+                        }).then((response) => {
+                            if (!response.ok) return;
+                            this.notes = this.notes.map((note) => note.id === id ? { ...note, is_viewed: true } : note);
+                            if (this.unread > 0) this.unread -= 1;
+                        });
+                    }
+                }">
+                    <button type="button"
+                            @click="open = !open"
+                            @click.outside="open = false"
+                            title="Notifications"
+                            class="relative w-8 h-8 flex items-center justify-center rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-slate-600 dark:hover:text-slate-300 transition-all">
+                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+                        <span x-show="unread > 0"
+                              x-text="unread > 9 ? '9+' : unread"
+                              class="absolute -right-1 -top-1 min-w-[16px] h-4 px-1 rounded-full bg-red-600 text-white text-[9px] font-black leading-4 text-center"></span>
+                    </button>
+                    <div x-show="open"
+                         x-cloak
+                         x-transition:enter="transition ease-out duration-100"
+                         x-transition:enter-start="opacity-0 translate-y-1"
+                         x-transition:enter-end="opacity-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-75"
+                         x-transition:leave-start="opacity-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 translate-y-1"
+                         class="absolute right-0 top-full mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900 z-[1300]">
+                        <div class="flex items-center justify-between gap-2 border-b border-slate-100 px-3 py-2 dark:border-slate-800">
+                            <p class="console-label text-slate-800 dark:text-slate-100">Notifications</p>
+                            <span class="console-meta">Latest 8</span>
+                        </div>
+                        <div class="max-h-80 overflow-y-auto">
+                            <template x-for="note in notes" :key="note.id">
+                            <button type="button"
+                                    @click="markViewed(note.id, note.is_viewed)"
+                                    class="w-full border-b border-slate-100 px-3 py-2.5 text-left transition hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">
+                                <div class="flex items-start gap-2.5">
+                                    <span class="mt-1.5 h-2 w-2 flex-shrink-0 rounded-full" :class="toneClass(note)"></span>
+                                    <span class="min-w-0 flex-1">
+                                        <span class="flex items-center justify-between gap-2">
+                                            <span class="console-row-title block truncate" x-text="note.title"></span>
+                                            <span class="console-meta whitespace-nowrap" x-text="note.created_at_display"></span>
+                                        </span>
+                                        <span class="mt-0.5 line-clamp-2 block text-[11px] leading-snug text-slate-500 dark:text-slate-400" x-text="note.body"></span>
+                                        <span class="mt-1 inline-flex items-center rounded border border-slate-200 px-1.5 py-0.5 text-[9px] font-bold uppercase tracking-wide text-slate-400 dark:border-slate-700" x-text="note.status"></span>
+                                    </span>
+                                </div>
+                            </button>
+                            </template>
+                            <div x-show="notes.length === 0" class="px-3 py-5 text-center">
+                                <p class="console-label text-slate-400">No notifications</p>
+                            </div>
+                        </div>
+                        {% if console_perm.MANAGE_BROADCAST in console_permissions %}
+                        <a href="{% url 'dashboard:broadcast' %}" class="block border-t border-slate-100 px-3 py-2 text-center console-label text-brand hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/60">Open Messaging</a>
+                        {% endif %}
+                    </div>
+                </div>
                 <!-- Dark mode toggle -->
                 <button @click="$store.theme.toggle()"
                         :title="$store.theme.dark ? 'Switch to Light Mode' : 'Switch to Dark Mode'"
