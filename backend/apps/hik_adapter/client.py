@@ -22,6 +22,10 @@ _LAP_ERROR_MESSAGES: dict[str, str] = {
 }
 
 
+def _is_success_status_code(value) -> bool:
+    return str(value).strip() == "1"
+
+
 @dataclass
 class HikPartnerClient:
     base_url: str | None = None
@@ -50,7 +54,8 @@ class HikPartnerClient:
         return urljoin(f"{self.base_url.rstrip('/')}/", path.lstrip("/"))
 
     def is_configured(self) -> bool:
-        return bool(self.base_url and self.api_key and self.api_secret)
+        values = (self.base_url, self.api_key, self.api_secret)
+        return all(value and str(value).strip().upper() != "CHANGE-ME" for value in values)
 
     def get_access_token(self) -> str:
         with self._token_lock:
@@ -189,10 +194,32 @@ class HikPartnerClient:
                 )
                 return response.text
 
-            # Special case for transparent ISAPI: §A.5.8 JSON_ResponseStatus
+            # Special case for transparent ISAPI: §A.5.8 JSON_ResponseStatus.
             # If statusCode is 1, it is a success regardless of errorCode.
-            if data.get("statusCode") == 1:
-                return data
+            # If statusCode is present and not 1, the device rejected the
+            # operation even when the gateway-level errorCode is absent.
+            if "statusCode" in data:
+                if _is_success_status_code(data.get("statusCode")):
+                    return data
+                error_code = (
+                    data.get("subStatusCode")
+                    or data.get("errorCode")
+                    or data.get("statusCode")
+                )
+                message = (
+                    data.get("statusString")
+                    or data.get("errorMsg")
+                    or data.get("msg")
+                    or _LAP_ERROR_MESSAGES.get(str(error_code))
+                    or "transparent ISAPI request failed"
+                )
+                raise HikPartnerError(
+                    f"Hik-Partner transparent API error {error_code}: {message} "
+                    f"(path={path}, req={request_id})",
+                    error_code=str(error_code),
+                    payload=data,
+                    status_code=response.status_code,
+                )
 
             error_code = data.get("errorCode")
             if error_code is not None and str(error_code) != "0":

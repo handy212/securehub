@@ -1,4 +1,4 @@
-DEBUG 2026-06-01 12:09:04,915 client 4733 REQ[b28becd2] POST /api/hpcgw/webhook/v1/config/save
+DEBUG 2026-06-01 16:20:03,247 client 87846 REQ[ed9e3d95] POST /api/hpcgw/webhook/v1/config/save
 Detecting ngrok tunnel...
-Registering Webhook: https://e067-197-251-215-82.ngrok-free.app/api/v1/alarms/webhook/
+Registering Webhook: https://4a50-197-251-215-82.ngrok-free.app/api/v1/alarms/webhook/
 ✓ Webhook registration successful!

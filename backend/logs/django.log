@@ -1,273 +1,94 @@
 Watching for file changes with StatReloader
-INFO 2026-06-01 12:09:01,498 autoreload 4633 Watching for file changes with StatReloader
-INFO 2026-06-01 12:09:05,257 views 4633 Webhook GET Handshake: timestamp=1780315744908, batch_id=ea8d8f1c-3628-4706-87d1-2ec4b86cc5e9 -> signature generated
-DEBUG 2026-06-01 12:09:07,412 views 4633 Webhook Verification: signature=sha256=291a99af88d6c07bb568d0ed03f2326b57ca09a65bbb78068069511a1a53830e timestamp=1780315747126 batch_id=474a057acc8946e39883e904a67457b5
-INFO 2026-06-01 12:09:07,412 views 4633 Webhook Verification: signature MATCHED for message: b'1780315747126.474a057acc8946e39883e904a67457b5'
-INFO 2026-06-01 12:09:07,413 views 4633 WEBHOOK[85a4ac04]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:09:10,167 views 4633 Webhook Verification: signature=sha256=881d72cba29208d79cf5df4432c1023ad1f006cf8037d8b6150997218872fabf timestamp=1780315749958 batch_id=4e0d559ae7544014a49361d7a7f11c70
-INFO 2026-06-01 12:09:10,167 views 4633 Webhook Verification: signature MATCHED for message: b'1780315749958.4e0d559ae7544014a49361d7a7f11c70'
-INFO 2026-06-01 12:09:10,168 views 4633 WEBHOOK[9bd9cfea]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:09:16,316 views 4633 Webhook Verification: signature=sha256=010f689452679040a2c5e4ab138600239573741e920c7ba6bc2ed5952c0c3d69 timestamp=1780315756084 batch_id=4cdd440c05e140f38829f909e0cb03e2
-INFO 2026-06-01 12:09:16,316 views 4633 Webhook Verification: signature MATCHED for message: b'1780315756084.4cdd440c05e140f38829f909e0cb03e2'
-INFO 2026-06-01 12:09:16,316 views 4633 WEBHOOK[0d9c092e]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:09:25,346 views 4633 Webhook Verification: signature=sha256=7a10101b4bdbb7669854d490ef05a707daf818b21f86d4af37277799d56665c0 timestamp=1780315765049 batch_id=8bbf7bc5ef3142f5a03098289de3fc8e
-INFO 2026-06-01 12:09:25,347 views 4633 Webhook Verification: signature MATCHED for message: b'1780315765049.8bbf7bc5ef3142f5a03098289de3fc8e'
-INFO 2026-06-01 12:09:25,347 views 4633 WEBHOOK[1f1b16a5]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:09:30,919 views 4633 Webhook Verification: signature=sha256=d19e9057b692bfe84b8f914627930ddfb93386f9c2cab5c4b9f91f3b288a8896 timestamp=1780315770592 batch_id=12a0f2a0910c4a44b03070e86c2123e6
-INFO 2026-06-01 12:09:30,920 views 4633 Webhook Verification: signature MATCHED for message: b'1780315770592.12a0f2a0910c4a44b03070e86c2123e6'
-INFO 2026-06-01 12:09:30,920 views 4633 WEBHOOK[5b3f7631]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:09:34,655 views 4633 Webhook Verification: signature=sha256=26979c6f4c406cbe671546cab8ad51ba1b101c5e79e2a2d4acfd0a0c31198237 timestamp=1780315774332 batch_id=ceee02800b8440fd9b1a5ab31451296c
-INFO 2026-06-01 12:09:34,655 views 4633 Webhook Verification: signature MATCHED for message: b'1780315774332.ceee02800b8440fd9b1a5ab31451296c'
-INFO 2026-06-01 12:09:34,656 views 4633 WEBHOOK[33010985]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:09:41,232 views 4633 Webhook Verification: signature=sha256=ce5dc37dc134cd515f708c30a37f31776d7f5868408f8421ef599dce7bcd2bb3 timestamp=1780315781013 batch_id=f48f8043069c4af8ae03034aae912909
-INFO 2026-06-01 12:09:41,233 views 4633 Webhook Verification: signature MATCHED for message: b'1780315781013.f48f8043069c4af8ae03034aae912909'
-INFO 2026-06-01 12:09:41,233 views 4633 WEBHOOK[53ddf0fe]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:09:46,680 views 4633 Webhook Verification: signature=sha256=fa2424f697323ff17cc23de07ab4d5bc6667c870c0a107a1e632e73bbed7cc12 timestamp=1780315786485 batch_id=3129ad5638ab4fdf99da285d909e321a
-INFO 2026-06-01 12:09:46,681 views 4633 Webhook Verification: signature MATCHED for message: b'1780315786485.3129ad5638ab4fdf99da285d909e321a'
-INFO 2026-06-01 12:09:46,681 views 4633 WEBHOOK[801c0ffb]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:09:53,673 views 4633 Webhook Verification: signature=sha256=67cd763d53515d32d91b69023b16d7997556546f63c2f294750f81ac4d07bab0 timestamp=1780315793461 batch_id=a2593bc27f814953bcbef3ead87e9072
-INFO 2026-06-01 12:09:53,673 views 4633 Webhook Verification: signature MATCHED for message: b'1780315793461.a2593bc27f814953bcbef3ead87e9072'
-INFO 2026-06-01 12:09:53,673 views 4633 WEBHOOK[ef244d80]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:09:54,588 views 4633 Webhook Verification: signature=sha256=c4479baa0aaf09ccc0f8f0f4085183408f97f5299890cdde5e0f2a5cd037d2f5 timestamp=1780315794369 batch_id=16c181c272d6491883b07dfab1605db5
-INFO 2026-06-01 12:09:54,588 views 4633 Webhook Verification: signature MATCHED for message: b'1780315794369.16c181c272d6491883b07dfab1605db5'
-INFO 2026-06-01 12:09:54,588 views 4633 WEBHOOK[2511a02d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:09:58,589 views 4633 Webhook Verification: signature=sha256=abaf8c073ea4963476c2452fd53a6435f7b0fd8c9ab1bcfa648c036156170af0 timestamp=1780315798350 batch_id=4397f6bcc3eb4859b38aaea5407e49cc
-INFO 2026-06-01 12:09:58,589 views 4633 Webhook Verification: signature MATCHED for message: b'1780315798350.4397f6bcc3eb4859b38aaea5407e49cc'
-INFO 2026-06-01 12:09:58,589 views 4633 WEBHOOK[78aa088f]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:10:06,193 views 4633 Webhook Verification: signature=sha256=3a83b19d0a763f55762b8dcd70755d771f94dab1760e03e310c5a128b86ac2fc timestamp=1780315805898 batch_id=e4fa5c6f62494ba2a8819b5a4c9784dd
-INFO 2026-06-01 12:10:06,194 views 4633 Webhook Verification: signature MATCHED for message: b'1780315805898.e4fa5c6f62494ba2a8819b5a4c9784dd'
-INFO 2026-06-01 12:10:06,194 views 4633 WEBHOOK[3b2d208c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:10:12,588 views 4633 Webhook Verification: signature=sha256=a323f194f9e9921a315fb6cc3adac489aceccdf9fca702e369ed006f6600a13e timestamp=1780315812363 batch_id=16b1fcfee1d94958aa8e760ce11c69ae
-INFO 2026-06-01 12:10:12,589 views 4633 Webhook Verification: signature MATCHED for message: b'1780315812363.16b1fcfee1d94958aa8e760ce11c69ae'
-INFO 2026-06-01 12:10:12,589 views 4633 WEBHOOK[31f78041]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:10:19,464 views 4633 Webhook Verification: signature=sha256=041cd6f394725b609467e6d023c7e73a75e66b78b74dd6ff9c978a3259e2bce8 timestamp=1780315819247 batch_id=fbe72f3cec8c4b12bff95f32d50b2de6
-INFO 2026-06-01 12:10:19,465 views 4633 Webhook Verification: signature MATCHED for message: b'1780315819247.fbe72f3cec8c4b12bff95f32d50b2de6'
-INFO 2026-06-01 12:10:19,465 views 4633 WEBHOOK[43367c98]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:10:39,436 views 4633 Webhook Verification: signature=sha256=247a9512d64084ebb6e4df376b5cd9896b7a2f5888ca17226ec8f2def19b5909 timestamp=1780315839079 batch_id=d658cdb350264a39b150dc12c74758c3
-INFO 2026-06-01 12:10:39,436 views 4633 Webhook Verification: signature MATCHED for message: b'1780315839079.d658cdb350264a39b150dc12c74758c3'
-INFO 2026-06-01 12:10:39,436 views 4633 WEBHOOK[cbf056dd]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:10:41,660 views 4633 Webhook Verification: signature=sha256=800751eff1fe5371128e95ce33a72807c6a9399a1cf67ecc9e2c395daeaa38e0 timestamp=1780315841379 batch_id=6655891ff8204d03b6f054de25916403
-INFO 2026-06-01 12:10:41,660 views 4633 Webhook Verification: signature MATCHED for message: b'1780315841379.6655891ff8204d03b6f054de25916403'
-INFO 2026-06-01 12:10:41,661 views 4633 WEBHOOK[bc8ce38b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:10:51,548 views 4633 Webhook Verification: signature=sha256=3224dfd2627f43bb2a9fadd731803081e9495fd12b7b4295851cc80de284dcae timestamp=1780315851353 batch_id=29b59f143b24470fbb680e3f512c00b2
-INFO 2026-06-01 12:10:51,548 views 4633 Webhook Verification: signature MATCHED for message: b'1780315851353.29b59f143b24470fbb680e3f512c00b2'
-INFO 2026-06-01 12:10:51,548 views 4633 WEBHOOK[166055f4]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:10:53,695 views 4633 Webhook Verification: signature=sha256=b2c0e2cea53e4e4e649dfbce13f9dbae2ada23e95c7da3e977d075eaaa2333d5 timestamp=1780315853492 batch_id=6b33998bf57c49fba4a503709a44d241
-INFO 2026-06-01 12:10:53,695 views 4633 Webhook Verification: signature MATCHED for message: b'1780315853492.6b33998bf57c49fba4a503709a44d241'
-INFO 2026-06-01 12:10:53,695 views 4633 WEBHOOK[eda48f56]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:10:57,668 views 4633 Webhook Verification: signature=sha256=1f348951e12f779f8fd9656616844d78c1009ec6a473ee90b7b53edd6575da0b timestamp=1780315857443 batch_id=98740528332c4708aa0afba8608e13ae
-INFO 2026-06-01 12:10:57,668 views 4633 Webhook Verification: signature MATCHED for message: b'1780315857443.98740528332c4708aa0afba8608e13ae'
-INFO 2026-06-01 12:10:57,668 views 4633 WEBHOOK[722f7965]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:10:58,230 views 4633 Webhook Verification: signature=sha256=d1dd37f4a2df5bb1f7d7c2ca9bcdc2caad93599239ab2e221fdf9e15a2171563 timestamp=1780315857999 batch_id=fba827b877244f3baf32a6754b82e630
-INFO 2026-06-01 12:10:58,230 views 4633 Webhook Verification: signature MATCHED for message: b'1780315857999.fba827b877244f3baf32a6754b82e630'
-INFO 2026-06-01 12:10:58,230 views 4633 WEBHOOK[d5f8a7dc]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:10:59,624 views 4633 Webhook Verification: signature=sha256=9e40055862b7ee21096fe57da4912b3cc49e3cec35efc012581ce2473ceffd12 timestamp=1780315859384 batch_id=40a58e5065994cb99d2f2b176deb5e5a
-INFO 2026-06-01 12:10:59,624 views 4633 Webhook Verification: signature MATCHED for message: b'1780315859384.40a58e5065994cb99d2f2b176deb5e5a'
-INFO 2026-06-01 12:10:59,624 views 4633 WEBHOOK[b6bfbcac]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:11:01,228 views 4633 Webhook Verification: signature=sha256=365e9e5cb5d439a60892f1314dd6b4bc0c12e0bc82759dbded8297c37abdbc07 timestamp=1780315860968 batch_id=09ec410de9e745bb8cdd548f41ab2d5e
-INFO 2026-06-01 12:11:01,228 views 4633 Webhook Verification: signature MATCHED for message: b'1780315860968.09ec410de9e745bb8cdd548f41ab2d5e'
-INFO 2026-06-01 12:11:01,228 views 4633 WEBHOOK[5cd486c4]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:11:03,117 views 4633 Webhook Verification: signature=sha256=16296df0cb025c668a3216cf5ed49ce2b3c8f12b465012ae87d7408284647f32 timestamp=1780315862843 batch_id=f882fec5a2f34951996323a3098d522d
-INFO 2026-06-01 12:11:03,117 views 4633 Webhook Verification: signature MATCHED for message: b'1780315862843.f882fec5a2f34951996323a3098d522d'
-INFO 2026-06-01 12:11:03,118 views 4633 WEBHOOK[89ae31e6]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:11:05,860 views 4633 Webhook Verification: signature=sha256=ba7ebad6ade028441097f57314067c9810497b87f9ae39be38e8b3373a4dd69e timestamp=1780315865562 batch_id=99d7fdf32efd4f9c991c847865e43d8f
-INFO 2026-06-01 12:11:05,860 views 4633 Webhook Verification: signature MATCHED for message: b'1780315865562.99d7fdf32efd4f9c991c847865e43d8f'
-INFO 2026-06-01 12:11:05,861 views 4633 WEBHOOK[aa8acbfc]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:11:09,775 views 4633 Webhook Verification: signature=sha256=0217553b49eb03e1c755626efe58deb95453d7cbf44ddc7289192deef3dff453 timestamp=1780315869444 batch_id=05506917fa4844df91b155744243d18d
-INFO 2026-06-01 12:11:09,775 views 4633 Webhook Verification: signature MATCHED for message: b'1780315869444.05506917fa4844df91b155744243d18d'
-INFO 2026-06-01 12:11:09,776 views 4633 WEBHOOK[fd5af5d0]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:11:26,953 views 4633 Webhook Verification: signature=sha256=74af05750ed40eac8d139f015c89c44858b35372bfbc67cc1a6711221a6b9858 timestamp=1780315886684 batch_id=b7b244e766cc4ff881b06f05bedc216e
-INFO 2026-06-01 12:11:26,953 views 4633 Webhook Verification: signature MATCHED for message: b'1780315886684.b7b244e766cc4ff881b06f05bedc216e'
-INFO 2026-06-01 12:11:26,954 views 4633 WEBHOOK[6783fcbd]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:11:52,395 views 4633 Webhook Verification: signature=sha256=8f82d27993177bb1e7a1b281a557d7a9f0b0eac5e139cf89965e285079b6707c timestamp=1780315912165 batch_id=912b5548bc3b4d3385d3029f7789df62
-INFO 2026-06-01 12:11:52,396 views 4633 Webhook Verification: signature MATCHED for message: b'1780315912165.912b5548bc3b4d3385d3029f7789df62'
-INFO 2026-06-01 12:11:52,396 views 4633 WEBHOOK[83a8355c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:12:04,392 views 4633 Webhook Verification: signature=sha256=f203764523fb4aca3c137a40ad076b1f42fe39a4c1e3d32ce9c570858072259c timestamp=1780315924120 batch_id=b741d5936475476c8d3ac5243459aff9
-INFO 2026-06-01 12:12:04,393 views 4633 Webhook Verification: signature MATCHED for message: b'1780315924120.b741d5936475476c8d3ac5243459aff9'
-INFO 2026-06-01 12:12:04,393 views 4633 WEBHOOK[b1f4ddac]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:12:06,689 views 4633 Webhook Verification: signature=sha256=6dab306a07f8a2dfabd01e943adef14a17c117fccb04bf0997418e594003ca62 timestamp=1780315926397 batch_id=1334435c2c584b29af28931263a751b8
-INFO 2026-06-01 12:12:06,689 views 4633 Webhook Verification: signature MATCHED for message: b'1780315926397.1334435c2c584b29af28931263a751b8'
-INFO 2026-06-01 12:12:06,689 views 4633 WEBHOOK[d0d1d929]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:12:16,563 views 4633 Webhook Verification: signature=sha256=298559818010d10a96c9ee8c2b837c48636ec81e303981db64991e9e12eca640 timestamp=1780315936248 batch_id=4325c18038db411bb24f806488963a9d
-INFO 2026-06-01 12:12:16,564 views 4633 Webhook Verification: signature MATCHED for message: b'1780315936248.4325c18038db411bb24f806488963a9d'
-INFO 2026-06-01 12:12:16,564 views 4633 WEBHOOK[b3a988d4]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:12:34,716 views 4633 Webhook Verification: signature=sha256=f551d7ed4326bedb8d0d2db588e6547764af54142d258e8519a45e2315ee0d92 timestamp=1780315954456 batch_id=6faaa0e115994f54912c54adfe0eea5d
-INFO 2026-06-01 12:12:34,716 views 4633 Webhook Verification: signature MATCHED for message: b'1780315954456.6faaa0e115994f54912c54adfe0eea5d'
-INFO 2026-06-01 12:12:34,716 views 4633 WEBHOOK[2b83b0ad]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:12:40,177 views 4633 Webhook Verification: signature=sha256=422673677c4053b46f3fb4e1d0e05fcc50306ccfe931743ed943b15a68d91445 timestamp=1780315959881 batch_id=02da650ff73646d78bc328060f830c47
-INFO 2026-06-01 12:12:40,178 views 4633 Webhook Verification: signature MATCHED for message: b'1780315959881.02da650ff73646d78bc328060f830c47'
-INFO 2026-06-01 12:12:40,178 views 4633 WEBHOOK[b3239f26]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:12:56,970 views 4633 Webhook Verification: signature=sha256=1e1810cb776da418bf0af28e29d2d9b5bc9b477337407cf8ffc1de1b2264ef22 timestamp=1780315976744 batch_id=335b79f8da10418bafb118c84dd6615e
-INFO 2026-06-01 12:12:56,971 views 4633 Webhook Verification: signature MATCHED for message: b'1780315976744.335b79f8da10418bafb118c84dd6615e'
-INFO 2026-06-01 12:12:56,971 views 4633 WEBHOOK[ed90bf73]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:12:58,971 views 4633 Webhook Verification: signature=sha256=57aea41c5aa8801bd6a8a146ed1c434b0b6b2b6ac0778f88dacbe3a0eafb3232 timestamp=1780315978751 batch_id=abd11ab90ce447fa86225308f82bd30e
-INFO 2026-06-01 12:12:58,972 views 4633 Webhook Verification: signature MATCHED for message: b'1780315978751.abd11ab90ce447fa86225308f82bd30e'
-INFO 2026-06-01 12:12:58,972 views 4633 WEBHOOK[a32e65dd]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:13:01,070 views 4633 Webhook Verification: signature=sha256=93aefdea59ab664c1d85ab03159024553edf5733f552f09becf9c1f5a39dc6dd timestamp=1780315980847 batch_id=1afe2e89db134611965e1371292c57ec
-INFO 2026-06-01 12:13:01,070 views 4633 Webhook Verification: signature MATCHED for message: b'1780315980847.1afe2e89db134611965e1371292c57ec'
-INFO 2026-06-01 12:13:01,070 views 4633 WEBHOOK[6888fcba]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:13:03,121 views 4633 Webhook Verification: signature=sha256=459faf7074fd537d1f3b15f96432b54c2c3ed0e2336ec459419b3d0c4ce9667d timestamp=1780315982893 batch_id=2f8c3432ef5e4315a281ceabeff44b14
-INFO 2026-06-01 12:13:03,121 views 4633 Webhook Verification: signature MATCHED for message: b'1780315982893.2f8c3432ef5e4315a281ceabeff44b14'
-INFO 2026-06-01 12:13:03,121 views 4633 WEBHOOK[2cbbcdb5]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:13:07,619 views 4633 Webhook Verification: signature=sha256=0e88b6b4027e0be4a11cf9cca1dc095a00408b43d594e470f4bbcbf809a43a53 timestamp=1780315987369 batch_id=f7357ca5f6c04f2f85c4d3b416d5ea02
-INFO 2026-06-01 12:13:07,620 views 4633 Webhook Verification: signature MATCHED for message: b'1780315987369.f7357ca5f6c04f2f85c4d3b416d5ea02'
-INFO 2026-06-01 12:13:07,620 views 4633 WEBHOOK[449938f6]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:13:13,344 views 4633 Webhook Verification: signature=sha256=dfd5fc4c20ee6e658b459250f388772c66ddd03354b072daf8675fc2903f6fe4 timestamp=1780315993051 batch_id=e5d92d5393ba49189a77bbdf92909ee1
-INFO 2026-06-01 12:13:13,344 views 4633 Webhook Verification: signature MATCHED for message: b'1780315993051.e5d92d5393ba49189a77bbdf92909ee1'
-INFO 2026-06-01 12:13:13,344 views 4633 WEBHOOK[99a5efa3]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:13:34,247 views 4633 Webhook Verification: signature=sha256=323abedf2464afff12eaa5c532545b68e5bb0630fb04156cbc6861312bb3cb89 timestamp=1780316014007 batch_id=3778be78ee854c36b4ea2b658180f0e7
-INFO 2026-06-01 12:13:34,247 views 4633 Webhook Verification: signature MATCHED for message: b'1780316014007.3778be78ee854c36b4ea2b658180f0e7'
-INFO 2026-06-01 12:13:34,247 views 4633 WEBHOOK[c25450d4]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:13:41,961 views 4633 Webhook Verification: signature=sha256=d737138bd794ed51f227cf7e36e0cce8997301cd378ce4705cd1b6fa4785e709 timestamp=1780316021678 batch_id=c0d194a404f3438786ab5b2643776678
-INFO 2026-06-01 12:13:41,961 views 4633 Webhook Verification: signature MATCHED for message: b'1780316021678.c0d194a404f3438786ab5b2643776678'
-INFO 2026-06-01 12:13:41,962 views 4633 WEBHOOK[8fd9031d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:13:51,957 views 4633 Webhook Verification: signature=sha256=56b03139712f63ab3b86ff31dfb7069491ad1dddc8b3057e9f31137b75ea3319 timestamp=1780316031600 batch_id=8f08592edafb4faf9764cdd453dea50d
-INFO 2026-06-01 12:13:51,957 views 4633 Webhook Verification: signature MATCHED for message: b'1780316031600.8f08592edafb4faf9764cdd453dea50d'
-INFO 2026-06-01 12:13:51,957 views 4633 WEBHOOK[b07b04b6]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:13:53,817 views 4633 Webhook Verification: signature=sha256=cbb15f0e8db9072eb57a03ba52981f1f8818da2659632add526eef7dab5afc5b timestamp=1780316033508 batch_id=c84985f7e62e4ce5b09ffc521ee9c624
-INFO 2026-06-01 12:13:53,817 views 4633 Webhook Verification: signature MATCHED for message: b'1780316033508.c84985f7e62e4ce5b09ffc521ee9c624'
-INFO 2026-06-01 12:13:53,817 views 4633 WEBHOOK[3425f86b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:13:59,713 views 4633 Webhook Verification: signature=sha256=9b90ca751d93bdf34604ca9a0536ba64262038b1a3319d1f2e3af0ee7f3adfab timestamp=1780316039483 batch_id=ba1946ebfd0041d7891b3ebe04e292b8
-INFO 2026-06-01 12:13:59,713 views 4633 Webhook Verification: signature MATCHED for message: b'1780316039483.ba1946ebfd0041d7891b3ebe04e292b8'
-INFO 2026-06-01 12:13:59,714 views 4633 WEBHOOK[4be84b0e]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:14:06,698 views 4633 Webhook Verification: signature=sha256=85e25b01b0493c9e5ca14c36ed48da2c6831b731f6f0d47c65fa4accb1f236f7 timestamp=1780316046474 batch_id=b264836a2ada467db912001c0cef679b
-INFO 2026-06-01 12:14:06,698 views 4633 Webhook Verification: signature MATCHED for message: b'1780316046474.b264836a2ada467db912001c0cef679b'
-INFO 2026-06-01 12:14:06,698 views 4633 WEBHOOK[b5121120]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:14:09,587 views 4633 Webhook Verification: signature=sha256=6e5fe448650dfd98c7f73c7dff145e1c5aa0db91dce22657abfd2148dd8871b6 timestamp=1780316049353 batch_id=f1394f9fa0ae4cfd810f72feb1ede546
-INFO 2026-06-01 12:14:09,587 views 4633 Webhook Verification: signature MATCHED for message: b'1780316049353.f1394f9fa0ae4cfd810f72feb1ede546'
-INFO 2026-06-01 12:14:09,587 views 4633 WEBHOOK[c8d01474]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:14:12,033 views 4633 Webhook Verification: signature=sha256=8415420bf527bcde6c95e65aeb0975a27f7957d82d1b1da7fd4eff480f6ca7d9 timestamp=1780316051785 batch_id=d4fda456928849569417f95d597bcfc0
-INFO 2026-06-01 12:14:12,033 views 4633 Webhook Verification: signature MATCHED for message: b'1780316051785.d4fda456928849569417f95d597bcfc0'
-INFO 2026-06-01 12:14:12,033 views 4633 WEBHOOK[bc686f54]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:14:34,035 views 4633 Webhook Verification: signature=sha256=d7daf9d4e1705f60b6051acaa3ce2254372f94cdf4f22c1f7512a596a3bbd62d timestamp=1780316073817 batch_id=848b0dff783f43518bb7ca5cf5359a8f
-INFO 2026-06-01 12:14:34,035 views 4633 Webhook Verification: signature MATCHED for message: b'1780316073817.848b0dff783f43518bb7ca5cf5359a8f'
-INFO 2026-06-01 12:14:34,036 views 4633 WEBHOOK[e0d49c90]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:14:39,139 views 4633 Webhook Verification: signature=sha256=a00d1493b489daea3745c8cb281048279df253e56267b9e4cd5367b2aa8baa91 timestamp=1780316078909 batch_id=59222632b9db4a229cd02aff4f299266
-INFO 2026-06-01 12:14:39,139 views 4633 Webhook Verification: signature MATCHED for message: b'1780316078909.59222632b9db4a229cd02aff4f299266'
-INFO 2026-06-01 12:14:39,139 views 4633 WEBHOOK[d544c1e1]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:14:51,938 views 4633 Webhook Verification: signature=sha256=4a155b7391ff0e835ca438b193183e87a0a8246a357059e3885e3f15107d42e3 timestamp=1780316091622 batch_id=4bb1f57dc4464d9fb2a3b9514edaf961
-INFO 2026-06-01 12:14:51,938 views 4633 Webhook Verification: signature MATCHED for message: b'1780316091622.4bb1f57dc4464d9fb2a3b9514edaf961'
-INFO 2026-06-01 12:14:51,938 views 4633 WEBHOOK[2b142573]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:14:55,308 views 4633 Webhook Verification: signature=sha256=1149d99a8a83ad258ed7b906b7c56787c29e3b1bd5306aa5573b845fa46f2568 timestamp=1780316094969 batch_id=884af81905a2407386e31f52eae5a3bc
-INFO 2026-06-01 12:14:55,308 views 4633 Webhook Verification: signature MATCHED for message: b'1780316094969.884af81905a2407386e31f52eae5a3bc'
-INFO 2026-06-01 12:14:55,308 views 4633 WEBHOOK[0d7579df]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:14:59,596 views 4633 Webhook Verification: signature=sha256=103276f34acc09db724a83cc69273aa8e1c8981c2a5b4e1f51ba932993c3d937 timestamp=1780316099306 batch_id=7c0324d7f6594805a89bb10bcd107cb3
-INFO 2026-06-01 12:14:59,597 views 4633 Webhook Verification: signature MATCHED for message: b'1780316099306.7c0324d7f6594805a89bb10bcd107cb3'
-INFO 2026-06-01 12:14:59,597 views 4633 WEBHOOK[dc00ef65]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:15:12,893 views 4633 Webhook Verification: signature=sha256=319c2cceb662571cc2b2e0204508f95e34b6b12ce2de8ca9a43ee567b21c018c timestamp=1780316112657 batch_id=50a3409e20b04cf1b840624337087e27
-INFO 2026-06-01 12:15:12,893 views 4633 Webhook Verification: signature MATCHED for message: b'1780316112657.50a3409e20b04cf1b840624337087e27'
-INFO 2026-06-01 12:15:12,893 views 4633 WEBHOOK[8bcd509e]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:15:14,996 views 4633 Webhook Verification: signature=sha256=d2c626137406ac4a788dddb9d5432af63bc39f5298bc59c9dc114ebeb34e7be1 timestamp=1780316114751 batch_id=37b7aeace3984f698bcbad7d04f133b5
-INFO 2026-06-01 12:15:14,996 views 4633 Webhook Verification: signature MATCHED for message: b'1780316114751.37b7aeace3984f698bcbad7d04f133b5'
-INFO 2026-06-01 12:15:14,996 views 4633 WEBHOOK[107a740e]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:15:33,656 views 4633 Webhook Verification: signature=sha256=612ec43cf9d76f6dd2e415979657bcc734d37c3dddc19d8255c72756899910ad timestamp=1780316133402 batch_id=28c778df0bf34bb3842212453befd52d
-INFO 2026-06-01 12:15:33,656 views 4633 Webhook Verification: signature MATCHED for message: b'1780316133402.28c778df0bf34bb3842212453befd52d'
-INFO 2026-06-01 12:15:33,656 views 4633 WEBHOOK[c905b1d8]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:15:51,150 views 4633 Webhook Verification: signature=sha256=88dd5f0b1cceb50b40d66eb62d07accc5cd587ad52d1bba3d9856abdc3c5d315 timestamp=1780316150881 batch_id=27525dfa23dc40a69236778df7e0a77a
-INFO 2026-06-01 12:15:51,150 views 4633 Webhook Verification: signature MATCHED for message: b'1780316150881.27525dfa23dc40a69236778df7e0a77a'
-INFO 2026-06-01 12:15:51,150 views 4633 WEBHOOK[13ec80e0]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:15:53,640 views 4633 Webhook Verification: signature=sha256=5911bee245664ecac61faae6553087610bb3775d76049c7221e9651914bf6d21 timestamp=1780316153352 batch_id=32f3cec213094a69a497483596d3f027
-INFO 2026-06-01 12:15:53,640 views 4633 Webhook Verification: signature MATCHED for message: b'1780316153352.32f3cec213094a69a497483596d3f027'
-INFO 2026-06-01 12:15:53,640 views 4633 WEBHOOK[7813dc68]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:16:03,217 views 4633 Webhook Verification: signature=sha256=382d7eaeea30d344d9e0d0d486f082b2ba957703a5bc14026ad15edcbc297dde timestamp=1780316162922 batch_id=6c8d502a56c14c0aaf7d5a3afc31dbd2
-INFO 2026-06-01 12:16:03,217 views 4633 Webhook Verification: signature MATCHED for message: b'1780316162922.6c8d502a56c14c0aaf7d5a3afc31dbd2'
-INFO 2026-06-01 12:16:03,217 views 4633 WEBHOOK[e5277a9d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:16:10,834 views 4633 Webhook Verification: signature=sha256=2d3cdd33abba160e3573a10374afe2ab0a598ce27967f9188d37e1bf94d873a4 timestamp=1780316170610 batch_id=c48671d79d274bc9ab312d68bad67cad
-INFO 2026-06-01 12:16:10,835 views 4633 Webhook Verification: signature MATCHED for message: b'1780316170610.c48671d79d274bc9ab312d68bad67cad'
-INFO 2026-06-01 12:16:10,835 views 4633 WEBHOOK[e6572f2c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:16:16,513 views 4633 Webhook Verification: signature=sha256=4d6a08c7e523fad606c3c07a8bd87994d55969e3f4c6c913976a7101b1330b06 timestamp=1780316176276 batch_id=07f6b4a7c90046e08ed437607bcd68fa
-INFO 2026-06-01 12:16:16,514 views 4633 Webhook Verification: signature MATCHED for message: b'1780316176276.07f6b4a7c90046e08ed437607bcd68fa'
-INFO 2026-06-01 12:16:16,514 views 4633 WEBHOOK[40acedf6]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:16:30,248 views 4633 Webhook Verification: signature=sha256=56a56190a271eabb19d4118be18e1cf42443bfa8215166fd0cff2b007135f0c3 timestamp=1780316189919 batch_id=3bce8a5796d34f1f889d0553f5755295
-INFO 2026-06-01 12:16:30,248 views 4633 Webhook Verification: signature MATCHED for message: b'1780316189919.3bce8a5796d34f1f889d0553f5755295'
-INFO 2026-06-01 12:16:30,248 views 4633 WEBHOOK[6daa354a]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:16:33,471 views 4633 Webhook Verification: signature=sha256=f4a2ec85fb114e5cc136d7f3d8af01d95fd23aa5ac0727e0d970ca33dc9170c1 timestamp=1780316193135 batch_id=b06a4d44adcb434c9f0a958a771e86c1
-INFO 2026-06-01 12:16:33,472 views 4633 Webhook Verification: signature MATCHED for message: b'1780316193135.b06a4d44adcb434c9f0a958a771e86c1'
-INFO 2026-06-01 12:16:33,472 views 4633 WEBHOOK[0e6bb6af]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:16:53,050 views 4633 Webhook Verification: signature=sha256=93d6632a0293ab30b79c99d9fc608c69acc7d21abeacb9815a02627c0f60c779 timestamp=1780316212777 batch_id=d0478dc8d42a4d0f94f81049e688d67e
-INFO 2026-06-01 12:16:53,050 views 4633 Webhook Verification: signature MATCHED for message: b'1780316212777.d0478dc8d42a4d0f94f81049e688d67e'
-INFO 2026-06-01 12:16:53,050 views 4633 WEBHOOK[c2fb875b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:16:54,382 views 4633 Webhook Verification: signature=sha256=9bc91a19be95385b14aa8fd7005568b4426e3bcfa498b72744d90d065714436e timestamp=1780316214107 batch_id=d294441a6b924e0e988722c159d72320
-INFO 2026-06-01 12:16:54,382 views 4633 Webhook Verification: signature MATCHED for message: b'1780316214107.d294441a6b924e0e988722c159d72320'
-INFO 2026-06-01 12:16:54,382 views 4633 WEBHOOK[7d696e29]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:17:10,039 views 4633 Webhook Verification: signature=sha256=3be37b07054975b62d5505750a0f535df0542957f6ff341e2b5fa7eb43655cc7 timestamp=1780316229753 batch_id=ca3db844d0b74dbc999dc94b12164767
-INFO 2026-06-01 12:17:10,039 views 4633 Webhook Verification: signature MATCHED for message: b'1780316229753.ca3db844d0b74dbc999dc94b12164767'
-INFO 2026-06-01 12:17:10,039 views 4633 WEBHOOK[a950880b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:17:12,704 views 4633 Webhook Verification: signature=sha256=2b3008367b0ef82fdf371c39aefc01b2c221ece9ddaef230a69be184b83d7e7b timestamp=1780316232458 batch_id=ec7b1739a5524ad6aaa1baba1ff04c4a
-INFO 2026-06-01 12:17:12,704 views 4633 Webhook Verification: signature MATCHED for message: b'1780316232458.ec7b1739a5524ad6aaa1baba1ff04c4a'
-INFO 2026-06-01 12:17:12,704 views 4633 WEBHOOK[be61d2d1]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:17:13,276 views 4633 Webhook Verification: signature=sha256=e0882b9d8feb31e568e55a7ac621ed5bc452d030a75a313f5793d0c6dc58d902 timestamp=1780316233034 batch_id=7de4f1e374b94f4dbd8ada4e5faa5db4
-INFO 2026-06-01 12:17:13,276 views 4633 Webhook Verification: signature MATCHED for message: b'1780316233034.7de4f1e374b94f4dbd8ada4e5faa5db4'
-INFO 2026-06-01 12:17:13,276 views 4633 WEBHOOK[a48ca41b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:17:15,696 views 4633 Webhook Verification: signature=sha256=0c4c60f795dcc2af2b1042993f0e3cfb2ea4adc0f9f67c98ebe1a66216b98e22 timestamp=1780316235462 batch_id=dfc5d13728dc472886c7f2b992f9ba9a
-INFO 2026-06-01 12:17:15,696 views 4633 Webhook Verification: signature MATCHED for message: b'1780316235462.dfc5d13728dc472886c7f2b992f9ba9a'
-INFO 2026-06-01 12:17:15,696 views 4633 WEBHOOK[c5c29973]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:17:17,895 views 4633 Webhook Verification: signature=sha256=ddf46e73de6fbf3b0085178666772cd1571136fd957bc57505ee160efd242fee timestamp=1780316237664 batch_id=456d78a4d16e4e99b7cddaff7c31d07f
-INFO 2026-06-01 12:17:17,895 views 4633 Webhook Verification: signature MATCHED for message: b'1780316237664.456d78a4d16e4e99b7cddaff7c31d07f'
-INFO 2026-06-01 12:17:17,895 views 4633 WEBHOOK[64e010ee]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:17:44,242 views 4633 Webhook Verification: signature=sha256=f89e77c012ee4d09475a2b98d202453c71a9aa5be3bf1961a24506ba3e7652d9 timestamp=1780316263995 batch_id=163d94559eb84cf9bd6fc5cc4e1939c1
-INFO 2026-06-01 12:17:44,243 views 4633 Webhook Verification: signature MATCHED for message: b'1780316263995.163d94559eb84cf9bd6fc5cc4e1939c1'
-INFO 2026-06-01 12:17:44,243 views 4633 WEBHOOK[01babfd1]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:17:49,476 views 4633 Webhook Verification: signature=sha256=7d651daaac3d5ccd36ae4825fed31ca6ba5957ca4617e220b4dde83155121c56 timestamp=1780316269245 batch_id=cadf633aa04247d38d13f43e7f54ba1a
-INFO 2026-06-01 12:17:49,477 views 4633 Webhook Verification: signature MATCHED for message: b'1780316269245.cadf633aa04247d38d13f43e7f54ba1a'
-INFO 2026-06-01 12:17:49,477 views 4633 WEBHOOK[15cb5d54]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:17:51,222 views 4633 Webhook Verification: signature=sha256=613f12a2c0e4fc37cc74e1d87b2a671767199f8a49bdd14fdbe63cc62f4cce4b timestamp=1780316270987 batch_id=649614da3daa4722a1cb29523d912e6d
-INFO 2026-06-01 12:17:51,222 views 4633 Webhook Verification: signature MATCHED for message: b'1780316270987.649614da3daa4722a1cb29523d912e6d'
-INFO 2026-06-01 12:17:51,223 views 4633 WEBHOOK[3c89f762]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:17:55,662 views 4633 Webhook Verification: signature=sha256=b7749fe5bfab3149275bce81327823e6c61bc5d6659f6870aa2d27c7ec0a8d41 timestamp=1780316275409 batch_id=b096004738ab4ada8a5caa5fe8508de5
-INFO 2026-06-01 12:17:55,662 views 4633 Webhook Verification: signature MATCHED for message: b'1780316275409.b096004738ab4ada8a5caa5fe8508de5'
-INFO 2026-06-01 12:17:55,663 views 4633 WEBHOOK[4f26af7e]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:17:56,871 views 4633 Webhook Verification: signature=sha256=52444f1c6c69f5fa8096ac69e3fc96f2651d556386e37061eadf313d86205059 timestamp=1780316276613 batch_id=4ce88c2b6847485b9b16f308b9b93e50
-INFO 2026-06-01 12:17:56,872 views 4633 Webhook Verification: signature MATCHED for message: b'1780316276613.4ce88c2b6847485b9b16f308b9b93e50'
-INFO 2026-06-01 12:17:56,872 views 4633 WEBHOOK[32d1fb09]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:18:13,340 views 4633 Webhook Verification: signature=sha256=85bbe87ec50ace20acfb70d46b2c17ced465eb1095de4170e30efbf760b57d96 timestamp=1780316293064 batch_id=5b917e4291274793a8cd293d4d5ed3d9
-INFO 2026-06-01 12:18:13,340 views 4633 Webhook Verification: signature MATCHED for message: b'1780316293064.5b917e4291274793a8cd293d4d5ed3d9'
-INFO 2026-06-01 12:18:13,340 views 4633 WEBHOOK[06ac7e30]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:18:18,956 views 4633 Webhook Verification: signature=sha256=ea09cded1675832cf56134c751b84c63f7e03e8553a663f2d6a08078064a29b9 timestamp=1780316298730 batch_id=640c3c581ef04a688a66f834de536b62
-INFO 2026-06-01 12:18:18,957 views 4633 Webhook Verification: signature MATCHED for message: b'1780316298730.640c3c581ef04a688a66f834de536b62'
-INFO 2026-06-01 12:18:18,957 views 4633 WEBHOOK[c8a8f36b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:18:34,814 views 4633 Webhook Verification: signature=sha256=c883d3a8ebc16032c2944b5a285e5e53ef8db9d96390a7d011e10b1d17cdab9d timestamp=1780316314525 batch_id=9f7785eba3ea408ead495c469b11606b
-INFO 2026-06-01 12:18:34,814 views 4633 Webhook Verification: signature MATCHED for message: b'1780316314525.9f7785eba3ea408ead495c469b11606b'
-INFO 2026-06-01 12:18:34,814 views 4633 WEBHOOK[9aa12afb]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:18:39,527 views 4633 Webhook Verification: signature=sha256=51f01d5381efc2dcb998d9a4c36072a2e09b330cfe386cc028fb42c1f3c705fe timestamp=1780316319203 batch_id=b0b7b6395d15492b92a40d11b0193479
-INFO 2026-06-01 12:18:39,527 views 4633 Webhook Verification: signature MATCHED for message: b'1780316319203.b0b7b6395d15492b92a40d11b0193479'
-INFO 2026-06-01 12:18:39,527 views 4633 WEBHOOK[18e04e52]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:18:43,170 views 4633 Webhook Verification: signature=sha256=48f9f1d7423f9a2905524b221b68b553dc17120a5bee943f4d2134820dbb9158 timestamp=1780316322857 batch_id=c50b17c769494a53acdbb8f6f3e48cce
-INFO 2026-06-01 12:18:43,170 views 4633 Webhook Verification: signature MATCHED for message: b'1780316322857.c50b17c769494a53acdbb8f6f3e48cce'
-INFO 2026-06-01 12:18:43,170 views 4633 WEBHOOK[4019c975]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:18:48,230 views 4633 Webhook Verification: signature=sha256=9c79ff712be9dca84d9f03250297ddb5c72db20419ba2a4e06dda8754e02506f timestamp=1780316327992 batch_id=7391943acf844aad91ca885fedc395fb
-INFO 2026-06-01 12:18:48,230 views 4633 Webhook Verification: signature MATCHED for message: b'1780316327992.7391943acf844aad91ca885fedc395fb'
-INFO 2026-06-01 12:18:48,230 views 4633 WEBHOOK[51c92527]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:18:53,749 views 4633 Webhook Verification: signature=sha256=3ccba7ea398dd7fa47086721f3e94ee3cdffa69020d8f1b1c8a2cd36cef53a80 timestamp=1780316333526 batch_id=73eb8b1de8494904be2ec31d2fa94dfa
-INFO 2026-06-01 12:18:53,749 views 4633 Webhook Verification: signature MATCHED for message: b'1780316333526.73eb8b1de8494904be2ec31d2fa94dfa'
-INFO 2026-06-01 12:18:53,749 views 4633 WEBHOOK[867a3b31]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:18:59,619 views 4633 Webhook Verification: signature=sha256=d3b7587bcea5e4f1a005126e221dacb399893889895ee293b2b90d58653c50bb timestamp=1780316339375 batch_id=7dbc4a4dc8964faea5168a71ed6bbe0d
-INFO 2026-06-01 12:18:59,620 views 4633 Webhook Verification: signature MATCHED for message: b'1780316339375.7dbc4a4dc8964faea5168a71ed6bbe0d'
-INFO 2026-06-01 12:18:59,620 views 4633 WEBHOOK[8377aa04]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:04,049 views 4633 Webhook Verification: signature=sha256=157d09fb2a9a9a3efcd37b0a4e49a4975e8ea1d40fb29b3af69fb592f3c8e13a timestamp=1780316343777 batch_id=1fe0c74949ff4dfbae36a0a7209e9eff
-INFO 2026-06-01 12:19:04,050 views 4633 Webhook Verification: signature MATCHED for message: b'1780316343777.1fe0c74949ff4dfbae36a0a7209e9eff'
-INFO 2026-06-01 12:19:04,050 views 4633 WEBHOOK[6ad1f507]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:13,515 views 4633 Webhook Verification: signature=sha256=58eba88c94d31583971d45aa5563ef55aea547ff90a59ae73c777333aeff6084 timestamp=1780316353171 batch_id=bc829ad440ab4849bac177b2bc5fe466
-INFO 2026-06-01 12:19:13,515 views 4633 Webhook Verification: signature MATCHED for message: b'1780316353171.bc829ad440ab4849bac177b2bc5fe466'
-INFO 2026-06-01 12:19:13,515 views 4633 WEBHOOK[171456b7]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:15,887 views 4633 Webhook Verification: signature=sha256=bee768caa5b32d4b1a9870391a74d60f0059f1eb2afcbab97727e49534aa1d87 timestamp=1780316355554 batch_id=f1cedc997f864ef3886b814649452aaf
-INFO 2026-06-01 12:19:15,887 views 4633 Webhook Verification: signature MATCHED for message: b'1780316355554.f1cedc997f864ef3886b814649452aaf'
-INFO 2026-06-01 12:19:15,887 views 4633 WEBHOOK[8a1b95cb]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:17,205 views 4633 Webhook Verification: signature=sha256=099f5823164d2910c9d3906ae5bd7e02d33cbbe38d9b79f7970683553f6542dc timestamp=1780316356897 batch_id=5e2c4f8d7a9f4f2b9cdcde7250552090
-INFO 2026-06-01 12:19:17,205 views 4633 Webhook Verification: signature MATCHED for message: b'1780316356897.5e2c4f8d7a9f4f2b9cdcde7250552090'
-INFO 2026-06-01 12:19:17,206 views 4633 WEBHOOK[481929ad]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:19,173 views 4633 Webhook Verification: signature=sha256=5ca9a0d66f65481d40453214b4a9df2835ccb6887c95f8cfd788b2a2b971685d timestamp=1780316358899 batch_id=f59070521bf044cdaf3b48f9e765d050
-INFO 2026-06-01 12:19:19,173 views 4633 Webhook Verification: signature MATCHED for message: b'1780316358899.f59070521bf044cdaf3b48f9e765d050'
-INFO 2026-06-01 12:19:19,174 views 4633 WEBHOOK[4a08456e]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:20,637 views 4633 Webhook Verification: signature=sha256=67ce13be248d19f0eac3f8a1f74d2ef909304e093182a7d136d14afd39b3d621 timestamp=1780316360378 batch_id=f0d9ad8fede04795a4cf008cf91e06aa
-INFO 2026-06-01 12:19:20,637 views 4633 Webhook Verification: signature MATCHED for message: b'1780316360378.f0d9ad8fede04795a4cf008cf91e06aa'
-INFO 2026-06-01 12:19:20,637 views 4633 WEBHOOK[3f6611a8]: received batch of 1 message(s)
-/home/dev/SecureHub/backend/apps/dashboard/views_ops.py changed, reloading.
-INFO 2026-06-01 12:19:22,899 autoreload 4633 /home/dev/SecureHub/backend/apps/dashboard/views_ops.py changed, reloading.
+INFO 2026-06-01 16:19:59,593 autoreload 87765 Watching for file changes with StatReloader
+INFO 2026-06-01 16:20:03,616 views 87765 Webhook GET Handshake: timestamp=1780330803395, batch_id=d7f2451d-9734-4062-bb65-bc43aadc4d4d -> signature generated
+DEBUG 2026-06-01 16:20:07,805 views 87765 Webhook Verification: signature=sha256=62d7a133b9c095e522f72de2a0f14cf68af261689f317c7a3a3b878c85cc8c5e timestamp=1780330807621 batch_id=d78c93c9c05649fb9b15c2ca6c9c0c40
+INFO 2026-06-01 16:20:07,805 views 87765 Webhook Verification: signature MATCHED for message: b'1780330807621.d78c93c9c05649fb9b15c2ca6c9c0c40'
+INFO 2026-06-01 16:20:07,805 views 87765 WEBHOOK[2d80b3d6]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:20:17,278 views 87765 Webhook Verification: signature=sha256=dcdf48a1c16b268a18e1ffb34d7d445cfe207cebb4e944353fb40646241db06c timestamp=1780330817208 batch_id=175528d5d89e4b69b2e6d535bd896db4
+INFO 2026-06-01 16:20:17,278 views 87765 Webhook Verification: signature MATCHED for message: b'1780330817208.175528d5d89e4b69b2e6d535bd896db4'
+INFO 2026-06-01 16:20:17,279 views 87765 WEBHOOK[63052d7f]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:20:33,844 client 87765 REQ[61ba27a9] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/control/capabilities?format=json
+DEBUG 2026-06-01 16:20:40,801 views 87765 Webhook Verification: signature=sha256=69c52ece1de4cf81cc828293025c276fc7876336d2413a24142497ac9bd3324c timestamp=1780330840732 batch_id=66ee8438e1574d1abb1a92130f7fb312
+INFO 2026-06-01 16:20:40,802 views 87765 Webhook Verification: signature MATCHED for message: b'1780330840732.66ee8438e1574d1abb1a92130f7fb312'
+INFO 2026-06-01 16:20:40,802 views 87765 WEBHOOK[c0ca8db8]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:20:43,910 views 87765 Webhook Verification: signature=sha256=0843b4cbd11dd8b1bdc2dea171b1e2fcf17a646669a4ff63448f10b2c9fc335f timestamp=1780330843825 batch_id=70d43998331b4a9297706222ed288a2a
+INFO 2026-06-01 16:20:43,910 views 87765 Webhook Verification: signature MATCHED for message: b'1780330843825.70d43998331b4a9297706222ed288a2a'
+INFO 2026-06-01 16:20:43,910 views 87765 WEBHOOK[2991c101]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:20:59,113 views 87765 Webhook Verification: signature=sha256=0e27cff7504e8c2f1e30b70327d37033d5ed1edba4cd2423bd57d0b88cfdc905 timestamp=1780330859037 batch_id=ca73aeb2fd934e0bb93910ab8ad6e368
+INFO 2026-06-01 16:20:59,113 views 87765 Webhook Verification: signature MATCHED for message: b'1780330859037.ca73aeb2fd934e0bb93910ab8ad6e368'
+INFO 2026-06-01 16:20:59,114 views 87765 WEBHOOK[d52d1dfd]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:20:59,605 views 87765 Webhook Verification: signature=sha256=da091e7633d580c761f2e186c93c234c65bb3bc66a0689538e830228aa3aa62d timestamp=1780330859536 batch_id=9298c5af7ba840e5b7f885c161c393be
+INFO 2026-06-01 16:20:59,605 views 87765 Webhook Verification: signature MATCHED for message: b'1780330859536.9298c5af7ba840e5b7f885c161c393be'
+INFO 2026-06-01 16:20:59,605 views 87765 WEBHOOK[6a0b02fb]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:21:04,804 views 87765 Webhook Verification: signature=sha256=fdee5a566b7496366256f263ee99d5f91a9fe366aa0a039aa65c3af99348ce80 timestamp=1780330864728 batch_id=df4292b2c5114accbc0669d9a09ec576
+INFO 2026-06-01 16:21:04,804 views 87765 Webhook Verification: signature MATCHED for message: b'1780330864728.df4292b2c5114accbc0669d9a09ec576'
+INFO 2026-06-01 16:21:04,804 views 87765 WEBHOOK[b4b16382]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:21:16,459 views 87765 Webhook Verification: signature=sha256=6a1bac9ef4e53cdd7eaffdb3f0e39770d49d63b9b705c1b56ca4886d969f2d5a timestamp=1780330876388 batch_id=952be97990174845ad5f2b546f271169
+INFO 2026-06-01 16:21:16,459 views 87765 Webhook Verification: signature MATCHED for message: b'1780330876388.952be97990174845ad5f2b546f271169'
+INFO 2026-06-01 16:21:16,459 views 87765 WEBHOOK[075549ea]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:21:18,635 views 87765 Webhook Verification: signature=sha256=893f6bffeb1bb35cbb6b2f11dc5c040bdd59e5139fbaeda5d0eb5d4e513ace3c timestamp=1780330878563 batch_id=e3d7e8b1e8f3487a8fe9f969c58d9ebd
+INFO 2026-06-01 16:21:18,635 views 87765 Webhook Verification: signature MATCHED for message: b'1780330878563.e3d7e8b1e8f3487a8fe9f969c58d9ebd'
+INFO 2026-06-01 16:21:18,635 views 87765 WEBHOOK[4e5b6e8a]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:21:18,846 views 87765 Webhook Verification: signature=sha256=ef67e51ae97e1c4582f9784d77d60478eaa061d404312a78db0c3ce0e7fb005e timestamp=1780330878773 batch_id=a4e8a340cc554227b06bb43266cc6c6e
+INFO 2026-06-01 16:21:18,846 views 87765 Webhook Verification: signature MATCHED for message: b'1780330878773.a4e8a340cc554227b06bb43266cc6c6e'
+INFO 2026-06-01 16:21:18,846 views 87765 WEBHOOK[6d27b428]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:21:22,571 views 87765 Webhook Verification: signature=sha256=e8ad3f036e84db92703f253faa92a0502ae5f2a80ce05ed17c3c670b632bf1b7 timestamp=1780330882498 batch_id=7465b6f3e03c4b32b0ac68527a09ff30
+INFO 2026-06-01 16:21:22,572 views 87765 Webhook Verification: signature MATCHED for message: b'1780330882498.7465b6f3e03c4b32b0ac68527a09ff30'
+INFO 2026-06-01 16:21:22,572 views 87765 WEBHOOK[b079d7d7]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:21:29,703 views 87765 Webhook Verification: signature=sha256=2fbe70e1fc585cbbd3ed1167519366f04eadd36cb977922b3e8fd02029f025b0 timestamp=1780330889633 batch_id=5c5b9543856a45be98645ab5a1957484
+INFO 2026-06-01 16:21:29,703 views 87765 Webhook Verification: signature MATCHED for message: b'1780330889633.5c5b9543856a45be98645ab5a1957484'
+INFO 2026-06-01 16:21:29,703 views 87765 WEBHOOK[5c117837]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:22:04,194 views 87765 Webhook Verification: signature=sha256=4080823a03875e863ba9dcfe947a6f17d44a6b0a75a0d60f0eae27fdb37cd577 timestamp=1780330924125 batch_id=7818b866260740e6a741ff526a520d26
+INFO 2026-06-01 16:22:04,195 views 87765 Webhook Verification: signature MATCHED for message: b'1780330924125.7818b866260740e6a741ff526a520d26'
+INFO 2026-06-01 16:22:04,195 views 87765 WEBHOOK[8ffc6e03]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:22:11,502 views 87765 Webhook Verification: signature=sha256=149f43ee3985758ef62e7b5a5f590f7f80ed047d01063377b03fa37b8e8d131f timestamp=1780330931434 batch_id=c582f4226352411e8aa064631fd6d458
+INFO 2026-06-01 16:22:11,502 views 87765 Webhook Verification: signature MATCHED for message: b'1780330931434.c582f4226352411e8aa064631fd6d458'
+INFO 2026-06-01 16:22:11,502 views 87765 WEBHOOK[6faeef2e]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:22:17,157 views 87765 Webhook Verification: signature=sha256=2707730498358ad712c2c2823867cef91e4b3449c12d9259fc0b3d7095547c73 timestamp=1780330937076 batch_id=6c26ee4af52d495ea595e4c5c21ae50d
+INFO 2026-06-01 16:22:17,157 views 87765 Webhook Verification: signature MATCHED for message: b'1780330937076.6c26ee4af52d495ea595e4c5c21ae50d'
+INFO 2026-06-01 16:22:17,157 views 87765 WEBHOOK[dae7e1f0]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:22:51,874 views 87765 Webhook Verification: signature=sha256=b490dd756fa008f8c1567eead510d338b0f5c122a607ae6f8fb2cfa8590eb52b timestamp=1780330971806 batch_id=abe629c5f9534ea8aff21fd1669d688a
+INFO 2026-06-01 16:22:51,874 views 87765 Webhook Verification: signature MATCHED for message: b'1780330971806.abe629c5f9534ea8aff21fd1669d688a'
+INFO 2026-06-01 16:22:51,874 views 87765 WEBHOOK[5273dcad]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:23:16,657 views 87765 Webhook Verification: signature=sha256=81987ecddf97ab8ad5b6cba73c4ae3b49f89a7c2ceb918aa5e99729ffa1f669a timestamp=1780330996585 batch_id=b8f713fbcfe345279dfe1410c17edb6b
+INFO 2026-06-01 16:23:16,657 views 87765 Webhook Verification: signature MATCHED for message: b'1780330996585.b8f713fbcfe345279dfe1410c17edb6b'
+INFO 2026-06-01 16:23:16,661 views 87765 WEBHOOK[671cdf6b]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:23:21,971 views 87765 Webhook Verification: signature=sha256=f99e307b232bfe58d7c97c98548093b792b00f1bef3b5f03299090115dae7656 timestamp=1780331001897 batch_id=31927b84630d4c05984ca93bf73c0522
+INFO 2026-06-01 16:23:21,972 views 87765 Webhook Verification: signature MATCHED for message: b'1780331001897.31927b84630d4c05984ca93bf73c0522'
+INFO 2026-06-01 16:23:21,972 views 87765 WEBHOOK[24962bc1]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:23:23,756 views 87765 Webhook Verification: signature=sha256=2c6cf0cec5b889b249984d79169b73709a7b789d527643dddb67445780c7c00b timestamp=1780331003688 batch_id=96b9efafe86c4a07a9583f25839463c6
+INFO 2026-06-01 16:23:23,756 views 87765 Webhook Verification: signature MATCHED for message: b'1780331003688.96b9efafe86c4a07a9583f25839463c6'
+INFO 2026-06-01 16:23:23,756 views 87765 WEBHOOK[2d123fd4]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:23:38,166 views 87765 Webhook Verification: signature=sha256=51b7997cf6794fc9c4c5c441bb26a024e297792ebcb620468a4c33af91bc3832 timestamp=1780331018096 batch_id=15d80fa5b7a54399be8546b0ee254576
+INFO 2026-06-01 16:23:38,167 views 87765 Webhook Verification: signature MATCHED for message: b'1780331018096.15d80fa5b7a54399be8546b0ee254576'
+INFO 2026-06-01 16:23:38,167 views 87765 WEBHOOK[bc0949fe]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:23:54,067 views 87765 Webhook Verification: signature=sha256=1df05a83b18ae6abdef0e3cbaffd02797a5d6583dd0bb8066c8aa3ae429e4f55 timestamp=1780331033999 batch_id=9e20450cf91f48929e9ea851b35d002b
+INFO 2026-06-01 16:23:54,067 views 87765 Webhook Verification: signature MATCHED for message: b'1780331033999.9e20450cf91f48929e9ea851b35d002b'
+INFO 2026-06-01 16:23:54,068 views 87765 WEBHOOK[3fae37fb]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:24:04,099 views 87765 Webhook Verification: signature=sha256=fb46c4681e6c7cbaf7ace1675d4d432757a1f2cc8f5ac6646b5ff9b650f4e152 timestamp=1780331044029 batch_id=b161617f2a234d1896b328c1ed43793a
+INFO 2026-06-01 16:24:04,099 views 87765 Webhook Verification: signature MATCHED for message: b'1780331044029.b161617f2a234d1896b328c1ed43793a'
+INFO 2026-06-01 16:24:04,099 views 87765 WEBHOOK[bb9c13c9]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:24:20,469 views 87765 Webhook Verification: signature=sha256=3fe65d13710856ac4805e731a7d85957a2f1085ad991adeb7e72d2a2fd8052d6 timestamp=1780331060400 batch_id=bc3d043789cd400f921d06d3d34a57d9
+INFO 2026-06-01 16:24:20,469 views 87765 Webhook Verification: signature MATCHED for message: b'1780331060400.bc3d043789cd400f921d06d3d34a57d9'
+INFO 2026-06-01 16:24:20,469 views 87765 WEBHOOK[53f51c41]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:24:31,971 views 87765 Webhook Verification: signature=sha256=bbf7adf7be94c2c6d450c6c0828ad46c3a9530cdfc9aad1235c4af37a84de635 timestamp=1780331071904 batch_id=0095ebd16ba04defa4a87de59467c91a
+INFO 2026-06-01 16:24:31,971 views 87765 Webhook Verification: signature MATCHED for message: b'1780331071904.0095ebd16ba04defa4a87de59467c91a'
+INFO 2026-06-01 16:24:31,971 views 87765 WEBHOOK[d10eeb6e]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:24:37,203 views 87765 Webhook Verification: signature=sha256=665b5fa173bd37c8e6ae1b4ee3f732d1109d4cc58dcaa9d2424cc99f3735059b timestamp=1780331077136 batch_id=1ac44d2987714a05b8316df9e740af5a
+INFO 2026-06-01 16:24:37,203 views 87765 Webhook Verification: signature MATCHED for message: b'1780331077136.1ac44d2987714a05b8316df9e740af5a'
+INFO 2026-06-01 16:24:37,203 views 87765 WEBHOOK[7254da8f]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:24:42,241 views 87765 Webhook Verification: signature=sha256=16a18912beb2351f15d6e205a265c764dedb122401e64d952cd1a3f0d077572f timestamp=1780331082173 batch_id=eb8a706c38ee4d6a888d046fdee2602e
+INFO 2026-06-01 16:24:42,241 views 87765 Webhook Verification: signature MATCHED for message: b'1780331082173.eb8a706c38ee4d6a888d046fdee2602e'
+INFO 2026-06-01 16:24:42,241 views 87765 WEBHOOK[893cee4e]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:24:42,727 views 87765 Webhook Verification: signature=sha256=16f44a289eacad98e9e87eebe7b2c1f6e035dcc7e678140fa92554206a7f7a76 timestamp=1780331082659 batch_id=f8c48ae3b8d94466830b5cfac909aa7a
+INFO 2026-06-01 16:24:42,727 views 87765 Webhook Verification: signature MATCHED for message: b'1780331082659.f8c48ae3b8d94466830b5cfac909aa7a'
+INFO 2026-06-01 16:24:42,727 views 87765 WEBHOOK[93f98182]: received batch of 1 message(s)
+/home/dev/SecureHub/backend/apps/hik_adapter/client.py changed, reloading.
+INFO 2026-06-01 16:24:57,056 autoreload 87765 /home/dev/SecureHub/backend/apps/hik_adapter/client.py changed, reloading.
 Performing system checks...
 
 System check identified no issues (0 silenced).
-June 01, 2026 - 12:09:01
+June 01, 2026 - 16:19:59
 Django version 5.2.12, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8000/
 Quit the server with CONTROL-C.
@@ -275,544 +96,218 @@ Quit the server with CONTROL-C.
 WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
 For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
 Watching for file changes with StatReloader
-INFO 2026-06-01 12:19:23,298 autoreload 13282 Watching for file changes with StatReloader
-DEBUG 2026-06-01 12:19:25,172 views 13282 Webhook Verification: signature=sha256=440674df828ae3e2333603ec764802a97004f6774a5fc6c1a8c4f4609982bfed timestamp=1780316364930 batch_id=c8112173733f4862acbafa540dae7c55
-INFO 2026-06-01 12:19:25,173 views 13282 Webhook Verification: signature MATCHED for message: b'1780316364930.c8112173733f4862acbafa540dae7c55'
-INFO 2026-06-01 12:19:25,173 views 13282 WEBHOOK[31e15033]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:36,330 views 13282 Webhook Verification: signature=sha256=7ce6d3e9990cfa85d71ddd24eb4b3819f8c7eda4ba1f35e0295f5cf3e66189d2 timestamp=1780316376044 batch_id=f782633434d6400ebc51190d64f5e676
-INFO 2026-06-01 12:19:36,330 views 13282 Webhook Verification: signature MATCHED for message: b'1780316376044.f782633434d6400ebc51190d64f5e676'
-INFO 2026-06-01 12:19:36,331 views 13282 WEBHOOK[b3e5d710]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:37,725 views 13282 Webhook Verification: signature=sha256=6e109afea37cf8af42e842ab6754fd9f37593af352ba20c1ecae120916f00923 timestamp=1780316377432 batch_id=f9a3e79dd4764e0d9078b5e4e499678b
-INFO 2026-06-01 12:19:37,725 views 13282 Webhook Verification: signature MATCHED for message: b'1780316377432.f9a3e79dd4764e0d9078b5e4e499678b'
-INFO 2026-06-01 12:19:37,725 views 13282 WEBHOOK[25a6181b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:44,952 views 13282 Webhook Verification: signature=sha256=aabed422c3acfa50c98b9d913408cdf37493da252287471577af49f9182b8f65 timestamp=1780316384605 batch_id=aa5c9d3f06344db3acf24388f1935b4b
-INFO 2026-06-01 12:19:44,953 views 13282 Webhook Verification: signature MATCHED for message: b'1780316384605.aa5c9d3f06344db3acf24388f1935b4b'
-INFO 2026-06-01 12:19:44,953 views 13282 WEBHOOK[75e03e63]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:48,913 views 13282 Webhook Verification: signature=sha256=64604142410c28d0414a86b9f3be86fdc3279ff974b0e885bfc43e70275e4144 timestamp=1780316388602 batch_id=35a8096c808d46e39a51cecd865cc257
-INFO 2026-06-01 12:19:48,914 views 13282 Webhook Verification: signature MATCHED for message: b'1780316388602.35a8096c808d46e39a51cecd865cc257'
-INFO 2026-06-01 12:19:48,914 views 13282 WEBHOOK[a00ab72c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:19:54,389 views 13282 Webhook Verification: signature=sha256=f8371febf7f3754012a486e3ec04748b92479f25dca7a619c051286b0f2ea2e9 timestamp=1780316394148 batch_id=46b5d765dfb346e0ac56e9aaea3e4ea5
-INFO 2026-06-01 12:19:54,389 views 13282 Webhook Verification: signature MATCHED for message: b'1780316394148.46b5d765dfb346e0ac56e9aaea3e4ea5'
-INFO 2026-06-01 12:19:54,389 views 13282 WEBHOOK[58e591c3]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:20:14,477 views 13282 Webhook Verification: signature=sha256=ba5c0add95eb3ebc077e417198b69117d5cd0eee4fe78bca419237883deec5b2 timestamp=1780316414164 batch_id=ad9b4b9143b64a83b43084e98c5624df
-INFO 2026-06-01 12:20:14,477 views 13282 Webhook Verification: signature MATCHED for message: b'1780316414164.ad9b4b9143b64a83b43084e98c5624df'
-INFO 2026-06-01 12:20:14,478 views 13282 WEBHOOK[1e933564]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:20:14,595 views 13282 Webhook Verification: signature=sha256=cee964f9e3bf0d51be876f95036b0a1b807ad122c691a7f348c60f023075f817 timestamp=1780316414279 batch_id=299c2078752a44cfa47592c6f35d6a3b
-INFO 2026-06-01 12:20:14,595 views 13282 Webhook Verification: signature MATCHED for message: b'1780316414279.299c2078752a44cfa47592c6f35d6a3b'
-INFO 2026-06-01 12:20:14,595 views 13282 WEBHOOK[dcbccd7b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:20:21,081 views 13282 Webhook Verification: signature=sha256=a9129e8fa1b0faccbe9cad1fea0dff641833fdd2c88148e0a5ef4723bb4a77c4 timestamp=1780316420779 batch_id=f0a50d9d8a1a4d28aa6cc782273e7980
-INFO 2026-06-01 12:20:21,081 views 13282 Webhook Verification: signature MATCHED for message: b'1780316420779.f0a50d9d8a1a4d28aa6cc782273e7980'
-INFO 2026-06-01 12:20:21,081 views 13282 WEBHOOK[2f12953c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:20:34,785 views 13282 Webhook Verification: signature=sha256=7979681fcaf957a8377c99362a9d5440809cea207b6fb4b921bcefd3e33db5b8 timestamp=1780316434541 batch_id=ea992d066800408185b043b92c7264a6
-INFO 2026-06-01 12:20:34,785 views 13282 Webhook Verification: signature MATCHED for message: b'1780316434541.ea992d066800408185b043b92c7264a6'
-INFO 2026-06-01 12:20:34,785 views 13282 WEBHOOK[e882c5df]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:20:36,450 views 13282 Webhook Verification: signature=sha256=dc9c36aa4af26fd7b54d9a7738f24b9b620630f2ebdf68e2e13f5535fd8e46e4 timestamp=1780316436194 batch_id=845cd8d8b737462dbdf12f27416f4aa6
-INFO 2026-06-01 12:20:36,450 views 13282 Webhook Verification: signature MATCHED for message: b'1780316436194.845cd8d8b737462dbdf12f27416f4aa6'
-INFO 2026-06-01 12:20:36,450 views 13282 WEBHOOK[fde94038]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:20:40,881 views 13282 Webhook Verification: signature=sha256=b3904fd1183843d9bbd671065374bd4b5b1743bf9a6c9c88051e310ddf341689 timestamp=1780316440601 batch_id=09a5fb048c9a423985d450d833f87bac
-INFO 2026-06-01 12:20:40,881 views 13282 Webhook Verification: signature MATCHED for message: b'1780316440601.09a5fb048c9a423985d450d833f87bac'
-INFO 2026-06-01 12:20:40,881 views 13282 WEBHOOK[7b8cb69f]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:20:41,141 views 13282 Webhook Verification: signature=sha256=e60b5dfa3a90ba142be48ad656716b3a29096efc2eafbeca85d998f19b310fe9 timestamp=1780316440858 batch_id=c0f26325d2c245d59a6531bfed45f0ec
-INFO 2026-06-01 12:20:41,142 views 13282 Webhook Verification: signature MATCHED for message: b'1780316440858.c0f26325d2c245d59a6531bfed45f0ec'
-INFO 2026-06-01 12:20:41,142 views 13282 WEBHOOK[bfcf7196]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:20:47,069 views 13282 Webhook Verification: signature=sha256=f07b73dea67b1c291d20af940b26a9a1084b8a1972975f9ef8c6a423d1b6ebac timestamp=1780316446742 batch_id=bdfacc14a0cd44d7bb7be540af0959e9
-INFO 2026-06-01 12:20:47,069 views 13282 Webhook Verification: signature MATCHED for message: b'1780316446742.bdfacc14a0cd44d7bb7be540af0959e9'
-INFO 2026-06-01 12:20:47,069 views 13282 WEBHOOK[4c041a87]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:20:54,661 views 13282 Webhook Verification: signature=sha256=aa840331fcc2826ba80962499824f140941e5aba569119ebbfb049600b0123df timestamp=1780316454383 batch_id=f1b7856f7ce0402e9c7d4114083ed38c
-INFO 2026-06-01 12:20:54,662 views 13282 Webhook Verification: signature MATCHED for message: b'1780316454383.f1b7856f7ce0402e9c7d4114083ed38c'
-INFO 2026-06-01 12:20:54,662 views 13282 WEBHOOK[fcb3db25]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:21:06,689 views 13282 Webhook Verification: signature=sha256=dab39967f762adfd06880505e343280eb55ab49918815bb2dfadd7e30a417595 timestamp=1780316466448 batch_id=d5b2884b63d74eaea04c24fc28f54505
-INFO 2026-06-01 12:21:06,689 views 13282 Webhook Verification: signature MATCHED for message: b'1780316466448.d5b2884b63d74eaea04c24fc28f54505'
-INFO 2026-06-01 12:21:06,689 views 13282 WEBHOOK[05711ff1]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:21:46,629 views 13282 Webhook Verification: signature=sha256=26975c9db98403606b461a548c9e31b65402293008fc6b9dc4494ad687042537 timestamp=1780316506354 batch_id=7d69c704ea624d64986ffce01c9d9921
-INFO 2026-06-01 12:21:46,629 views 13282 Webhook Verification: signature MATCHED for message: b'1780316506354.7d69c704ea624d64986ffce01c9d9921'
-INFO 2026-06-01 12:21:46,629 views 13282 WEBHOOK[e1afe0cd]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:21:47,452 views 13282 Webhook Verification: signature=sha256=c5241caec455d2a3bcc8104b59742e6d93f2c253a7fc282f6728ec534defc7a9 timestamp=1780316507176 batch_id=93d3081929714036a2c90ee770da56e1
-INFO 2026-06-01 12:21:47,453 views 13282 Webhook Verification: signature MATCHED for message: b'1780316507176.93d3081929714036a2c90ee770da56e1'
-INFO 2026-06-01 12:21:47,453 views 13282 WEBHOOK[3ab5c82c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:21:51,439 views 13282 Webhook Verification: signature=sha256=c7d02ec1b610f4a91dd73ad342a9f2a6b736ddb2a431190a34618eb4682bd03c timestamp=1780316511130 batch_id=f59c17375c154d23bb0d93bff38b8e2b
-INFO 2026-06-01 12:21:51,439 views 13282 Webhook Verification: signature MATCHED for message: b'1780316511130.f59c17375c154d23bb0d93bff38b8e2b'
-INFO 2026-06-01 12:21:51,439 views 13282 WEBHOOK[955f123b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:21:55,837 views 13282 Webhook Verification: signature=sha256=1fb918945cdd30ec1a5d98c500fa9c32984ca4c553bd1a921c40cd9b7ea40896 timestamp=1780316515486 batch_id=a867a69fca3d479692b5fe975cec5187
-INFO 2026-06-01 12:21:55,837 views 13282 Webhook Verification: signature MATCHED for message: b'1780316515486.a867a69fca3d479692b5fe975cec5187'
-INFO 2026-06-01 12:21:55,837 views 13282 WEBHOOK[4a8ab7a6]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:22:00,667 views 13282 Webhook Verification: signature=sha256=87977e1879ba57a1dfe341da0c0969c895dfb02a68c325d6684f0ea188d10688 timestamp=1780316520409 batch_id=60e601211b3549319354e22134482606
-INFO 2026-06-01 12:22:00,668 views 13282 Webhook Verification: signature MATCHED for message: b'1780316520409.60e601211b3549319354e22134482606'
-INFO 2026-06-01 12:22:00,669 views 13282 WEBHOOK[9080d8b1]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:22:13,681 views 13282 Webhook Verification: signature=sha256=94c713b398a1609d35401575a2a242d961c5eb991fa36e1e403baab3510635b8 timestamp=1780316533423 batch_id=2dd01f5de1bc4a25a2927db6b2e1e1bf
-INFO 2026-06-01 12:22:13,681 views 13282 Webhook Verification: signature MATCHED for message: b'1780316533423.2dd01f5de1bc4a25a2927db6b2e1e1bf'
-INFO 2026-06-01 12:22:13,682 views 13282 WEBHOOK[439c8a5c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:22:44,990 views 13282 Webhook Verification: signature=sha256=c25586274d1948b725e4e103451632424fc2eb2bdcb652f25ee03aec4055d075 timestamp=1780316564748 batch_id=eae84cfc7acd4aa399361464fdc4d4b8
-INFO 2026-06-01 12:22:44,990 views 13282 Webhook Verification: signature MATCHED for message: b'1780316564748.eae84cfc7acd4aa399361464fdc4d4b8'
-INFO 2026-06-01 12:22:44,990 views 13282 WEBHOOK[b743866c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:22:53,945 views 13282 Webhook Verification: signature=sha256=89ffdb80d7d4d7ba59dee8808c6448149396a97d11345e0bf6551d86ee02b611 timestamp=1780316573645 batch_id=b45017565fb342b5bf15607c4bbc321c
-INFO 2026-06-01 12:22:53,945 views 13282 Webhook Verification: signature MATCHED for message: b'1780316573645.b45017565fb342b5bf15607c4bbc321c'
-INFO 2026-06-01 12:22:53,945 views 13282 WEBHOOK[47349f0d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:23:07,817 views 13282 Webhook Verification: signature=sha256=21cb4ef041fd54d38ded10233a5a7d6d4e713ea90fa352077e4c894ebfefe30c timestamp=1780316587587 batch_id=fa79af452dc94dd8932ac090c02e80c0
-INFO 2026-06-01 12:23:07,817 views 13282 Webhook Verification: signature MATCHED for message: b'1780316587587.fa79af452dc94dd8932ac090c02e80c0'
-INFO 2026-06-01 12:23:07,817 views 13282 WEBHOOK[7eb312ee]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:23:52,580 views 13282 Webhook Verification: signature=sha256=536506e61da6cc82aed9fd758872a339b1c879a2da8370b0d985a0d4618727b4 timestamp=1780316632318 batch_id=1fcdfd81c27c4ac29c27145b4a610847
-INFO 2026-06-01 12:23:52,580 views 13282 Webhook Verification: signature MATCHED for message: b'1780316632318.1fcdfd81c27c4ac29c27145b4a610847'
-INFO 2026-06-01 12:23:52,580 views 13282 WEBHOOK[82af0160]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:23:55,109 views 13282 Webhook Verification: signature=sha256=11f6ff50465080d921ce6a7e2e6a0d82223e413625bb124dbc1b4dcdca2a0397 timestamp=1780316634831 batch_id=cbc3815d38ee46f1b79fd08bb3da2179
-INFO 2026-06-01 12:23:55,109 views 13282 Webhook Verification: signature MATCHED for message: b'1780316634831.cbc3815d38ee46f1b79fd08bb3da2179'
-INFO 2026-06-01 12:23:55,109 views 13282 WEBHOOK[3385dd80]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:03,802 views 13282 Webhook Verification: signature=sha256=fc2a4bf7c2f7713ca5ad231ec3ec04019f849e6d55d910966e094cd2e8859094 timestamp=1780316643460 batch_id=8fe924d345d54f43987cd2ed34e95fb9
-INFO 2026-06-01 12:24:03,802 views 13282 Webhook Verification: signature MATCHED for message: b'1780316643460.8fe924d345d54f43987cd2ed34e95fb9'
-INFO 2026-06-01 12:24:03,802 views 13282 WEBHOOK[5906a285]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:09,183 views 13282 Webhook Verification: signature=sha256=76156e22b308b28e046398adf696c2f5b9ee594b12b84cb8f1a36df78ed4e048 timestamp=1780316648917 batch_id=88c81ea6c42e49c1a29d82082076d41e
-INFO 2026-06-01 12:24:09,183 views 13282 Webhook Verification: signature MATCHED for message: b'1780316648917.88c81ea6c42e49c1a29d82082076d41e'
-INFO 2026-06-01 12:24:09,183 views 13282 WEBHOOK[18dc55ff]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:11,372 views 13282 Webhook Verification: signature=sha256=17d379e831cb4dba8f269d61c879ca6a8097abb5e08061bc02136605c0d6ce6a timestamp=1780316651130 batch_id=9e02641a3b804ceaa4fade412567e917
-INFO 2026-06-01 12:24:11,372 views 13282 Webhook Verification: signature MATCHED for message: b'1780316651130.9e02641a3b804ceaa4fade412567e917'
-INFO 2026-06-01 12:24:11,372 views 13282 WEBHOOK[90002300]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:14,386 views 13282 Webhook Verification: signature=sha256=9d46fd3ec3834f0fa9dbed8c46f627a3e56d351446253b5b9e87fe32ac488bc1 timestamp=1780316654159 batch_id=f7ff4d79dd154102a36de2e10e8bb336
-INFO 2026-06-01 12:24:14,386 views 13282 Webhook Verification: signature MATCHED for message: b'1780316654159.f7ff4d79dd154102a36de2e10e8bb336'
-INFO 2026-06-01 12:24:14,387 views 13282 WEBHOOK[8bbb6a4d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:31,300 views 13282 Webhook Verification: signature=sha256=00845a9915e1af7539ecdcba2990412ecafb848c5d09587119650bb50ccd5849 timestamp=1780316671001 batch_id=ae181e4f286c4c628d45b118c43d93bb
-INFO 2026-06-01 12:24:31,300 views 13282 Webhook Verification: signature MATCHED for message: b'1780316671001.ae181e4f286c4c628d45b118c43d93bb'
-INFO 2026-06-01 12:24:31,300 views 13282 WEBHOOK[74821120]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:36,408 views 13282 Webhook Verification: signature=sha256=1aae530f3bfd5b939820a301a4db27e29d65f4b8d4b271a3b24a1e5d0212eddc timestamp=1780316676068 batch_id=98f41415a31e4fcc92178aaec460191b
-INFO 2026-06-01 12:24:36,408 views 13282 Webhook Verification: signature MATCHED for message: b'1780316676068.98f41415a31e4fcc92178aaec460191b'
-INFO 2026-06-01 12:24:36,408 views 13282 WEBHOOK[d5e7b0db]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:38,361 views 13282 Webhook Verification: signature=sha256=3d604305243b752320e2f7d4965eb73cd9dc74cd5a2e5b93c3291ea4cc2d1b41 timestamp=1780316678053 batch_id=ff284649634646b5a3069aa589200fac
-INFO 2026-06-01 12:24:38,361 views 13282 Webhook Verification: signature MATCHED for message: b'1780316678053.ff284649634646b5a3069aa589200fac'
-INFO 2026-06-01 12:24:38,361 views 13282 WEBHOOK[0199d579]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:39,220 views 13282 Webhook Verification: signature=sha256=90788e37d579047ab394ac570d4070711fa31363475d4e176b707827b2245b63 timestamp=1780316678930 batch_id=5ed2236932494237babe59177f316bca
-INFO 2026-06-01 12:24:39,221 views 13282 Webhook Verification: signature MATCHED for message: b'1780316678930.5ed2236932494237babe59177f316bca'
-INFO 2026-06-01 12:24:39,221 views 13282 WEBHOOK[efa34c88]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:42,644 views 13282 Webhook Verification: signature=sha256=3de4106f7a0bf690763beaa68fa7ff7dc24d624167076fbc49fcedae53a0e710 timestamp=1780316682398 batch_id=e074b325337e4686b8fa7136469026fa
-INFO 2026-06-01 12:24:42,644 views 13282 Webhook Verification: signature MATCHED for message: b'1780316682398.e074b325337e4686b8fa7136469026fa'
-INFO 2026-06-01 12:24:42,644 views 13282 WEBHOOK[d8902a6a]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:45,790 views 13282 Webhook Verification: signature=sha256=0a679b9a195a64b6c849d482abadb6feea053ffb54e094d27c45e52c7e599c51 timestamp=1780316685566 batch_id=7fff42f84bc6437da45e24b03d1fdae6
-INFO 2026-06-01 12:24:45,791 views 13282 Webhook Verification: signature MATCHED for message: b'1780316685566.7fff42f84bc6437da45e24b03d1fdae6'
-INFO 2026-06-01 12:24:45,791 views 13282 WEBHOOK[1a4d539d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:24:46,329 views 13282 Webhook Verification: signature=sha256=94ee1d2bf11208c2a25cfb767b6210d91664a83f333ea24b44c7b91141f5c7f3 timestamp=1780316686106 batch_id=eb97c269560241758ee12ae675ff2f31
-INFO 2026-06-01 12:24:46,329 views 13282 Webhook Verification: signature MATCHED for message: b'1780316686106.eb97c269560241758ee12ae675ff2f31'
-INFO 2026-06-01 12:24:46,329 views 13282 WEBHOOK[c9de53d0]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:25:10,140 views 13282 Webhook Verification: signature=sha256=1e0eff4655833a753eeb48119e6ab862fa95fbd18c20554e90a8a226a06da964 timestamp=1780316709826 batch_id=4b51cdfcdae1419ab0324976aa9d9f6b
-INFO 2026-06-01 12:25:10,140 views 13282 Webhook Verification: signature MATCHED for message: b'1780316709826.4b51cdfcdae1419ab0324976aa9d9f6b'
-INFO 2026-06-01 12:25:10,140 views 13282 WEBHOOK[1e03bd61]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:25:11,733 views 13282 Webhook Verification: signature=sha256=de0a05e749e2312c9a493081f219b41c7325fa4e4ea2a09d4b9c4e83b478ae1c timestamp=1780316711451 batch_id=fc26c0f7c4bb4668b9d5cb411471f563
-INFO 2026-06-01 12:25:11,733 views 13282 Webhook Verification: signature MATCHED for message: b'1780316711451.fc26c0f7c4bb4668b9d5cb411471f563'
-INFO 2026-06-01 12:25:11,733 views 13282 WEBHOOK[b04c6bae]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:25:23,910 views 13282 Webhook Verification: signature=sha256=934ef6710e2fc13a517d8142ef65990a516f7cc0a5d19770bbba71a9b0d5578f timestamp=1780316723670 batch_id=00020e7f7b554cf2b347f823ef66c047
-INFO 2026-06-01 12:25:23,910 views 13282 Webhook Verification: signature MATCHED for message: b'1780316723670.00020e7f7b554cf2b347f823ef66c047'
-INFO 2026-06-01 12:25:23,910 views 13282 WEBHOOK[6fa01ea4]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:25:53,983 views 13282 Webhook Verification: signature=sha256=1a7707220dee700b79c7a09593ab338ac407fbdf75478c5a94d2b87657173b29 timestamp=1780316753764 batch_id=8f234f7549cd4b4a8cebbca746038585
-INFO 2026-06-01 12:25:53,984 views 13282 Webhook Verification: signature MATCHED for message: b'1780316753764.8f234f7549cd4b4a8cebbca746038585'
-INFO 2026-06-01 12:25:53,984 views 13282 WEBHOOK[103a465e]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:26:14,774 views 13282 Webhook Verification: signature=sha256=bbdedb676d3c0a758dd1a52a29f74ed28cdbf48a35534eaa2e592e8de2ddbdbc timestamp=1780316774462 batch_id=5e932c26824d4352b8955275364864dc
-INFO 2026-06-01 12:26:14,774 views 13282 Webhook Verification: signature MATCHED for message: b'1780316774462.5e932c26824d4352b8955275364864dc'
-INFO 2026-06-01 12:26:14,775 views 13282 WEBHOOK[4ac4da90]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:26:34,051 views 13282 Webhook Verification: signature=sha256=b06e3967d1bc3713040a560a5dfcabef9997cb8a0a1fa473dc6b342fb90409ea timestamp=1780316793799 batch_id=a86385b4a7ce46968ff4dad6b95aa549
-INFO 2026-06-01 12:26:34,051 views 13282 Webhook Verification: signature MATCHED for message: b'1780316793799.a86385b4a7ce46968ff4dad6b95aa549'
-INFO 2026-06-01 12:26:34,051 views 13282 WEBHOOK[333b6cbf]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:26:56,235 views 13282 Webhook Verification: signature=sha256=d2f574ee878ca0c2be4c59af5d6b26f2073a8b1af9c2dc330bf4d31dcadbd5ec timestamp=1780316816015 batch_id=f89894ae23cf424c919ecc9a3f474411
-INFO 2026-06-01 12:26:56,236 views 13282 Webhook Verification: signature MATCHED for message: b'1780316816015.f89894ae23cf424c919ecc9a3f474411'
-INFO 2026-06-01 12:26:56,236 views 13282 WEBHOOK[3a13f852]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:27:04,929 views 13282 Webhook Verification: signature=sha256=de8791f74103854ab9b879057cd1f496d5e93ee6a10590acde1f38129b482d2f timestamp=1780316824685 batch_id=02e98d2f485f44dbb6bce67f827cbe97
-INFO 2026-06-01 12:27:04,930 views 13282 Webhook Verification: signature MATCHED for message: b'1780316824685.02e98d2f485f44dbb6bce67f827cbe97'
-INFO 2026-06-01 12:27:04,930 views 13282 WEBHOOK[b2f7f5f7]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:27:26,883 views 13282 Webhook Verification: signature=sha256=fb85a7ce75a44d22d05103876b2ef8ad1b6730baab8fb3c3a90b59e14b94cabe timestamp=1780316846656 batch_id=aaa6cf3b63ab475f97317c523640f98e
-INFO 2026-06-01 12:27:26,883 views 13282 Webhook Verification: signature MATCHED for message: b'1780316846656.aaa6cf3b63ab475f97317c523640f98e'
-INFO 2026-06-01 12:27:26,883 views 13282 WEBHOOK[b57752b8]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:27:26,907 views 13282 Webhook Verification: signature=sha256=2dee0c59545b9ef6fb274a61bc12dc9b56614542939ca87e5b764097ff3adbc3 timestamp=1780316846662 batch_id=3fc52341f9e740b68cbbf4a7458f00ff
-INFO 2026-06-01 12:27:26,907 views 13282 Webhook Verification: signature MATCHED for message: b'1780316846662.3fc52341f9e740b68cbbf4a7458f00ff'
-INFO 2026-06-01 12:27:26,907 views 13282 WEBHOOK[cb284984]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:27:36,661 views 13282 Webhook Verification: signature=sha256=92837ff994a1d1b847750c8d2501de64848f6d57b945e55c386944b747fa0088 timestamp=1780316856410 batch_id=f1d2b3b8e813444aaff57af8e574fefa
-INFO 2026-06-01 12:27:36,661 views 13282 Webhook Verification: signature MATCHED for message: b'1780316856410.f1d2b3b8e813444aaff57af8e574fefa'
-INFO 2026-06-01 12:27:36,661 views 13282 WEBHOOK[908a5caf]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:27:51,343 views 13282 Webhook Verification: signature=sha256=f309321aa964775ef60507f196dd0fc2fe81ed269af5e16502f5a0903922d504 timestamp=1780316870999 batch_id=e6c7a011152c46309ba878feef993a83
-INFO 2026-06-01 12:27:51,343 views 13282 Webhook Verification: signature MATCHED for message: b'1780316870999.e6c7a011152c46309ba878feef993a83'
-INFO 2026-06-01 12:27:51,343 views 13282 WEBHOOK[8c01d9b3]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:27:54,046 views 13282 Webhook Verification: signature=sha256=5384e02d72957354b97875c3bca48488ff87ac866994e49d7d08132e33942736 timestamp=1780316873758 batch_id=3b5f7f517d534c018684da53fdaf34c9
-INFO 2026-06-01 12:27:54,046 views 13282 Webhook Verification: signature MATCHED for message: b'1780316873758.3b5f7f517d534c018684da53fdaf34c9'
-INFO 2026-06-01 12:27:54,046 views 13282 WEBHOOK[98359d3d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:27:56,269 views 13282 Webhook Verification: signature=sha256=8d1efdb3e65c4b771b330b46425ac2930515a13eedd09e85b32d5138667a7837 timestamp=1780316876009 batch_id=b523aae60fa54d7fb00962b14c1150eb
-INFO 2026-06-01 12:27:56,269 views 13282 Webhook Verification: signature MATCHED for message: b'1780316876009.b523aae60fa54d7fb00962b14c1150eb'
-INFO 2026-06-01 12:27:56,269 views 13282 WEBHOOK[0d862bad]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:28:01,865 views 13282 Webhook Verification: signature=sha256=fd63ea33895809deccd820f3103bda450a70cf1ddb1fcf5f6a653739cd680f21 timestamp=1780316881631 batch_id=9131bf2e9c754bb8b1a8d4a09084d1e2
-INFO 2026-06-01 12:28:01,865 views 13282 Webhook Verification: signature MATCHED for message: b'1780316881631.9131bf2e9c754bb8b1a8d4a09084d1e2'
-INFO 2026-06-01 12:28:01,865 views 13282 WEBHOOK[fbed5dbd]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:28:10,202 views 13282 Webhook Verification: signature=sha256=576eac5832d08497b5bf69ba1542d542b1e79a3b50e54935c1b0d3b497665de5 timestamp=1780316889904 batch_id=dd0259bdab4e439295f8aff7c27a3180
-INFO 2026-06-01 12:28:10,202 views 13282 Webhook Verification: signature MATCHED for message: b'1780316889904.dd0259bdab4e439295f8aff7c27a3180'
-INFO 2026-06-01 12:28:10,202 views 13282 WEBHOOK[247e14bc]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:28:12,060 views 13282 Webhook Verification: signature=sha256=630bfa8a39f92e397ab6edfea9d3e3b8321b5b7901cd0f5f16ceb33ae39ed5de timestamp=1780316891780 batch_id=2e7d9d3a1f5849498bdcb2f8b5af56c9
-INFO 2026-06-01 12:28:12,061 views 13282 Webhook Verification: signature MATCHED for message: b'1780316891780.2e7d9d3a1f5849498bdcb2f8b5af56c9'
-INFO 2026-06-01 12:28:12,061 views 13282 WEBHOOK[58086161]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:28:14,699 views 13282 Webhook Verification: signature=sha256=b082e26195eeaa9ed15937a36c26a2747de64520baf630f2d87436ea7fa2b4b9 timestamp=1780316894389 batch_id=49dd38e58b7248bca47984190517cb1e
-INFO 2026-06-01 12:28:14,699 views 13282 Webhook Verification: signature MATCHED for message: b'1780316894389.49dd38e58b7248bca47984190517cb1e'
-INFO 2026-06-01 12:28:14,699 views 13282 WEBHOOK[f6a6c96f]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:28:27,118 views 13282 Webhook Verification: signature=sha256=28f1ab270f1d4c50e1cd52c3172a1adc94bae492441d010e915cc09b951f5260 timestamp=1780316906848 batch_id=46336cf0753344fd95fc6d8fd18d66a6
-INFO 2026-06-01 12:28:27,118 views 13282 Webhook Verification: signature MATCHED for message: b'1780316906848.46336cf0753344fd95fc6d8fd18d66a6'
-INFO 2026-06-01 12:28:27,118 views 13282 WEBHOOK[86b156da]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:28:43,520 views 13282 Webhook Verification: signature=sha256=68b63b8ae8df67e8cb1561c35dd6baeb4b6f29ee4b80d8f842dde56e72f970ec timestamp=1780316923246 batch_id=f55ec1f8208d471aa78c481a5b575271
-INFO 2026-06-01 12:28:43,520 views 13282 Webhook Verification: signature MATCHED for message: b'1780316923246.f55ec1f8208d471aa78c481a5b575271'
-INFO 2026-06-01 12:28:43,520 views 13282 WEBHOOK[f8817c45]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:28:52,030 views 13282 Webhook Verification: signature=sha256=79e683751bc9766e423a1e53fdbe3bc2d89968af62e8aa3f6977fe4c5091ae32 timestamp=1780316931698 batch_id=d74ccc1632e3470e91a5ec6a742dc46a
-INFO 2026-06-01 12:28:52,030 views 13282 Webhook Verification: signature MATCHED for message: b'1780316931698.d74ccc1632e3470e91a5ec6a742dc46a'
-INFO 2026-06-01 12:28:52,030 views 13282 WEBHOOK[ba33d2ee]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:28:54,182 views 13282 Webhook Verification: signature=sha256=12c5665befaef92b18d4835b9dce04cfdc2e1d8f30a2e260833a8bb4fad256f2 timestamp=1780316933835 batch_id=a772a7a2866b49e893b98032dcaf0d00
-INFO 2026-06-01 12:28:54,182 views 13282 Webhook Verification: signature MATCHED for message: b'1780316933835.a772a7a2866b49e893b98032dcaf0d00'
-INFO 2026-06-01 12:28:54,183 views 13282 WEBHOOK[fecb1feb]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:29:11,387 views 13282 Webhook Verification: signature=sha256=d649c521757e77fe2026493d2f850c04bfb28184486d9901502b0ec115128499 timestamp=1780316951143 batch_id=adf53428483f4f8e900266c929b8ab2d
-INFO 2026-06-01 12:29:11,387 views 13282 Webhook Verification: signature MATCHED for message: b'1780316951143.adf53428483f4f8e900266c929b8ab2d'
-INFO 2026-06-01 12:29:11,387 views 13282 WEBHOOK[ac32d174]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:29:39,681 views 13282 Webhook Verification: signature=sha256=926218f3e7d2d431d8da93665d6024ed07f241f7654b95fe7b40264f7df3078b timestamp=1780316979451 batch_id=6824dbdd8f2f4a5c8cbfe28c6173364f
-INFO 2026-06-01 12:29:39,681 views 13282 Webhook Verification: signature MATCHED for message: b'1780316979451.6824dbdd8f2f4a5c8cbfe28c6173364f'
-INFO 2026-06-01 12:29:39,681 views 13282 WEBHOOK[45bafe4d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:29:47,102 views 13282 Webhook Verification: signature=sha256=90e4b24b8a3df7d4ed6c7d716d138daaf4805d08881827a579d9efe4faafe1ef timestamp=1780316986841 batch_id=d51208b30d634484998f08999c31e5e7
-INFO 2026-06-01 12:29:47,103 views 13282 Webhook Verification: signature MATCHED for message: b'1780316986841.d51208b30d634484998f08999c31e5e7'
-INFO 2026-06-01 12:29:47,103 views 13282 WEBHOOK[9ac4935d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:29:56,849 views 13282 Webhook Verification: signature=sha256=83d9e9879684b141a50c3e7c99493022cd561ecbdeed195ddd6b5baf4ebf6cfe timestamp=1780316996522 batch_id=170875016e9b4d52bac59b6f50ebd01f
-INFO 2026-06-01 12:29:56,849 views 13282 Webhook Verification: signature MATCHED for message: b'1780316996522.170875016e9b4d52bac59b6f50ebd01f'
-INFO 2026-06-01 12:29:56,849 views 13282 WEBHOOK[b59e1f3d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:29:57,880 views 13282 Webhook Verification: signature=sha256=c24037541e5214fa7020a70478e3d2cf8e8310fb3f3e2494f13b8bd8b43c760a timestamp=1780316997543 batch_id=c159f869331f4f3d81f773cee657441f
-INFO 2026-06-01 12:29:57,880 views 13282 Webhook Verification: signature MATCHED for message: b'1780316997543.c159f869331f4f3d81f773cee657441f'
-INFO 2026-06-01 12:29:57,881 views 13282 WEBHOOK[b93cb986]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:30:07,375 views 13282 Webhook Verification: signature=sha256=c03ef0ba78cf3409d0b46d83791abe334b2076348688ea5c4fd8193eec090213 timestamp=1780317007134 batch_id=6c3c5f9c203b4218b88cabe3dbb55a99
-INFO 2026-06-01 12:30:07,375 views 13282 Webhook Verification: signature MATCHED for message: b'1780317007134.6c3c5f9c203b4218b88cabe3dbb55a99'
-INFO 2026-06-01 12:30:07,375 views 13282 WEBHOOK[cdbc1608]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:30:45,358 views 13282 Webhook Verification: signature=sha256=791fa8da60ab5cc3a90d40f15ff7fa1bea56142b5a91879845e589a529da317e timestamp=1780317045139 batch_id=154015c1268847a197910ad7da78b177
-INFO 2026-06-01 12:30:45,358 views 13282 Webhook Verification: signature MATCHED for message: b'1780317045139.154015c1268847a197910ad7da78b177'
-INFO 2026-06-01 12:30:45,358 views 13282 WEBHOOK[f1d87955]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:30:47,861 views 13282 Webhook Verification: signature=sha256=856c7bd2b278e84787fc71a9bffdb2dc875f2a4cce21cd3829760f7c2b703555 timestamp=1780317047638 batch_id=5f752c08c5044dd2b5213e5885dd4c87
-INFO 2026-06-01 12:30:47,861 views 13282 Webhook Verification: signature MATCHED for message: b'1780317047638.5f752c08c5044dd2b5213e5885dd4c87'
-INFO 2026-06-01 12:30:47,861 views 13282 WEBHOOK[0a6c9291]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:30:49,265 views 13282 Webhook Verification: signature=sha256=0c9753abe0c84e42408901577347edcbde7c9e23072b009a4f9df7df62599dba timestamp=1780317049033 batch_id=0fb46ad091934007a5a53da1499fd663
-INFO 2026-06-01 12:30:49,265 views 13282 Webhook Verification: signature MATCHED for message: b'1780317049033.0fb46ad091934007a5a53da1499fd663'
-INFO 2026-06-01 12:30:49,265 views 13282 WEBHOOK[556a16b6]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:30:53,965 views 13282 Webhook Verification: signature=sha256=77fcbc4c16faa338b24ecfc41cf6d42b3d1262b6b912c816b6fd8af1773be220 timestamp=1780317053709 batch_id=e7a62cc82da742bc97614fde683bb896
-INFO 2026-06-01 12:30:53,965 views 13282 Webhook Verification: signature MATCHED for message: b'1780317053709.e7a62cc82da742bc97614fde683bb896'
-INFO 2026-06-01 12:30:53,965 views 13282 WEBHOOK[4327484c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:30:57,483 views 13282 Webhook Verification: signature=sha256=af653a5f12ee0ab131e8738d51d065dd0be6bc9dad5410b9622d92e6a3e36351 timestamp=1780317057203 batch_id=82fa97c37cbc4eb78302974d744e6f80
-INFO 2026-06-01 12:30:57,483 views 13282 Webhook Verification: signature MATCHED for message: b'1780317057203.82fa97c37cbc4eb78302974d744e6f80'
-INFO 2026-06-01 12:30:57,483 views 13282 WEBHOOK[d9cbf837]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:31:01,261 views 13282 Webhook Verification: signature=sha256=ded70b294b2f742236b4bf30bd0393003a955dc1c6f81ed678130dec30763388 timestamp=1780317060950 batch_id=47e546b5b2b94aaa866f4d5d29b8f279
-INFO 2026-06-01 12:31:01,262 views 13282 Webhook Verification: signature MATCHED for message: b'1780317060950.47e546b5b2b94aaa866f4d5d29b8f279'
-INFO 2026-06-01 12:31:01,262 views 13282 WEBHOOK[83b22d59]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:31:03,829 views 13282 Webhook Verification: signature=sha256=b1d5fa9f7a9a595731d22fcf03bf5dcf92b77b6b95bc5154e98fdbc0e0295b29 timestamp=1780317063500 batch_id=15ff27c270bb42d28507b8ea918e257a
-INFO 2026-06-01 12:31:03,829 views 13282 Webhook Verification: signature MATCHED for message: b'1780317063500.15ff27c270bb42d28507b8ea918e257a'
-INFO 2026-06-01 12:31:03,830 views 13282 WEBHOOK[e0c5df1c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:31:17,700 views 13282 Webhook Verification: signature=sha256=3ef041ffbc8c498ebdf96c5ef6ae39f75050ca63d681e1cf39ef8b66d65659b5 timestamp=1780317077477 batch_id=6e0074acaa2a4a40a60827cf88725feb
-INFO 2026-06-01 12:31:17,700 views 13282 Webhook Verification: signature MATCHED for message: b'1780317077477.6e0074acaa2a4a40a60827cf88725feb'
-INFO 2026-06-01 12:31:17,701 views 13282 WEBHOOK[43d16aa8]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:31:54,480 views 13282 Webhook Verification: signature=sha256=ecd1260cacbfa98e28637529ec69aa1b4ec7f0d46fac6ada1f9229f5f0bbde29 timestamp=1780317114228 batch_id=4796894848c04a9aa00821c9cd811d4a
-INFO 2026-06-01 12:31:54,481 views 13282 Webhook Verification: signature MATCHED for message: b'1780317114228.4796894848c04a9aa00821c9cd811d4a'
-INFO 2026-06-01 12:31:54,481 views 13282 WEBHOOK[51c2f664]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:31:56,162 views 13282 Webhook Verification: signature=sha256=3a162352ac6942975af2d31f1f5b74bc36c702f1f27f8d81726d575a44e5eefe timestamp=1780317115900 batch_id=7af3703de59c496ea7672dac9b04bcee
-INFO 2026-06-01 12:31:56,162 views 13282 Webhook Verification: signature MATCHED for message: b'1780317115900.7af3703de59c496ea7672dac9b04bcee'
-INFO 2026-06-01 12:31:56,162 views 13282 WEBHOOK[8994e3a6]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:31:58,201 views 13282 Webhook Verification: signature=sha256=5c4e7c424d128236c23e064f8f77c23db93e41d2d617a68843a904a6d417cacb timestamp=1780317117927 batch_id=800efbfd7daa487db9e53bf1219db46a
-INFO 2026-06-01 12:31:58,202 views 13282 Webhook Verification: signature MATCHED for message: b'1780317117927.800efbfd7daa487db9e53bf1219db46a'
-INFO 2026-06-01 12:31:58,202 views 13282 WEBHOOK[d1e19d09]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:31:59,828 views 13282 Webhook Verification: signature=sha256=ba5f95fe1784287bc6f92c7deaf110b1ad899968fa3bf0d826a52de20b7e7d84 timestamp=1780317119543 batch_id=d6b875fa36af4cfd864b8ec2bb052872
-INFO 2026-06-01 12:31:59,828 views 13282 Webhook Verification: signature MATCHED for message: b'1780317119543.d6b875fa36af4cfd864b8ec2bb052872'
-INFO 2026-06-01 12:31:59,829 views 13282 WEBHOOK[de807e71]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:32:17,544 views 13282 Webhook Verification: signature=sha256=e7997c015c81159ec374a2e0426ad9175f4043614edc2b6d0b08747256657154 timestamp=1780317137315 batch_id=6f3ca9c46b5147429eae2b41bb5cd572
-INFO 2026-06-01 12:32:17,544 views 13282 Webhook Verification: signature MATCHED for message: b'1780317137315.6f3ca9c46b5147429eae2b41bb5cd572'
-INFO 2026-06-01 12:32:17,544 views 13282 WEBHOOK[4238b3a0]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:32:59,981 views 13282 Webhook Verification: signature=sha256=09b91f36c125a2dc5ad490565145bb2b6763ebe793d50eed0f761d14116d11a5 timestamp=1780317179727 batch_id=0d5d1a176374463aa930394e222fc93a
-INFO 2026-06-01 12:32:59,981 views 13282 Webhook Verification: signature MATCHED for message: b'1780317179727.0d5d1a176374463aa930394e222fc93a'
-INFO 2026-06-01 12:32:59,981 views 13282 WEBHOOK[ae7d7e7f]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:33:03,715 views 13282 Webhook Verification: signature=sha256=ebd0f3ac6d8ae68439a2678a7f0a141e8325dfb1a9b0ddc3d37680422c2b321f timestamp=1780317183437 batch_id=2b49d8d37a93499f9f7bb92c3e85fd98
-INFO 2026-06-01 12:33:03,715 views 13282 Webhook Verification: signature MATCHED for message: b'1780317183437.2b49d8d37a93499f9f7bb92c3e85fd98'
-INFO 2026-06-01 12:33:03,715 views 13282 WEBHOOK[63b53636]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:33:30,221 views 13282 Webhook Verification: signature=sha256=ee94dfb01987c2dadba089cb3a5bbfbd1ffcefae6cd9203b38990a1eb6b19212 timestamp=1780317209984 batch_id=910acafe34ad4622b5b62b68d3f4a7e5
-INFO 2026-06-01 12:33:30,222 views 13282 Webhook Verification: signature MATCHED for message: b'1780317209984.910acafe34ad4622b5b62b68d3f4a7e5'
-INFO 2026-06-01 12:33:30,222 views 13282 WEBHOOK[8698df01]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:33:55,830 views 13282 Webhook Verification: signature=sha256=26ec05d4d31bdb7122c7f0b078bf4e8b0828f22916e8257c5fbcc31d84f0bb1b timestamp=1780317235605 batch_id=cbac387ba6274d3994bafdb84b4af86f
-INFO 2026-06-01 12:33:55,830 views 13282 Webhook Verification: signature MATCHED for message: b'1780317235605.cbac387ba6274d3994bafdb84b4af86f'
-INFO 2026-06-01 12:33:55,831 views 13282 WEBHOOK[7b4838ca]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:34:04,938 views 13282 Webhook Verification: signature=sha256=3e344a66f36fcf368675a7d4da36d36d8a71c1f0068112253baa803ac6e54a88 timestamp=1780317244680 batch_id=b37df553c1c4497e853d2565c89b333d
-INFO 2026-06-01 12:34:04,938 views 13282 Webhook Verification: signature MATCHED for message: b'1780317244680.b37df553c1c4497e853d2565c89b333d'
-INFO 2026-06-01 12:34:04,939 views 13282 WEBHOOK[16e689a7]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:34:31,215 views 13282 Webhook Verification: signature=sha256=8c0a484b606e9d2d4d187123d713079019e84ebfbe8b1770fc061a6906be8851 timestamp=1780317270981 batch_id=131f958fefed407fbd6f00d026d891a0
-INFO 2026-06-01 12:34:31,215 views 13282 Webhook Verification: signature MATCHED for message: b'1780317270981.131f958fefed407fbd6f00d026d891a0'
-INFO 2026-06-01 12:34:31,215 views 13282 WEBHOOK[e1191ff9]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:34:54,398 views 13282 Webhook Verification: signature=sha256=683c757a2358be39b09827f55ce95963fdfccf00fb0281ce5d7ccc4953fff525 timestamp=1780317294135 batch_id=32ba55d004564f32b26c956ae3fe9199
-INFO 2026-06-01 12:34:54,398 views 13282 Webhook Verification: signature MATCHED for message: b'1780317294135.32ba55d004564f32b26c956ae3fe9199'
-INFO 2026-06-01 12:34:54,399 views 13282 WEBHOOK[66e05bce]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:34:56,157 views 13282 Webhook Verification: signature=sha256=983b8cf5e771936c429b3acb055e8ab9d1ecb3af470de34f7d4d8913dbfbf4a5 timestamp=1780317295910 batch_id=04bbd1c1e43d4b328806509346af12ac
-INFO 2026-06-01 12:34:56,157 views 13282 Webhook Verification: signature MATCHED for message: b'1780317295910.04bbd1c1e43d4b328806509346af12ac'
-INFO 2026-06-01 12:34:56,157 views 13282 WEBHOOK[f1e472c2]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:35:10,349 views 13282 Webhook Verification: signature=sha256=a0d2a31bdf367cc01c46db1983e22b4d0af4d2c33aa99b61743d1b8e14d147e3 timestamp=1780317310086 batch_id=5ecdd55d0188499fa2b7cf5ac8b5c8f8
-INFO 2026-06-01 12:35:10,349 views 13282 Webhook Verification: signature MATCHED for message: b'1780317310086.5ecdd55d0188499fa2b7cf5ac8b5c8f8'
-INFO 2026-06-01 12:35:10,349 views 13282 WEBHOOK[bea4ff13]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:35:35,017 views 13282 Webhook Verification: signature=sha256=fe84b206ee1b40aacb208d4eae5197d457961c4b5ee340e6990f4bcc5e5382c9 timestamp=1780317334790 batch_id=c03889fa0abd482c949340ad5aa64d5c
-INFO 2026-06-01 12:35:35,017 views 13282 Webhook Verification: signature MATCHED for message: b'1780317334790.c03889fa0abd482c949340ad5aa64d5c'
-INFO 2026-06-01 12:35:35,017 views 13282 WEBHOOK[8fc01c50]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:35:45,741 views 13282 Webhook Verification: signature=sha256=27fbed68a3a92ada58e428d20fbe375eb2ae20d3fff88fd4e1d90374fd6b5289 timestamp=1780317345458 batch_id=fa118015ba094506b814c4eaa7645dfd
-INFO 2026-06-01 12:35:45,741 views 13282 Webhook Verification: signature MATCHED for message: b'1780317345458.fa118015ba094506b814c4eaa7645dfd'
-INFO 2026-06-01 12:35:45,742 views 13282 WEBHOOK[03e4bc92]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:35:56,560 views 13282 Webhook Verification: signature=sha256=382222c21fb56de439c0a8b55660ca976208b5d4dd3cae25bb6c16ba7e8e7b04 timestamp=1780317356271 batch_id=4281705b5d6b421599253873e91301f9
-INFO 2026-06-01 12:35:56,560 views 13282 Webhook Verification: signature MATCHED for message: b'1780317356271.4281705b5d6b421599253873e91301f9'
-INFO 2026-06-01 12:35:56,561 views 13282 WEBHOOK[a9ada640]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:36:10,675 views 13282 Webhook Verification: signature=sha256=f447a58c139151ea21daa537f34c9ab3cfc51f7606c1dd2c9f88ab2c3abbdcc9 timestamp=1780317370430 batch_id=e951d268cbbe4f22874c66ea71e6a1ed
-INFO 2026-06-01 12:36:10,675 views 13282 Webhook Verification: signature MATCHED for message: b'1780317370430.e951d268cbbe4f22874c66ea71e6a1ed'
-INFO 2026-06-01 12:36:10,676 views 13282 WEBHOOK[0f9652d0]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:36:27,102 views 13282 Webhook Verification: signature=sha256=675fdf691231a792ad34fa7b3af86e80f5bd8c3e1c4c4a076caf403fcb2019fd timestamp=1780317386748 batch_id=0a2c90b738ea45d0b10cc77760b43e8e
-INFO 2026-06-01 12:36:27,103 views 13282 Webhook Verification: signature MATCHED for message: b'1780317386748.0a2c90b738ea45d0b10cc77760b43e8e'
-INFO 2026-06-01 12:36:27,103 views 13282 WEBHOOK[261ee4b0]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:36:27,930 views 13282 Webhook Verification: signature=sha256=c6cc070295b96d5c63f175daa58dc66fe3a7c20ce488c15cf7120415a659a6b8 timestamp=1780317387599 batch_id=3496709f3771423f9fa7274cdc90a39c
-INFO 2026-06-01 12:36:27,931 views 13282 Webhook Verification: signature MATCHED for message: b'1780317387599.3496709f3771423f9fa7274cdc90a39c'
-INFO 2026-06-01 12:36:27,931 views 13282 WEBHOOK[0f5e812c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:36:28,145 views 13282 Webhook Verification: signature=sha256=f851c7a112890089991b861434d11f0634163e0b405c4f57873e5437c8fdac70 timestamp=1780317387818 batch_id=e87da16db7f84ae4982e379a07cbe347
-INFO 2026-06-01 12:36:28,145 views 13282 Webhook Verification: signature MATCHED for message: b'1780317387818.e87da16db7f84ae4982e379a07cbe347'
-INFO 2026-06-01 12:36:28,145 views 13282 WEBHOOK[29e3679c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:36:36,638 views 13282 Webhook Verification: signature=sha256=9f89ada98beca96e6204c17be10d2404b26a89df432c306f4ef6193c283987fa timestamp=1780317396405 batch_id=1482a77ddc7348638d60ea58ea86b63e
-INFO 2026-06-01 12:36:36,638 views 13282 Webhook Verification: signature MATCHED for message: b'1780317396405.1482a77ddc7348638d60ea58ea86b63e'
-INFO 2026-06-01 12:36:36,638 views 13282 WEBHOOK[4c5541e2]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:36:37,488 views 13282 Webhook Verification: signature=sha256=1ac51fda140bd3f33b83ee77700bf7d15e9d14dce65ac47426253908240d57c3 timestamp=1780317397256 batch_id=6d2106990992437f89cd797f0fe62877
-INFO 2026-06-01 12:36:37,488 views 13282 Webhook Verification: signature MATCHED for message: b'1780317397256.6d2106990992437f89cd797f0fe62877'
-INFO 2026-06-01 12:36:37,489 views 13282 WEBHOOK[bb29eaaf]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:36:45,730 views 13282 Webhook Verification: signature=sha256=953f658dc123f0a4c7c127b5a29b674fe406c86028db3be42a9a8f342b6df62b timestamp=1780317405475 batch_id=5c61ccca61a049bca6d1766fdf0c9cc4
-INFO 2026-06-01 12:36:45,731 views 13282 Webhook Verification: signature MATCHED for message: b'1780317405475.5c61ccca61a049bca6d1766fdf0c9cc4'
-INFO 2026-06-01 12:36:45,731 views 13282 WEBHOOK[a86ffedc]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:36:46,062 views 13282 Webhook Verification: signature=sha256=663eeedd17da0dbd1e3da02bb4f749fc5a9af4139d3e8c5311b3c4359f0b3f6e timestamp=1780317405806 batch_id=343c293723b84eba9f55e9d7568fd3ea
-INFO 2026-06-01 12:36:46,062 views 13282 Webhook Verification: signature MATCHED for message: b'1780317405806.343c293723b84eba9f55e9d7568fd3ea'
-INFO 2026-06-01 12:36:46,063 views 13282 WEBHOOK[fcdba99a]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:36:55,212 views 13282 Webhook Verification: signature=sha256=0d74fe8c416c627c98c7424c2b0064664a09d41c7812d96d88a5737ff2a5a0a2 timestamp=1780317414891 batch_id=54a8c2720d9a4cd7b2c80cf800ad00e2
-INFO 2026-06-01 12:36:55,213 views 13282 Webhook Verification: signature MATCHED for message: b'1780317414891.54a8c2720d9a4cd7b2c80cf800ad00e2'
-INFO 2026-06-01 12:36:55,213 views 13282 WEBHOOK[e98abafc]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:36:58,783 views 13282 Webhook Verification: signature=sha256=fe6b8fbfbf5b8e7d92f257bd9a610685c30e8863e524859eb377f63a63b18857 timestamp=1780317418434 batch_id=5af72d26f5004904ab1078e88fd11712
-INFO 2026-06-01 12:36:58,783 views 13282 Webhook Verification: signature MATCHED for message: b'1780317418434.5af72d26f5004904ab1078e88fd11712'
-INFO 2026-06-01 12:36:58,783 views 13282 WEBHOOK[da50f7c2]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:37:00,522 views 13282 Webhook Verification: signature=sha256=f87b69989c034fa230cc895c19bb243b4fe9b87af8ba323c27ac0e491f72015f timestamp=1780317420210 batch_id=4b138c4fa7364f699f9ebe39ad7315dd
-INFO 2026-06-01 12:37:00,522 views 13282 Webhook Verification: signature MATCHED for message: b'1780317420210.4b138c4fa7364f699f9ebe39ad7315dd'
-INFO 2026-06-01 12:37:00,523 views 13282 WEBHOOK[52cc8223]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:37:04,236 views 13282 Webhook Verification: signature=sha256=beb5a382f2f2319ecdc6d560a5eab2e6429c616ac8ccd0dd5234834358b09481 timestamp=1780317423984 batch_id=a2a24e57fd6343739dd9563f5ce6ae01
-INFO 2026-06-01 12:37:04,236 views 13282 Webhook Verification: signature MATCHED for message: b'1780317423984.a2a24e57fd6343739dd9563f5ce6ae01'
-INFO 2026-06-01 12:37:04,237 views 13282 WEBHOOK[448a0961]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:37:09,044 views 13282 Webhook Verification: signature=sha256=2c5e9ab537daf4d19f01bf5476bf8413e155945772ee5bb61da7acab12c61855 timestamp=1780317428816 batch_id=4b0453ec15054315a00903b13035dd86
-INFO 2026-06-01 12:37:09,044 views 13282 Webhook Verification: signature MATCHED for message: b'1780317428816.4b0453ec15054315a00903b13035dd86'
-INFO 2026-06-01 12:37:09,044 views 13282 WEBHOOK[e9dc3044]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:37:23,083 views 13282 Webhook Verification: signature=sha256=16fa6874c183f195eae63eeaef73caf8aec800f70f2975139e80e5dff81d1bfc timestamp=1780317442787 batch_id=ba772e2081ce482eaaec8c71f14c0449
-INFO 2026-06-01 12:37:23,083 views 13282 Webhook Verification: signature MATCHED for message: b'1780317442787.ba772e2081ce482eaaec8c71f14c0449'
-INFO 2026-06-01 12:37:23,083 views 13282 WEBHOOK[dcb24c45]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:37:49,211 views 13282 Webhook Verification: signature=sha256=3f48f2750b16d5dce556ac3c6dda6f80edd0b740b9e046b2e0bd451c0e0a3735 timestamp=1780317468961 batch_id=d9a89baf63c8489caaf62dfb30b36106
-INFO 2026-06-01 12:37:49,211 views 13282 Webhook Verification: signature MATCHED for message: b'1780317468961.d9a89baf63c8489caaf62dfb30b36106'
-INFO 2026-06-01 12:37:49,211 views 13282 WEBHOOK[0262c637]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:37:57,666 views 13282 Webhook Verification: signature=sha256=50cf82d5153ff65b399fb97a6cfd0f7c4845def131b4a3c2ca392c7476d755f8 timestamp=1780317477363 batch_id=94a20b0f2c924f8f821b1d9149a78a9d
-INFO 2026-06-01 12:37:57,667 views 13282 Webhook Verification: signature MATCHED for message: b'1780317477363.94a20b0f2c924f8f821b1d9149a78a9d'
-INFO 2026-06-01 12:37:57,667 views 13282 WEBHOOK[e20a0ac7]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:38:07,749 views 13282 Webhook Verification: signature=sha256=37bcb49ef3ed90d63b1c92254c4606dd79544ff6a105da33642b761e67ad547f timestamp=1780317487495 batch_id=aa2a7cc79f15485098c8b2baf2a873dc
-INFO 2026-06-01 12:38:07,750 views 13282 Webhook Verification: signature MATCHED for message: b'1780317487495.aa2a7cc79f15485098c8b2baf2a873dc'
-INFO 2026-06-01 12:38:07,750 views 13282 WEBHOOK[b12a4398]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:38:46,795 views 13282 Webhook Verification: signature=sha256=dc01d6a58746a346fbcdbd9b1d23ab29049f3acfb0a273c85743a1f7120106b0 timestamp=1780317526573 batch_id=9e52b9a6902246188f689c618a0bd371
-INFO 2026-06-01 12:38:46,795 views 13282 Webhook Verification: signature MATCHED for message: b'1780317526573.9e52b9a6902246188f689c618a0bd371'
-INFO 2026-06-01 12:38:46,795 views 13282 WEBHOOK[4864c3bd]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:38:55,948 views 13282 Webhook Verification: signature=sha256=3fe3a6809e2c903591f5898950e6924767a620852dd9b0df4d461a9b9d77924e timestamp=1780317535695 batch_id=ff67debf512a490789ae544267e55acf
-INFO 2026-06-01 12:38:55,948 views 13282 Webhook Verification: signature MATCHED for message: b'1780317535695.ff67debf512a490789ae544267e55acf'
-INFO 2026-06-01 12:38:55,948 views 13282 WEBHOOK[b9d77d4b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:38:57,970 views 13282 Webhook Verification: signature=sha256=3e884208188a75ffd4799e37371547291497d737eb592fe7ddc6c68d5ecf9465 timestamp=1780317537705 batch_id=5cc9a2abf6ec4f728ff8478cb4d17a12
-INFO 2026-06-01 12:38:57,970 views 13282 Webhook Verification: signature MATCHED for message: b'1780317537705.5cc9a2abf6ec4f728ff8478cb4d17a12'
-INFO 2026-06-01 12:38:57,970 views 13282 WEBHOOK[3e7b135d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:39:04,682 views 13282 Webhook Verification: signature=sha256=895b01d8559fc82fd3f84d88eacc4e9a812ba48615141689df9b6f95b2c472f3 timestamp=1780317544373 batch_id=cdcbad0b7e774fbe88b74072180eedc3
-INFO 2026-06-01 12:39:04,682 views 13282 Webhook Verification: signature MATCHED for message: b'1780317544373.cdcbad0b7e774fbe88b74072180eedc3'
-INFO 2026-06-01 12:39:04,682 views 13282 WEBHOOK[ccb0f019]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:39:05,258 views 13282 Webhook Verification: signature=sha256=7a68067f8f1b18f65e29f417987a6c71c64ee65778c3de82c805cc5c4b661cda timestamp=1780317544938 batch_id=54545f889b2849a6b6c802316cbcd014
-INFO 2026-06-01 12:39:05,258 views 13282 Webhook Verification: signature MATCHED for message: b'1780317544938.54545f889b2849a6b6c802316cbcd014'
-INFO 2026-06-01 12:39:05,258 views 13282 WEBHOOK[6b48b0ce]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:39:17,182 views 13282 Webhook Verification: signature=sha256=2def548ce9e21183bed8054d8af134396cfbbf2ad5e908db3783d1219dead487 timestamp=1780317556957 batch_id=0582b503440841be8d9fa95df1e1970c
-INFO 2026-06-01 12:39:17,182 views 13282 Webhook Verification: signature MATCHED for message: b'1780317556957.0582b503440841be8d9fa95df1e1970c'
-INFO 2026-06-01 12:39:17,182 views 13282 WEBHOOK[d2d646ba]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:39:25,829 views 13282 Webhook Verification: signature=sha256=d4aa274c007408eb8343fabb32ee37fc2f6c9bcddfe59e7391dda3e2f98e1682 timestamp=1780317565586 batch_id=6c477586b17f4656a797278b54853801
-INFO 2026-06-01 12:39:25,829 views 13282 Webhook Verification: signature MATCHED for message: b'1780317565586.6c477586b17f4656a797278b54853801'
-INFO 2026-06-01 12:39:25,829 views 13282 WEBHOOK[b8610c54]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:39:38,350 views 13282 Webhook Verification: signature=sha256=cb3cdafb4f029026aff1688fd8ac7069b169eabbb08ffd2da253685dbc145a51 timestamp=1780317578021 batch_id=85c8ec8d75ab4b2aa7e1ebd7f195465c
-INFO 2026-06-01 12:39:38,351 views 13282 Webhook Verification: signature MATCHED for message: b'1780317578021.85c8ec8d75ab4b2aa7e1ebd7f195465c'
-INFO 2026-06-01 12:39:38,351 views 13282 WEBHOOK[4f765ad0]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:39:55,844 views 13282 Webhook Verification: signature=sha256=df32cd1f1c63141e7b6a5ce024c22cd137e1616bd6d669e4a0eda66f46f1ed10 timestamp=1780317595611 batch_id=a6d53c60059f47b9b34bb9bf0ff7a1b1
-INFO 2026-06-01 12:39:55,844 views 13282 Webhook Verification: signature MATCHED for message: b'1780317595611.a6d53c60059f47b9b34bb9bf0ff7a1b1'
-INFO 2026-06-01 12:39:55,848 views 13282 WEBHOOK[1520a24b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:40:05,693 views 13282 Webhook Verification: signature=sha256=ed0365f78dc1a1dbeaee83a452f15d514ab13a7f33319e41da63eec8f0fef4ba timestamp=1780317605404 batch_id=83b98933bf8b4f0d88f2e3a343caa2c3
-INFO 2026-06-01 12:40:05,693 views 13282 Webhook Verification: signature MATCHED for message: b'1780317605404.83b98933bf8b4f0d88f2e3a343caa2c3'
-INFO 2026-06-01 12:40:05,693 views 13282 WEBHOOK[9c672a4c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:40:08,678 views 13282 Webhook Verification: signature=sha256=e75c678e9079fa44ff80777b6cef060c0870d10b576c2168f922d88618b42de2 timestamp=1780317608365 batch_id=7546625945664242942e8f35f112cac4
-INFO 2026-06-01 12:40:08,678 views 13282 Webhook Verification: signature MATCHED for message: b'1780317608365.7546625945664242942e8f35f112cac4'
-INFO 2026-06-01 12:40:08,678 views 13282 WEBHOOK[6245d4fa]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:40:30,088 views 13282 Webhook Verification: signature=sha256=67eba5dfba0862f4e1f3c14ecab6b58aa9c2c8a77fad1de739523902022f768f timestamp=1780317629845 batch_id=3eba8afbfe1e42e3b5cf6d4a9f192800
-INFO 2026-06-01 12:40:30,088 views 13282 Webhook Verification: signature MATCHED for message: b'1780317629845.3eba8afbfe1e42e3b5cf6d4a9f192800'
-INFO 2026-06-01 12:40:30,088 views 13282 WEBHOOK[1e62bf6b]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:40:46,703 views 13282 Webhook Verification: signature=sha256=3ca442e925aa8a2773c8d359926d65d70bca7603fa3ff65bccaf1baf905f179d timestamp=1780317646393 batch_id=65b165769f424ffa8b270112906dafbb
-INFO 2026-06-01 12:40:46,704 views 13282 Webhook Verification: signature MATCHED for message: b'1780317646393.65b165769f424ffa8b270112906dafbb'
-INFO 2026-06-01 12:40:46,704 views 13282 WEBHOOK[80dc3233]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:40:56,572 views 13282 Webhook Verification: signature=sha256=52d061faf23ea6bb3474d122ad292dfa3fe9ae9095b3a10ea918320f130b393d timestamp=1780317656335 batch_id=bda5488b010e4aa9a7013f87827da8bf
-INFO 2026-06-01 12:40:56,573 views 13282 Webhook Verification: signature MATCHED for message: b'1780317656335.bda5488b010e4aa9a7013f87827da8bf'
-INFO 2026-06-01 12:40:56,573 views 13282 WEBHOOK[e538cf84]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:41:08,943 views 13282 Webhook Verification: signature=sha256=fdf292993ab34f9fa7debb1d5a9109648d930ff347a4194500af3ab8f71997a9 timestamp=1780317668648 batch_id=fbb3c85978b1487987b4496f64be6922
-INFO 2026-06-01 12:41:08,943 views 13282 Webhook Verification: signature MATCHED for message: b'1780317668648.fbb3c85978b1487987b4496f64be6922'
-INFO 2026-06-01 12:41:08,943 views 13282 WEBHOOK[e01549ef]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:41:10,870 views 13282 Webhook Verification: signature=sha256=72a3abd22deed2e4a4f4dd8f3b851ad077e822478600b78ff9d94888cf3cce57 timestamp=1780317670562 batch_id=dcae51f95bd04324b015c7182e5fe0aa
-INFO 2026-06-01 12:41:10,870 views 13282 Webhook Verification: signature MATCHED for message: b'1780317670562.dcae51f95bd04324b015c7182e5fe0aa'
-INFO 2026-06-01 12:41:10,870 views 13282 WEBHOOK[b480d023]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:41:56,098 views 13282 Webhook Verification: signature=sha256=4b7085e341e2ea319cbb4e404764d0e4c556848822b416dc8dddb64f27420f45 timestamp=1780317715859 batch_id=5f821e4fe6764679a191a17229cadbfd
-INFO 2026-06-01 12:41:56,098 views 13282 Webhook Verification: signature MATCHED for message: b'1780317715859.5f821e4fe6764679a191a17229cadbfd'
-INFO 2026-06-01 12:41:56,098 views 13282 WEBHOOK[2c60ee97]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:42:05,292 views 13282 Webhook Verification: signature=sha256=4c4ddd1f5d5f49a0527aba99c77f0d0fa3f2208024584ce12833d6444d69954b timestamp=1780317724974 batch_id=3cc74560e620471db7832b022685bfcc
-INFO 2026-06-01 12:42:05,292 views 13282 Webhook Verification: signature MATCHED for message: b'1780317724974.3cc74560e620471db7832b022685bfcc'
-INFO 2026-06-01 12:42:05,292 views 13282 WEBHOOK[a438ee1d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:42:08,009 views 13282 Webhook Verification: signature=sha256=691e2cfa8b6ebb728d91c70f3972ad800abb229df371c4d5f04dac192d723a2f timestamp=1780317727753 batch_id=f24dd141dc2f4098905cf9c45a5662c4
-INFO 2026-06-01 12:42:08,009 views 13282 Webhook Verification: signature MATCHED for message: b'1780317727753.f24dd141dc2f4098905cf9c45a5662c4'
-INFO 2026-06-01 12:42:08,009 views 13282 WEBHOOK[533d9bbf]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:42:23,012 views 13282 Webhook Verification: signature=sha256=96d1045404f3a1e3c0e6762fbdadf5f4c154698063a8610dbaaffef751bd4dbd timestamp=1780317742717 batch_id=2956c134a74f40aaaf04732fe7e13b13
-INFO 2026-06-01 12:42:23,012 views 13282 Webhook Verification: signature MATCHED for message: b'1780317742717.2956c134a74f40aaaf04732fe7e13b13'
-INFO 2026-06-01 12:42:23,012 views 13282 WEBHOOK[607329c4]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:42:24,913 views 13282 Webhook Verification: signature=sha256=4dc7d707ffc4b6936f4a8c67d97252a3987932ba2b00b296fb198e28143ce1b6 timestamp=1780317744650 batch_id=e727f203c4c042f38857d3e91441ac8d
-INFO 2026-06-01 12:42:24,913 views 13282 Webhook Verification: signature MATCHED for message: b'1780317744650.e727f203c4c042f38857d3e91441ac8d'
-INFO 2026-06-01 12:42:24,913 views 13282 WEBHOOK[c336e674]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:42:56,874 views 13282 Webhook Verification: signature=sha256=544e165da3a602a7768c5956492bdc3c9e8e924681aafc76f2a4df16ce4182a5 timestamp=1780317776591 batch_id=ab8821aa134d4bdaaaca92d94e4c302d
-INFO 2026-06-01 12:42:56,874 views 13282 Webhook Verification: signature MATCHED for message: b'1780317776591.ab8821aa134d4bdaaaca92d94e4c302d'
-INFO 2026-06-01 12:42:56,874 views 13282 WEBHOOK[eaa366a5]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:43:09,086 views 13282 Webhook Verification: signature=sha256=b31b3bc1dc5108aca04de533d0639452fd106b13b2d8c0c5d78d2eff3bc5e918 timestamp=1780317788850 batch_id=2f05724b23004d17b2917d4e7dbdd631
-INFO 2026-06-01 12:43:09,087 views 13282 Webhook Verification: signature MATCHED for message: b'1780317788850.2f05724b23004d17b2917d4e7dbdd631'
-INFO 2026-06-01 12:43:09,087 views 13282 WEBHOOK[8bdded63]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:43:09,567 views 13282 Webhook Verification: signature=sha256=3bc0d8fe3ff24247d2f6742aa36cd8ed9c94f328694ee73b0fd4aa3932a7f068 timestamp=1780317789328 batch_id=f2dd890c02c0413e99023a1513f61e15
-INFO 2026-06-01 12:43:09,568 views 13282 Webhook Verification: signature MATCHED for message: b'1780317789328.f2dd890c02c0413e99023a1513f61e15'
-INFO 2026-06-01 12:43:09,568 views 13282 WEBHOOK[d9a9e85a]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:43:27,375 views 13282 Webhook Verification: signature=sha256=72df71c41fdeb6baf1ceb75523b611149b8cc30e1766529c81d1c7c1e8e2007b timestamp=1780317807062 batch_id=116ac87c52264c0795de24373e01fcb8
-INFO 2026-06-01 12:43:27,375 views 13282 Webhook Verification: signature MATCHED for message: b'1780317807062.116ac87c52264c0795de24373e01fcb8'
-INFO 2026-06-01 12:43:27,375 views 13282 WEBHOOK[228b279f]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:43:37,423 views 13282 Webhook Verification: signature=sha256=0291e9c8720519fbdee491b69670924a9f0fd15f0fd2d785c244db17227ef82a timestamp=1780317817192 batch_id=449fcaf395574b93a91566735ddc5c04
-INFO 2026-06-01 12:43:37,423 views 13282 Webhook Verification: signature MATCHED for message: b'1780317817192.449fcaf395574b93a91566735ddc5c04'
-INFO 2026-06-01 12:43:37,424 views 13282 WEBHOOK[3b3132c0]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:43:54,849 views 13282 Webhook Verification: signature=sha256=9f3ecced21fb360c203f590a0a5542ad392f3a33c8dfa150fe52297252a7900f timestamp=1780317834524 batch_id=be1987a9b1f240c4b4302e898c87bb27
-INFO 2026-06-01 12:43:54,849 views 13282 Webhook Verification: signature MATCHED for message: b'1780317834524.be1987a9b1f240c4b4302e898c87bb27'
-INFO 2026-06-01 12:43:54,849 views 13282 WEBHOOK[d2093f95]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:43:56,638 views 13282 Webhook Verification: signature=sha256=26b970fba261f8430a70cc1e2ba10f0aaab06ab4060e64cec6703acdac13b0a8 timestamp=1780317836300 batch_id=fcd0c2fe8ec144e4b197a1c93574219c
-INFO 2026-06-01 12:43:56,638 views 13282 Webhook Verification: signature MATCHED for message: b'1780317836300.fcd0c2fe8ec144e4b197a1c93574219c'
-INFO 2026-06-01 12:43:56,638 views 13282 WEBHOOK[9504f6ec]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:44:02,766 views 13282 Webhook Verification: signature=sha256=9f4bcf06b35a52eec4a6be1325ca7dfcde3b650756e4f76968324141c3030643 timestamp=1780317842510 batch_id=71855469bfed4d8c9976308b8d14c89f
-INFO 2026-06-01 12:44:02,766 views 13282 Webhook Verification: signature MATCHED for message: b'1780317842510.71855469bfed4d8c9976308b8d14c89f'
-INFO 2026-06-01 12:44:02,766 views 13282 WEBHOOK[7e8ec1f5]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:44:04,376 views 13282 Webhook Verification: signature=sha256=db46ab76c15d28035563ad5dd23f6ba3dff2cee1c706c405937c8b108b6b08fa timestamp=1780317844138 batch_id=c4c153aecad14434baf7ab82cec54be5
-INFO 2026-06-01 12:44:04,376 views 13282 Webhook Verification: signature MATCHED for message: b'1780317844138.c4c153aecad14434baf7ab82cec54be5'
-INFO 2026-06-01 12:44:04,376 views 13282 WEBHOOK[b32dbd95]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:44:26,698 views 13282 Webhook Verification: signature=sha256=844f3585add87f99e96ae78847c91a4da1eba5e2ca16387d22b176cbf93be1aa timestamp=1780317866386 batch_id=32652aca17d0481989fdebba0cc19cfe
-INFO 2026-06-01 12:44:26,698 views 13282 Webhook Verification: signature MATCHED for message: b'1780317866386.32652aca17d0481989fdebba0cc19cfe'
-INFO 2026-06-01 12:44:26,698 views 13282 WEBHOOK[4d6a4c38]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:44:27,897 views 13282 Webhook Verification: signature=sha256=2b4aa057a63b8d47d7bcba862e75d43a42b107893e03b3dc00be0be191d5e5bd timestamp=1780317867577 batch_id=e4806ff5bd7e40cb9641e5e78aae3026
-INFO 2026-06-01 12:44:27,897 views 13282 Webhook Verification: signature MATCHED for message: b'1780317867577.e4806ff5bd7e40cb9641e5e78aae3026'
-INFO 2026-06-01 12:44:27,897 views 13282 WEBHOOK[a0e480c4]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:44:48,727 views 13282 Webhook Verification: signature=sha256=bd2aa84587026ef6e064445812e828a0586a6fb9e0bcd6d79fc844d0748e1c5b timestamp=1780317888476 batch_id=997472da71bc442fb6c2bc35c7986129
-INFO 2026-06-01 12:44:48,727 views 13282 Webhook Verification: signature MATCHED for message: b'1780317888476.997472da71bc442fb6c2bc35c7986129'
-INFO 2026-06-01 12:44:48,727 views 13282 WEBHOOK[60661bf2]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:44:55,817 views 13282 Webhook Verification: signature=sha256=2b182c5be26f329ffd3b19f5f15275ec5f755e4b07c7b82b88d768e40df61262 timestamp=1780317895521 batch_id=68e9513a0fb94c4cb93cbdb62f68f3b2
-INFO 2026-06-01 12:44:55,818 views 13282 Webhook Verification: signature MATCHED for message: b'1780317895521.68e9513a0fb94c4cb93cbdb62f68f3b2'
-INFO 2026-06-01 12:44:55,818 views 13282 WEBHOOK[d87f30a7]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:45:02,089 views 13282 Webhook Verification: signature=sha256=30195f9c36828943da40d61a7250296534c7494805f5f3603ba2bf7cf8f12819 timestamp=1780317901745 batch_id=6c16b0d0170f4cd996ad340b68dd8ad2
-INFO 2026-06-01 12:45:02,089 views 13282 Webhook Verification: signature MATCHED for message: b'1780317901745.6c16b0d0170f4cd996ad340b68dd8ad2'
-INFO 2026-06-01 12:45:02,090 views 13282 WEBHOOK[66b9a0c3]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:45:05,498 views 13282 Webhook Verification: signature=sha256=03e92a4238c59ff5108d5a2037962ca79714e0eb4f842c821f5a46e718fbb68a timestamp=1780317905206 batch_id=2cb5bf4ae8294313a797ae484956f015
-INFO 2026-06-01 12:45:05,499 views 13282 Webhook Verification: signature MATCHED for message: b'1780317905206.2cb5bf4ae8294313a797ae484956f015'
-INFO 2026-06-01 12:45:05,499 views 13282 WEBHOOK[da6eeeb0]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:45:40,321 views 13282 Webhook Verification: signature=sha256=0f1e2a8b8a417f564bbda0655d85734630f6539e6af72e3de253acec3ad6bb60 timestamp=1780317940100 batch_id=15f053a852314872be835e1abaf80b7a
-INFO 2026-06-01 12:45:40,322 views 13282 Webhook Verification: signature MATCHED for message: b'1780317940100.15f053a852314872be835e1abaf80b7a'
-INFO 2026-06-01 12:45:40,322 views 13282 WEBHOOK[97039a51]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:45:58,013 views 13282 Webhook Verification: signature=sha256=3791a7eeb28bd143218a16056eb0ce2530a0313362bd39e351c2a82983922d0b timestamp=1780317957745 batch_id=7c21a397c2454f90a3bb0855a1bee01c
-INFO 2026-06-01 12:45:58,014 views 13282 Webhook Verification: signature MATCHED for message: b'1780317957745.7c21a397c2454f90a3bb0855a1bee01c'
-INFO 2026-06-01 12:45:58,015 views 13282 WEBHOOK[fe80cb08]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:46:01,327 views 13282 Webhook Verification: signature=sha256=622f413f2e39eca3fe5644d2dfc808d3e308bbb5cd8222c1b6080be25f2b743b timestamp=1780317961036 batch_id=1fd4867c4d024c8f8004362c5a95b982
-INFO 2026-06-01 12:46:01,328 views 13282 Webhook Verification: signature MATCHED for message: b'1780317961036.1fd4867c4d024c8f8004362c5a95b982'
-INFO 2026-06-01 12:46:01,328 views 13282 WEBHOOK[ec9d5da4]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:46:47,358 views 13282 Webhook Verification: signature=sha256=e79b6f5e1c0b20bb022eee648b93bacf6fed0f44efc904fe3b8d18c6c684527f timestamp=1780318007149 batch_id=63293fe13a614cbd8b5e6961b6b60791
-INFO 2026-06-01 12:46:47,358 views 13282 Webhook Verification: signature MATCHED for message: b'1780318007149.63293fe13a614cbd8b5e6961b6b60791'
-INFO 2026-06-01 12:46:47,358 views 13282 WEBHOOK[c6c2b376]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:46:48,605 views 13282 Webhook Verification: signature=sha256=303bd8d40863c7a30a29dec2bc69e600a1b211b776c7f46b1d22b931ed2be325 timestamp=1780318008398 batch_id=34a788e71a8a4e89b5f8407ab02eb416
-INFO 2026-06-01 12:46:48,605 views 13282 Webhook Verification: signature MATCHED for message: b'1780318008398.34a788e71a8a4e89b5f8407ab02eb416'
-INFO 2026-06-01 12:46:48,605 views 13282 WEBHOOK[7e837ac6]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:46:55,974 views 13282 Webhook Verification: signature=sha256=05246f5b8e75263383136020172506cf1040aea20b30241323d8338bff514667 timestamp=1780318015749 batch_id=0d63b48e9992466ba629626b5e0173a5
-INFO 2026-06-01 12:46:55,974 views 13282 Webhook Verification: signature MATCHED for message: b'1780318015749.0d63b48e9992466ba629626b5e0173a5'
-INFO 2026-06-01 12:46:55,974 views 13282 WEBHOOK[30ec95e2]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:47:23,048 views 13282 Webhook Verification: signature=sha256=00a52a23b9b33c7641374071ab96141f8cfb4775878819745524ea5b657e06c6 timestamp=1780318042833 batch_id=b1eef8a680244b51a99a3bc52d43857f
-INFO 2026-06-01 12:47:23,049 views 13282 Webhook Verification: signature MATCHED for message: b'1780318042833.b1eef8a680244b51a99a3bc52d43857f'
-INFO 2026-06-01 12:47:23,049 views 13282 WEBHOOK[67743708]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:47:48,342 views 13282 Webhook Verification: signature=sha256=97762575d868b7d560063179e9f0beb7d03494c79abd558672cb209bbd0a748a timestamp=1780318068091 batch_id=558533996a314a08afe5f2ca8bf81c48
-INFO 2026-06-01 12:47:48,343 views 13282 Webhook Verification: signature MATCHED for message: b'1780318068091.558533996a314a08afe5f2ca8bf81c48'
-INFO 2026-06-01 12:47:48,343 views 13282 WEBHOOK[e15c9afb]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:47:56,208 views 13282 Webhook Verification: signature=sha256=d5e5b95edcc245b4a05c48c76e1e65d9ffd5c269eeb37c5d6ca831a774f40961 timestamp=1780318075989 batch_id=e3a649f12cb64412bf6f91c7c966e0cd
-INFO 2026-06-01 12:47:56,209 views 13282 Webhook Verification: signature MATCHED for message: b'1780318075989.e3a649f12cb64412bf6f91c7c966e0cd'
-INFO 2026-06-01 12:47:56,209 views 13282 WEBHOOK[20789b9c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:48:05,960 views 13282 Webhook Verification: signature=sha256=dcf900f8bd5297acc100a0fbca47e5954d590a1e3331a800949f272c9372d08f timestamp=1780318085694 batch_id=a32b99e672784e4780964268fc2eca11
-INFO 2026-06-01 12:48:05,960 views 13282 Webhook Verification: signature MATCHED for message: b'1780318085694.a32b99e672784e4780964268fc2eca11'
-INFO 2026-06-01 12:48:05,960 views 13282 WEBHOOK[03a474c4]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:48:16,147 views 13282 Webhook Verification: signature=sha256=90f1f9bcbe599d2c031e9d59759ad6bd7aa8283c28204caa6282d1b84724fd46 timestamp=1780318095818 batch_id=2726fe6557e14bf89f02858d43226d50
-INFO 2026-06-01 12:48:16,147 views 13282 Webhook Verification: signature MATCHED for message: b'1780318095818.2726fe6557e14bf89f02858d43226d50'
-INFO 2026-06-01 12:48:16,147 views 13282 WEBHOOK[6c48c1ba]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:48:48,321 views 13282 Webhook Verification: signature=sha256=42bfd915c5fc0bbc0ca306241de4d0cc3ce61853a9da998b00bd6edd56389528 timestamp=1780318128014 batch_id=d895f19811854ee6b2ec7f8f563916f5
-INFO 2026-06-01 12:48:48,321 views 13282 Webhook Verification: signature MATCHED for message: b'1780318128014.d895f19811854ee6b2ec7f8f563916f5'
-INFO 2026-06-01 12:48:48,321 views 13282 WEBHOOK[77734c32]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:48:56,442 views 13282 Webhook Verification: signature=sha256=f1e5d89a28a494908fd5aaeb0ea8a6de977984cdcec687b9cbfb2c6af7d37b06 timestamp=1780318136231 batch_id=2195ecb8b53d4f4bb41831896966838e
-INFO 2026-06-01 12:48:56,442 views 13282 Webhook Verification: signature MATCHED for message: b'1780318136231.2195ecb8b53d4f4bb41831896966838e'
-INFO 2026-06-01 12:48:56,442 views 13282 WEBHOOK[207b0719]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:49:08,938 views 13282 Webhook Verification: signature=sha256=d2287324d7069c008c6e3c3e3f99a47c9a3389b156c74bee78c34d34d001cb38 timestamp=1780318148690 batch_id=b7438a32a8db494fa88b74bf082b58bb
-INFO 2026-06-01 12:49:08,938 views 13282 Webhook Verification: signature MATCHED for message: b'1780318148690.b7438a32a8db494fa88b74bf082b58bb'
-INFO 2026-06-01 12:49:08,939 views 13282 WEBHOOK[9aba29ff]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:49:17,242 views 13282 Webhook Verification: signature=sha256=eff111758ec0f88a4982c8855c6f2c167a474672ff4889fa2807472e1537dac5 timestamp=1780318156946 batch_id=140ade1d07ba408c8bb5d3738eb15144
-INFO 2026-06-01 12:49:17,242 views 13282 Webhook Verification: signature MATCHED for message: b'1780318156946.140ade1d07ba408c8bb5d3738eb15144'
-INFO 2026-06-01 12:49:17,242 views 13282 WEBHOOK[1e136f11]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:49:55,920 views 13282 Webhook Verification: signature=sha256=9543bca9c775116f9f5db5ff55a21e56cc448e7fbbaad43fe51673cdb32a2e7a timestamp=1780318195661 batch_id=4a31604dbc044d7ca7776f50f626c91d
-INFO 2026-06-01 12:49:55,920 views 13282 Webhook Verification: signature MATCHED for message: b'1780318195661.4a31604dbc044d7ca7776f50f626c91d'
-INFO 2026-06-01 12:49:55,920 views 13282 WEBHOOK[566eca8d]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:50:12,032 views 13282 Webhook Verification: signature=sha256=c9522550602309e0918bbd56a4563f51565373d94fb427722af12934495a28f3 timestamp=1780318211799 batch_id=02a05fe56d0f4d469ddc29070756490a
-INFO 2026-06-01 12:50:12,032 views 13282 Webhook Verification: signature MATCHED for message: b'1780318211799.02a05fe56d0f4d469ddc29070756490a'
-INFO 2026-06-01 12:50:12,032 views 13282 WEBHOOK[d94175cb]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:50:13,954 views 13282 Webhook Verification: signature=sha256=7687ed47d78a4128f12a8fe5718f14311c09e5a4062a1fd4d180531927def605 timestamp=1780318213710 batch_id=d9982a2c0bd4430d86203bbcbf051c28
-INFO 2026-06-01 12:50:13,954 views 13282 Webhook Verification: signature MATCHED for message: b'1780318213710.d9982a2c0bd4430d86203bbcbf051c28'
-INFO 2026-06-01 12:50:13,955 views 13282 WEBHOOK[2641804c]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:50:55,734 views 13282 Webhook Verification: signature=sha256=4b91af942052bd721d6821865d2e77f69107127ff8f801da137bb848bd075cdf timestamp=1780318255426 batch_id=ed548f1b154c4e81b3aebfaf0b5f72a8
-INFO 2026-06-01 12:50:55,734 views 13282 Webhook Verification: signature MATCHED for message: b'1780318255426.ed548f1b154c4e81b3aebfaf0b5f72a8'
-INFO 2026-06-01 12:50:55,734 views 13282 WEBHOOK[fdd55e0f]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:50:56,604 views 13282 Webhook Verification: signature=sha256=2738f1c01db77df11600d91810a8c60f0f797f98ef0e189ea2f2d9b70a48a1da timestamp=1780318256288 batch_id=35a37b9d300c4c78a4ff5ea25e6484fb
-INFO 2026-06-01 12:50:56,604 views 13282 Webhook Verification: signature MATCHED for message: b'1780318256288.35a37b9d300c4c78a4ff5ea25e6484fb'
-INFO 2026-06-01 12:50:56,604 views 13282 WEBHOOK[120df1c9]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:51:12,245 views 13282 Webhook Verification: signature=sha256=fe7a1de7f7521a027c1d39247fa8f66a98e56b16146f0fb0e3e6e30df5b0e922 timestamp=1780318272033 batch_id=5867b5636e8242cc80e3b88b1139ada2
-INFO 2026-06-01 12:51:12,245 views 13282 Webhook Verification: signature MATCHED for message: b'1780318272033.5867b5636e8242cc80e3b88b1139ada2'
-INFO 2026-06-01 12:51:12,245 views 13282 WEBHOOK[99c9f046]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:51:22,682 views 13282 Webhook Verification: signature=sha256=2811a04c64f9daf98055a5be785fdcd5a2c4720690571c4b95bac071891fbfc5 timestamp=1780318282410 batch_id=b25aae0490374b02a9067461d36e8671
-INFO 2026-06-01 12:51:22,682 views 13282 Webhook Verification: signature MATCHED for message: b'1780318282410.b25aae0490374b02a9067461d36e8671'
-INFO 2026-06-01 12:51:22,682 views 13282 WEBHOOK[4e4eb27e]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:51:56,288 views 13282 Webhook Verification: signature=sha256=5a077e059c1532cb6343baac8b680d8c53ab09c2af1f234f73282b95a1628c79 timestamp=1780318315997 batch_id=1055a4750d7b4030b00263785a8f02a4
-INFO 2026-06-01 12:51:56,288 views 13282 Webhook Verification: signature MATCHED for message: b'1780318315997.1055a4750d7b4030b00263785a8f02a4'
-INFO 2026-06-01 12:51:56,289 views 13282 WEBHOOK[6d243cf6]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:52:29,794 views 13282 Webhook Verification: signature=sha256=b84d888d998c75b2c8e15de10db84558497b2d05e75b750799d6c7f8aa4897d4 timestamp=1780318349494 batch_id=efcf9e62cd654440b52f0b2c0db9d5b0
-INFO 2026-06-01 12:52:29,794 views 13282 Webhook Verification: signature MATCHED for message: b'1780318349494.efcf9e62cd654440b52f0b2c0db9d5b0'
-INFO 2026-06-01 12:52:29,794 views 13282 WEBHOOK[93570474]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:52:34,570 views 13282 Webhook Verification: signature=sha256=461b58158b5e3662928a7da6b08dfc1733764daefa817ab59555bc29d83f40a7 timestamp=1780318354253 batch_id=6eef6d9475664cdd9453ebebb78b807c
-INFO 2026-06-01 12:52:34,570 views 13282 Webhook Verification: signature MATCHED for message: b'1780318354253.6eef6d9475664cdd9453ebebb78b807c'
-INFO 2026-06-01 12:52:34,571 views 13282 WEBHOOK[976d83d6]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:52:36,231 views 13282 Webhook Verification: signature=sha256=ce04e901af01205ba39ea2f3e421f2563be056bfcf1f86c07fd15218a9378da9 timestamp=1780318355944 batch_id=2c7c7cbfd4f641b98ebbc2c864e79274
-INFO 2026-06-01 12:52:36,231 views 13282 Webhook Verification: signature MATCHED for message: b'1780318355944.2c7c7cbfd4f641b98ebbc2c864e79274'
-INFO 2026-06-01 12:52:36,231 views 13282 WEBHOOK[5d35a481]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:52:40,916 views 13282 Webhook Verification: signature=sha256=1f82af511673ea2ead8120c6876396e5bac125916ecbd6851447e750653fc6ba timestamp=1780318360683 batch_id=1be1831cb45f49809b877abb5b58b9a5
-INFO 2026-06-01 12:52:40,917 views 13282 Webhook Verification: signature MATCHED for message: b'1780318360683.1be1831cb45f49809b877abb5b58b9a5'
-INFO 2026-06-01 12:52:40,917 views 13282 WEBHOOK[e9ecf51e]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:52:56,157 views 13282 Webhook Verification: signature=sha256=4c1fb8d87af7a8237c3dd2f072532fbd7627f0db46741f534dc4384308bde540 timestamp=1780318375891 batch_id=c0d3fdc0c9624870a076b786ed6d6b8c
-INFO 2026-06-01 12:52:56,158 views 13282 Webhook Verification: signature MATCHED for message: b'1780318375891.c0d3fdc0c9624870a076b786ed6d6b8c'
-INFO 2026-06-01 12:52:56,158 views 13282 WEBHOOK[c228e1b1]: received batch of 1 message(s)
-DEBUG 2026-06-01 12:53:03,586 views 13282 Webhook Verification: signature=sha256=ce2d21e63293842a8eec56273dcd0e94488279c599e7fc6e3493b1530eadce5f timestamp=1780318383268 batch_id=ef8f49cbba094ac2b2ec264775c86d18
-INFO 2026-06-01 12:53:03,586 views 13282 Webhook Verification: signature MATCHED for message: b'1780318383268.ef8f49cbba094ac2b2ec264775c86d18'
-INFO 2026-06-01 12:53:03,586 views 13282 WEBHOOK[c18e8dba]: received batch of 1 message(s)
+INFO 2026-06-01 16:24:57,453 autoreload 92541 Watching for file changes with StatReloader
+DEBUG 2026-06-01 16:25:13,318 views 92541 Webhook Verification: signature=sha256=d954041f527cb59c0730bf9e9b31fc67dce8559bad6d2399b1967ae286703fc8 timestamp=1780331113251 batch_id=b29f4240b0984237b245fdce48ecbfe8
+INFO 2026-06-01 16:25:13,318 views 92541 Webhook Verification: signature MATCHED for message: b'1780331113251.b29f4240b0984237b245fdce48ecbfe8'
+INFO 2026-06-01 16:25:13,318 views 92541 WEBHOOK[75a98d80]: received batch of 1 message(s)
+/home/dev/SecureHub/backend/apps/alarms/views.py changed, reloading.
+INFO 2026-06-01 16:25:15,059 autoreload 92541 /home/dev/SecureHub/backend/apps/alarms/views.py changed, reloading.
 Performing system checks...
 
 System check identified no issues (0 silenced).
-June 01, 2026 - 12:19:23
+June 01, 2026 - 16:24:57
 Django version 5.2.12, using settings 'config.settings'
 Starting development server at http://0.0.0.0:8000/
 Quit the server with CONTROL-C.
 
 WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
 For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
-Exception ignored in: <module 'threading' from '/usr/lib/python3.12/threading.py'>
-Traceback (most recent call last):
-  File "/usr/lib/python3.12/threading.py", line 1602, in _shutdown
-    _main_thread._stop()
-  File "/usr/lib/python3.12/threading.py", line 1079, in _stop
-    def _stop(self):
+Watching for file changes with StatReloader
+INFO 2026-06-01 16:25:15,454 autoreload 92817 Watching for file changes with StatReloader
+DEBUG 2026-06-01 16:25:17,824 views 92817 Webhook Verification: signature=sha256=5ae0010f8ccf29a34295821ce000eb5862b7ad7020d2e65b904013e037133cfc timestamp=1780331117240 batch_id=2dce4241b3994abca2d81d1c9b111ea6
+INFO 2026-06-01 16:25:17,824 views 92817 WEBHOOK[ac71342e]: received batch of 1 message(s)
+/home/dev/SecureHub/backend/apps/hik_adapter/services.py changed, reloading.
+INFO 2026-06-01 16:25:18,983 autoreload 92817 /home/dev/SecureHub/backend/apps/hik_adapter/services.py changed, reloading.
+Performing system checks...
 
-  File "/home/dev/SecureHub/backend/.venv/lib/python3.12/site-packages/django/utils/autoreload.py", line 663, in <lambda>
-    signal.signal(signal.SIGTERM, lambda *args: sys.exit(0))
-                                                ^^^^^^^^^^^
-SystemExit: 0
+System check identified no issues (0 silenced).
+June 01, 2026 - 16:25:15
+Django version 5.2.12, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+INFO 2026-06-01 16:25:19,365 autoreload 92882 Watching for file changes with StatReloader
+DEBUG 2026-06-01 16:25:38,345 views 92882 Webhook Verification: signature=sha256=a2a452f20dc6fa90651a57fc45d21787b25d9e4c575728efdef8efc764e95aae timestamp=1780331138155 batch_id=8328c7c774cc4e89919f0a074a58a7ed
+INFO 2026-06-01 16:25:38,346 views 92882 WEBHOOK[18bb694a]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:25:52,953 views 92882 Webhook Verification: signature=sha256=e0882c77fa2f74c304d20b609c38b13ecfb705ce60d33b96066f0ab45d7dd880 timestamp=1780331152887 batch_id=7d20722f6c8248ba81db6812f9df47bc
+INFO 2026-06-01 16:25:52,954 views 92882 WEBHOOK[dbedba20]: received batch of 1 message(s)
+/home/dev/SecureHub/backend/apps/alarms/views.py changed, reloading.
+INFO 2026-06-01 16:26:16,346 autoreload 92882 /home/dev/SecureHub/backend/apps/alarms/views.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+June 01, 2026 - 16:25:19
+Django version 5.2.12, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+INFO 2026-06-01 16:26:16,704 autoreload 93716 Watching for file changes with StatReloader
+DEBUG 2026-06-01 16:26:17,610 views 93716 Webhook Verification: signature=sha256=5495cd02fed44be98c8f6df0c92f946be278abb69295b89380d6988765a5d105 timestamp=1780331177540 batch_id=5b207c737ddb47c3b51402967ccf17b4
+INFO 2026-06-01 16:26:17,727 views 93716 WEBHOOK[4129b766]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:26:52,573 views 93716 Webhook Verification: signature=sha256=718c09853af44dd2e14440ca6332e9c6281200d8fb1e40295d6a1207be47bfd7 timestamp=1780331212508 batch_id=d6af0b7287684bc58d32ccf0d66eacc2
+INFO 2026-06-01 16:26:52,573 views 93716 WEBHOOK[7ffa94ea]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:27:03,589 views 93716 Webhook Verification: signature=sha256=660811c12f31a2490285b276cf8294593b5e531386ec5b839c1f265bfeb52905 timestamp=1780331223520 batch_id=6db0b5b05dbf475aa841124f2a7b42f3
+INFO 2026-06-01 16:27:03,589 views 93716 WEBHOOK[c82082f6]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:27:18,773 views 93716 Webhook Verification: signature=sha256=625783d410085ff7c4d1f71a9cd9d1a5c8ce6e2928c3559ec84c253d12424e7c timestamp=1780331238709 batch_id=f15e6927eea14927baa5f6914a71bedd
+INFO 2026-06-01 16:27:18,773 views 93716 WEBHOOK[f36bd399]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:27:23,270 views 93716 Webhook Verification: signature=sha256=ea42892705fc5cfe64bc18256d652ff9000748113d75395d8b62948af3a9e766 timestamp=1780331243204 batch_id=dc51176b9a9f4591a5036cfb400fef2d
+INFO 2026-06-01 16:27:23,271 views 93716 WEBHOOK[e1f15ee6]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:27:23,859 views 93716 Webhook Verification: signature=sha256=a8131a3320ee6ec4d4fe1b5005b659e79ad944c89bceb74faad1f07db4de77a1 timestamp=1780331243794 batch_id=cde87b3041624425a45e838f0c104dd7
+INFO 2026-06-01 16:27:23,859 views 93716 WEBHOOK[56a1680e]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:27:44,585 views 93716 Webhook Verification: signature=sha256=ea1b4a28eb1242c5e8f605a2baf94d3f40a6624e0e2a643f05e118642c73f52e timestamp=1780331264519 batch_id=7a9c7eec2b1b4e33ab9aea40fc23cca8
+INFO 2026-06-01 16:27:44,585 views 93716 WEBHOOK[57b08d02]: received batch of 1 message(s)
+/home/dev/SecureHub/backend/apps/hik_adapter/services.py changed, reloading.
+INFO 2026-06-01 16:27:44,942 autoreload 93716 /home/dev/SecureHub/backend/apps/hik_adapter/services.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+June 01, 2026 - 16:26:17
+Django version 5.2.12, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+INFO 2026-06-01 16:27:45,317 autoreload 96230 Watching for file changes with StatReloader
+DEBUG 2026-06-01 16:27:48,050 views 96230 Webhook Verification: signature=sha256=d242e10baeaab229b9c545e0ddbc46283ae5d216f66d65f45d3c8d237da96860 timestamp=1780331267856 batch_id=785c6354449e4029bb83dc1b2d646e2a
+INFO 2026-06-01 16:27:48,050 views 96230 WEBHOOK[4dd9970f]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:27:51,995 views 96230 Webhook Verification: signature=sha256=f11718d9df9a0d794c3757467b7af1c4001a3d3466a1574f76b0a2c009d69f6a timestamp=1780331271929 batch_id=b8e4931775534f789aa984850201b78b
+INFO 2026-06-01 16:27:51,995 views 96230 WEBHOOK[36344395]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:28:05,891 views 96230 Webhook Verification: signature=sha256=ffd4bdaba4ae06a1987047b8514e2f75e480b24105f6d995ef0a3e36c773a1d0 timestamp=1780331285827 batch_id=9dea617aafc64d5e97d4b6dc97ff8549
+INFO 2026-06-01 16:28:05,891 views 96230 WEBHOOK[5a17fd64]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:28:18,846 views 96230 Webhook Verification: signature=sha256=bd6655ec0a3304776d1b8544a4ba9a3adc00fd8c98fc0510907ef886dd4d3fae timestamp=1780331298613 batch_id=8f11a703996e406a9b1741d4f811997f
+INFO 2026-06-01 16:28:18,846 views 96230 WEBHOOK[da7c6a6f]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:28:27,055 views 96230 Webhook Verification: signature=sha256=88430c88ca9df3487e929d1f953ad4cf60c2e7bc6c35f7f2a7e4f67b709eca66 timestamp=1780331306869 batch_id=b0685006b1e94d139f6071c8cfe67d5a
+INFO 2026-06-01 16:28:27,056 views 96230 WEBHOOK[73d7efb5]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:28:34,752 views 96230 Webhook Verification: signature=sha256=642c92eee6564f26cd07b93d57e938de251c60f1219bc7e5bc30e148aed4816d timestamp=1780331314688 batch_id=8a928356edf94ceda91d86333e2f8eab
+INFO 2026-06-01 16:28:34,752 views 96230 WEBHOOK[0bed885d]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:28:43,951 views 96230 Webhook Verification: signature=sha256=92e63931acc93a7c304ec78daaced99857f2d1b46468bbe1c52204758109410b timestamp=1780331323888 batch_id=1be81e8427144119b5cea9071480511c
+INFO 2026-06-01 16:28:43,951 views 96230 WEBHOOK[f7e20f3f]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:28:44,052 views 96230 Webhook Verification: signature=sha256=2db3f038830c031cba9735ad23f111616065a552c29e2fd7447d785151c9ea9d timestamp=1780331323986 batch_id=d078b779f7e14272bd5165b75056ef4a
+INFO 2026-06-01 16:28:44,052 views 96230 WEBHOOK[61326597]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:29:17,623 views 96230 Webhook Verification: signature=sha256=8e687af03527488ed7f2bd40a48635bbe0cae1cef4af76549fdc3f8459e6e181 timestamp=1780331357560 batch_id=9931543f80354e03b92f09cde7f7a814
+INFO 2026-06-01 16:29:17,623 views 96230 WEBHOOK[cfa560bd]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:29:24,042 views 96230 Webhook Verification: signature=sha256=e566b97a803571970bdc980a75dac8e92f0bf5575bc8a356f87eb853b21ebb0b timestamp=1780331363980 batch_id=52d54b9d9efe4e439748092607282018
+INFO 2026-06-01 16:29:24,042 views 96230 WEBHOOK[a818f2f6]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:29:31,552 views 96230 Webhook Verification: signature=sha256=7564cfe8c377635c5fbdf98c4ab0c08207472146e6b73b89374f7bbb62be9272 timestamp=1780331371489 batch_id=eb136e8064b34208b59c60aabc14df5b
+INFO 2026-06-01 16:29:31,552 views 96230 WEBHOOK[4aec9257]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:29:36,978 views 96230 Webhook Verification: signature=sha256=27e60319500406b3cb3a91c0dfb6de92f90913d5e1b675887da7248ed61d54d5 timestamp=1780331376914 batch_id=29211d861b8b45029fe3d2d81e32b7c7
+INFO 2026-06-01 16:29:36,979 views 96230 WEBHOOK[1a8a6450]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:29:53,026 views 96230 Webhook Verification: signature=sha256=4573dc54bb38809c9a5d859d495d08b45fb9a240e4fc714082b6970acd5c3564 timestamp=1780331392960 batch_id=a7c7a0014ae24bfcbd96f18a02b0435e
+INFO 2026-06-01 16:29:53,026 views 96230 WEBHOOK[c12b98f7]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:30:10,247 views 96230 Webhook Verification: signature=sha256=6f015cbe850e5922b88b5ec2822bbd1c00b16fe2159d2ccac21faefb13c21fc9 timestamp=1780331410184 batch_id=2ae96fc1d3d04965a9242a04a034c2a9
+INFO 2026-06-01 16:30:10,247 views 96230 WEBHOOK[6ab126da]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:30:18,341 views 96230 Webhook Verification: signature=sha256=df04521f6c1f831501f05be7dc88339768a073196cb6f39c06418848bcddb504 timestamp=1780331418279 batch_id=77ad68d85efc48ccbbbfe588456ff740
+INFO 2026-06-01 16:30:18,341 views 96230 WEBHOOK[6752cbe5]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:30:32,061 views 96230 Webhook Verification: signature=sha256=b333434828bb4b533fcedeb71486513d65bfb7126f95d9a899f3170349507e04 timestamp=1780331431996 batch_id=ecc68575871d4fbbb5db51d46db4395e
+INFO 2026-06-01 16:30:32,061 views 96230 WEBHOOK[fb489283]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:30:48,569 views 96230 Webhook Verification: signature=sha256=6371bd4005ea1a9c35893c0d063a9edf5975c44dbd005ac8f9a007254fd09257 timestamp=1780331448508 batch_id=1073d7d867204d9ca777e1472da909c1
+INFO 2026-06-01 16:30:48,570 views 96230 WEBHOOK[f3eebb49]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:31:12,647 views 96230 Webhook Verification: signature=sha256=8b8c0d0c835ff3c8da29760199ee88487cede236b891cc5e04d7f978421f08f0 timestamp=1780331472586 batch_id=1adacc8f519349988724b395b17e05e5
+INFO 2026-06-01 16:31:12,647 views 96230 WEBHOOK[137ba809]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:31:13,419 views 96230 Webhook Verification: signature=sha256=8b88e6e1d08813e2e0d44a62c3ab1b9f90f00e094fda0727d069fb237a057492 timestamp=1780331473226 batch_id=75dfdef400344816b7342376cbb3d850
+INFO 2026-06-01 16:31:13,419 views 96230 WEBHOOK[7a47ddf1]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:31:16,848 views 96230 Webhook Verification: signature=sha256=4c425ec2b11393f544b796efbfa702c4b185bb4380615772d9b08b1e6ad821bf timestamp=1780331476786 batch_id=69b7749de05d4e239f4a10c927a45414
+INFO 2026-06-01 16:31:16,848 views 96230 WEBHOOK[71266a88]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:31:34,551 views 96230 Webhook Verification: signature=sha256=5b132b8dd17162efd8b0624af1c9049fa987492d80301824a95a7dbe27f5d6a9 timestamp=1780331494484 batch_id=81ea9be667274c7f9efc53731d623608
+INFO 2026-06-01 16:31:35,023 views 96230 WEBHOOK[27ae7db3]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:31:45,424 views 96230 Webhook Verification: signature=sha256=286dc13b7c43fd1403956486254f70d8c852e57db7d2151bfe13b8fbc9aa7b6e timestamp=1780331505361 batch_id=f5e0d87c1c90423bb2fad029023924f2
+INFO 2026-06-01 16:31:45,424 views 96230 WEBHOOK[07c6a630]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:31:55,059 views 96230 Webhook Verification: signature=sha256=35dbbc85a56a5f9854f4322631169d019a723a7709e06520cf8e00d07332c896 timestamp=1780331514999 batch_id=8822092515654cde87ffee71415281d5
+INFO 2026-06-01 16:31:55,060 views 96230 WEBHOOK[77cd614c]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:32:01,212 views 96230 Webhook Verification: signature=sha256=73fe8256eb299e96e5b97f1073d8fe6880d2012b5015ee2440cb058c9f8a906a timestamp=1780331521152 batch_id=251005ac4b494b1dad80e920a240df6e
+INFO 2026-06-01 16:32:01,212 views 96230 WEBHOOK[724f12d8]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:32:01,857 views 96230 Webhook Verification: signature=sha256=75ce4d7254e0854075c196eed1302fc0123b67e645deac4f7aedc4f915c8d888 timestamp=1780331521795 batch_id=6876d3135dd34d429496678401eaed05
+INFO 2026-06-01 16:32:01,857 views 96230 WEBHOOK[5fa350c3]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:32:22,075 views 96230 Webhook Verification: signature=sha256=66c71a9cf3968edf056ca66efe23dd44079a6de89969ea1ff8dfcc989646b2bc timestamp=1780331542016 batch_id=454e3ece8a4a487c85c13715ce964137
+INFO 2026-06-01 16:32:22,076 views 96230 WEBHOOK[b582d551]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:32:45,327 views 96230 Webhook Verification: signature=sha256=d6a03706e54428d2ae856caf7c08d67041a48a8a1847bfc30a778b3cefbcde20 timestamp=1780331565266 batch_id=a099a5cf88f54d7a978a5bfe02dce14e
+INFO 2026-06-01 16:32:45,327 views 96230 WEBHOOK[54adddd6]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:32:48,704 views 96230 Webhook Verification: signature=sha256=66adcc26c2847b5e661d0ab9c58e5722a3cf02fcee58b9761064abeb13984353 timestamp=1780331568642 batch_id=db23dfd8c51f43ea908d521180666a28
+INFO 2026-06-01 16:32:48,704 views 96230 WEBHOOK[5f6368db]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:33:08,889 views 96230 Webhook Verification: signature=sha256=13cf4f1c6c0df21a1ab86f0d65f4f302c84ce13abedc9da42734685169181929 timestamp=1780331588827 batch_id=ee57468f56294fed9e134d78e73e4ae9
+INFO 2026-06-01 16:33:08,889 views 96230 WEBHOOK[00def016]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:33:12,777 views 96230 Webhook Verification: signature=sha256=0d830a1e9ed9fb32adb9d7dabafc83797ed1747b424a37080b489df2e17a52f6 timestamp=1780331592716 batch_id=8cb290b2748042b98ea5e617df31afd5
+INFO 2026-06-01 16:33:12,777 views 96230 WEBHOOK[457e353c]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:33:19,821 views 96230 Webhook Verification: signature=sha256=aea21a86526d59d8eac89f1c1572010846cd8ba8a13f892cc6bc7b65bb0c9840 timestamp=1780331599760 batch_id=5dac42cf1b05445fbb9fb9344f2634a1
+INFO 2026-06-01 16:33:19,821 views 96230 WEBHOOK[240cc5b9]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:33:21,386 views 96230 Webhook Verification: signature=sha256=4c46f5a256a8b30144a7df1d6f88b22155142350ca63ed6c824c4e6fc7988e7d timestamp=1780331601326 batch_id=cc0239d5c8f242e38dbdc3c4bf282f4d
+INFO 2026-06-01 16:33:21,386 views 96230 WEBHOOK[b11cfdbf]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:33:45,480 views 96230 Webhook Verification: signature=sha256=777052b19523bb6135fdc16d8f3ecefa2a40ecba7166fc2e799235bf03dbc5b2 timestamp=1780331625277 batch_id=efa59f765aa946eba2ea6b4d3e3060b5
+INFO 2026-06-01 16:33:45,480 views 96230 WEBHOOK[30f3decc]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:33:57,022 views 96230 Webhook Verification: signature=sha256=e3688c523c20413a7cf74c2a369e5c246d52ce84a4f804357ebc573bf72176ac timestamp=1780331636782 batch_id=bd218a1a950a4d8a9386aba4dc0f8b6e
+INFO 2026-06-01 16:33:57,022 views 96230 WEBHOOK[b3e76562]: received batch of 1 message(s)
+/home/dev/SecureHub/backend/apps/hik_adapter/client.py changed, reloading.
+INFO 2026-06-01 16:34:13,565 autoreload 96230 /home/dev/SecureHub/backend/apps/hik_adapter/client.py changed, reloading.
+Performing system checks...
+
+System check identified no issues (0 silenced).
+June 01, 2026 - 16:27:45
+Django version 5.2.12, using settings 'config.settings'
+Starting development server at http://0.0.0.0:8000/
+Quit the server with CONTROL-C.
+
+WARNING: This is a development server. Do not use it in a production setting. Use a production WSGI or ASGI server instead.
+For more information on production servers see: https://docs.djangoproject.com/en/5.2/howto/deployment/
+Watching for file changes with StatReloader
+INFO 2026-06-01 16:34:13,961 autoreload 101884 Watching for file changes with StatReloader
+DEBUG 2026-06-01 16:34:16,811 views 101884 Webhook Verification: signature=sha256=ab9675455d8aebce21effa49baf8b6958aa0052774de573c972edcfc2da37a1d timestamp=1780331656622 batch_id=034abdeeed474ff7a8d1d1aa7da2c1e6
+INFO 2026-06-01 16:34:16,811 views 101884 WEBHOOK[cbb59202]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:34:21,620 views 101884 Webhook Verification: signature=sha256=2db9ae4df179bcee1f73bb7387a9e1d42f4dd32ca8e53d66780969c877564965 timestamp=1780331661554 batch_id=54f35f03e7df4298bc18a445d4e4a358
+INFO 2026-06-01 16:34:21,620 views 101884 WEBHOOK[fe479259]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:34:46,374 views 101884 Webhook Verification: signature=sha256=2186c8bc8004792806a0ed357fd833df5f619920341d49a29cd200af48b54165 timestamp=1780331686312 batch_id=f9e5c2dff873409c82e05765e0baad32
+INFO 2026-06-01 16:34:46,375 views 101884 WEBHOOK[5c5994a4]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:34:48,420 client 101884 REQ[fbe3a367] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/control/capabilities?format=json
+DEBUG 2026-06-01 16:34:51,787 views 101884 Webhook Verification: signature=sha256=bb92209f378146fc5fee812ab8d87128b2886066597ca0c3f1058b3c488dfb85 timestamp=1780331691715 batch_id=65583507e57148828b08af5f2e226b90
+INFO 2026-06-01 16:34:51,788 views 101884 WEBHOOK[2782905e]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:34:58,811 views 101884 Webhook Verification: signature=sha256=58f32ded33bb78b4a50c4cfe3341ecbc620eb7320cbed4f16dc8a83617548c67 timestamp=1780331698753 batch_id=0613d5f4cd164f75a7e0652395129c62
+INFO 2026-06-01 16:34:58,812 views 101884 WEBHOOK[01111fbe]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:35:04,381 views 101884 Webhook Verification: signature=sha256=55aafac2f1dfabd02ed2d401b005bd7b406a96312193cd6e90c5056d4f381a8e timestamp=1780331704323 batch_id=be7faee7f8e54ad7be5c0bccfce9a6ee
+INFO 2026-06-01 16:35:04,381 views 101884 WEBHOOK[54a45f32]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:35:24,193 views 101884 Webhook Verification: signature=sha256=2fc2eab8b6bd78d5b35f0ec46e1509ff737d3e6a3051a74d5dae25e57df9265a timestamp=1780331724108 batch_id=20a5a4b44f2141e89d579d2082c972ed
+INFO 2026-06-01 16:35:24,194 views 101884 WEBHOOK[f94e3cce]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:35:27,235 views 101884 Webhook Verification: signature=sha256=d80f91cdaff05bcd2fee0ecb2bfc9340a3d9c6596cf32a58f7b53efeac23774d timestamp=1780331727174 batch_id=d71596707cad4651a3f28f89ff764e20
+INFO 2026-06-01 16:35:27,236 views 101884 WEBHOOK[467b76b0]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:35:45,829 views 101884 Webhook Verification: signature=sha256=6f93ceaa6e722144cc0936a2eef9fbe578ba1e97095d285ebc8b7cd1bea5eccb timestamp=1780331745768 batch_id=1d200e1e8f5c4127ae20e6ad626b8e32
+INFO 2026-06-01 16:35:45,830 views 101884 WEBHOOK[e8eee2e0]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:35:50,300 views 101884 Webhook Verification: signature=sha256=ade3fe9eccda5ac2e525dee6fedc42e125f5dc4220b7e78994239f100dce578f timestamp=1780331750238 batch_id=d3301a10fbc24915a130e6844506c8ba
+INFO 2026-06-01 16:35:50,300 views 101884 WEBHOOK[db35f0eb]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:35:50,765 views 101884 Webhook Verification: signature=sha256=2fc7a056c296f3c2e54294fb12d9f2070fbf325ccaef0f731cb43f90ca65d178 timestamp=1780331750707 batch_id=a4ce5f2ce2d04a83b18690cf96887d39
+INFO 2026-06-01 16:35:50,766 views 101884 WEBHOOK[d6b2a2e3]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:35:51,895 views 101884 Webhook Verification: signature=sha256=5b976e3093fbe0c5aeebe544fbb9b7503dbbc3cfdf98f1401aa08330ad61dea0 timestamp=1780331751836 batch_id=32d2a325287e43218c19708f698d9ed8
+INFO 2026-06-01 16:35:51,895 views 101884 WEBHOOK[462ed412]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:36:01,514 views 101884 Webhook Verification: signature=sha256=12a1e980b5bcdbc285a25d1da0274b0e1af746e70332be0a6077fa194b9b3dcc timestamp=1780331761457 batch_id=1b62b123be0241e18d5f36628c04dec3
+INFO 2026-06-01 16:36:01,514 views 101884 WEBHOOK[6c858319]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:36:05,204 views 101884 Webhook Verification: signature=sha256=c9002ee63c1719b21550835dc8a9623d565c9a85e8675e281f34ddfe8bc7c91d timestamp=1780331765144 batch_id=2f5f7021808348068762932f14dae13c
+INFO 2026-06-01 16:36:05,204 views 101884 WEBHOOK[6d3a46bd]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:36:18,390 views 101884 Webhook Verification: signature=sha256=8ed015ca791da46b81974c99f27cda0c8ef81b774efe72ff89bbcd568535eef4 timestamp=1780331778327 batch_id=29ee0891789a43c199388801c6fb3601
+INFO 2026-06-01 16:36:18,390 views 101884 WEBHOOK[5598ef96]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:36:37,116 views 101884 Webhook Verification: signature=sha256=a3532e3b1f51e1a8b32d1bc2f55db309915e1fb89ae70d0432d8cf113122e5d4 timestamp=1780331797058 batch_id=41f47868480e437c94a5dc6d5af961ac
+INFO 2026-06-01 16:36:37,116 views 101884 WEBHOOK[40220856]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:36:38,025 views 101884 Webhook Verification: signature=sha256=2618898fe4c7aadd86d63f5b581a6a2c5c5aee2987857a9daa14ddfc839642b6 timestamp=1780331797965 batch_id=f470b84a0db8417aaad640a088432eb2
+INFO 2026-06-01 16:36:38,026 views 101884 WEBHOOK[cd586d30]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:36:46,837 views 101884 Webhook Verification: signature=sha256=e3b5483a18e2b818e00d0875254c7e1c8c37234bf7712f6976563f6e33e95efb timestamp=1780331806778 batch_id=cf5c232158f2492e80b9a829dcaff177
+INFO 2026-06-01 16:36:46,837 views 101884 WEBHOOK[52af381b]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:36:52,092 views 101884 Webhook Verification: signature=sha256=f455aa0e8b64044dde205cdb50d87aa49b2824a85a80e7e3ed37ce73231e818f timestamp=1780331812035 batch_id=1b46d6b477e04fa28a672ce06740d57b
+INFO 2026-06-01 16:36:52,093 views 101884 WEBHOOK[95b0ebea]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:37:04,446 views 101884 Webhook Verification: signature=sha256=a117d681fcbf0316afe1b5042b7b025e143cfea91330c7f52e6e8b8b9e075450 timestamp=1780331824380 batch_id=511dc808aafc4b69b72657bef8c86946
+INFO 2026-06-01 16:37:04,447 views 101884 WEBHOOK[3b6bf4c3]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:37:06,974 views 101884 Webhook Verification: signature=sha256=2f1a23cae11c3753af0e12ab28f6b35cec5b19b249e20d41a15f3a7e32887108 timestamp=1780331826915 batch_id=df7ec4b108244b1fa82d962e1c5186e8
+INFO 2026-06-01 16:37:06,975 views 101884 WEBHOOK[181bd299]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:37:17,839 views 101884 Webhook Verification: signature=sha256=ceb9b4b3debf9d425409fe4ffc6c2e9c6e24765b98794a3e7235dbb493ccfe2d timestamp=1780331837778 batch_id=6b842482372a4152a8bfbc3a7bf5381c
+INFO 2026-06-01 16:37:17,839 views 101884 WEBHOOK[62d5978c]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:37:51,558 views 101884 Webhook Verification: signature=sha256=ea8dcf5150651081f98eb7a0b3f83a9c308cd75b47c13679a8228a151122a807 timestamp=1780331871501 batch_id=662c5e0e614644f7b6471ac0983ba112
+INFO 2026-06-01 16:37:51,558 views 101884 WEBHOOK[cdc84c5e]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:38:12,119 views 101884 Webhook Verification: signature=sha256=481832b5ab95fbfc18df46cc25938cdd1f83018b3d051536b6ea0b55a731cc7d timestamp=1780331892055 batch_id=3c52169f926f470599ad0c5b86576b60
+INFO 2026-06-01 16:38:12,119 views 101884 WEBHOOK[d28f5b77]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:38:23,830 views 101884 Webhook Verification: signature=sha256=e3c4128e9ea1e64ce8f89710e85e69272d2523a840ffb83dd02372f1b15e07d0 timestamp=1780331903771 batch_id=76956a0c0aa146fe8b9ed124aba812dc
+INFO 2026-06-01 16:38:23,831 views 101884 WEBHOOK[ec174392]: received batch of 1 message(s)
+DEBUG 2026-06-01 16:38:24,522 views 101884 Webhook Verification: signature=sha256=f716489f04a3fbd5bb44cbb5510f88dd6c64f25aef39a1e0492c4b7b458175e7 timestamp=1780331904466 batch_id=a1a9c14be179417c829b93546eb9965d
+INFO 2026-06-01 16:38:24,522 views 101884 WEBHOOK[1990ed1b]: received batch of 1 message(s)

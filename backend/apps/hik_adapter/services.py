@@ -1843,8 +1843,9 @@ class HikPartnerService:
         """
         Normalize a single MQ message into an AlarmEvent.
         Per §3.34 response schema: formatType, accountNumber, deviceSerial, alarmData.
-        alarmData arrives as a JSON-encoded STRING (not a dict) even when formatType=JSON.
-        Parse it first, then extract event details and sync local state.
+        alarmData commonly arrives as a JSON-encoded STRING, but the guide also
+        shows JSON message examples where alarmData is already an object. Parse
+        string payloads first, then extract event details and sync local state.
         """
         device_serial = msg.get("deviceSerial", "")
         raw_alarm_data = msg.get("alarmData", "")
@@ -2453,12 +2454,22 @@ class HikPartnerService:
         retry_delay_ms: int = 1000,
         sign_secret: str = None,
     ) -> dict:
-        """Per §3.68. callback_url must be HTTPS."""
+        """
+        Per §3.68. callback_url must be HTTPS.
+
+        Omit signSecret unless a dedicated webhook secret is configured. Hik
+        defaults it to the app SecretKey, and the explicit field has stricter
+        8-32 alphanumeric validation than some generated API secrets.
+        """
+        configured_sign_secret = sign_secret
+        if configured_sign_secret is None:
+            configured_sign_secret = settings.HIK_PARTNER.get("WEBHOOK_SIGN_SECRET") or None
+
         return self.client.save_webhook_config(
             callback_url=callback_url,
             retry_times=retry_times,
             retry_delay_ms=retry_delay_ms,
-            sign_secret=sign_secret or self.get_webhook_sign_secret(),
+            sign_secret=configured_sign_secret,
         )
 
     def delete_webhook_config(self) -> dict:

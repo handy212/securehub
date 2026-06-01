@@ -1070,6 +1070,72 @@ class WebhookTests(APITestCase):
         expected_sig = self._make_signature(timestamp, batch_id)
         self.assertEqual(response.headers.get("X-Hook-Signature"), expected_sig)
 
+    def test_webhook_get_handshake_requires_batch_id(self):
+        """GET verification must include the batch id that Hik signs."""
+        timestamp = str(int(time.time() * 1000))
+
+        response = self.client.get(
+            self.url,
+            HTTP_X_HOOK_TIMESTAMP=timestamp,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_webhook_post_rejects_missing_batch_id(self):
+        """POST verification must not accept timestamp-only signatures."""
+        timestamp = str(int(time.time() * 1000))
+        signature = "sha256=" + hmac.new(
+            b"Webhook123",
+            f"{timestamp}.".encode(),
+            hashlib.sha256,
+        ).hexdigest()
+
+        response = self.client.post(
+            self.url,
+            {"deviceSerial": self.device.serial_number},
+            format="json",
+            HTTP_X_HOOK_SIGNATURE=signature,
+            HTTP_X_HOOK_TIMESTAMP=timestamp,
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_webhook_post_rejects_body_batch_id_mismatch(self):
+        """The signed batch id header must match the body batchId."""
+        response = self._post_webhook(
+            {
+                "batchId": "different-batch",
+                "list": [{"deviceSerial": self.device.serial_number}],
+            },
+            batch_id="batch-1",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    @patch("apps.alarms.views.process_webhook_messages.delay")
+    def test_webhook_extracts_messages_from_nested_data_list(self, mock_delay):
+        response = self._post_webhook(
+            {
+                "batchId": "batch-1",
+                "data": {
+                    "list": [
+                        {
+                            "deviceSerial": self.device.serial_number,
+                            "alarmData": {"eventDescription": "AwayArm"},
+                        }
+                    ],
+                },
+            }
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_delay.assert_called_once()
+        self.assertEqual(len(mock_delay.call_args.args[0]), 1)
+        self.assertEqual(
+            mock_delay.call_args.args[0][0]["deviceSerial"],
+            self.device.serial_number,
+        )
+
     @patch("apps.alarms.views.process_webhook_messages.delay")
     def test_webhook_empty_body_returns_accepted(self, mock_delay):
         """An empty (or non-dict) body after signature check must return 200, not crash."""

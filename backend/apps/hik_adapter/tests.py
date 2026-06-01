@@ -2,7 +2,7 @@ import json
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from apps.alarms.models import AlarmEvent
@@ -137,6 +137,16 @@ class HikAdapterTests(TestCase):
         # Verify expiry is set correctly from expireTime (ms)
         self.assertAlmostEqual(client._token_expires_at, expire_ms / 1000 - 60, delta=5)
 
+    def test_is_configured_rejects_placeholder_credentials(self):
+        client = HikPartnerClient(
+            base_url="https://api.hik-partner.com",
+            api_key="CHANGE-ME",
+            api_secret="CHANGE-ME",
+            dry_run=False,
+        )
+
+        self.assertFalse(client.is_configured())
+
     @patch("apps.hik_adapter.client.requests.request")
     @patch("apps.hik_adapter.client.HikPartnerClient.get_access_token")
     def test_request_includes_auth_header_only(self, mock_get_token, mock_request):
@@ -192,6 +202,60 @@ class HikAdapterTests(TestCase):
 
         self.assertEqual(cm.exception.error_code, "LAP006009")
 
+    @patch("apps.hik_adapter.client.requests.request")
+    @patch("apps.hik_adapter.client.HikPartnerClient.get_access_token")
+    def test_request_accepts_transparent_success_status_code_as_string(
+        self, mock_get_token, mock_request
+    ):
+        mock_get_token.return_value = "token-abc"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.ok = True
+        mock_response.json.return_value = {"statusCode": "1", "statusString": "OK"}
+        mock_request.return_value = mock_response
+
+        client = HikPartnerClient(
+            base_url="https://api.example.com",
+            api_key="key",
+            api_secret="secret",
+            dry_run=False,
+        )
+
+        response = client.request("PUT", "/api/test", json={})
+
+        self.assertEqual(response, {"statusCode": "1", "statusString": "OK"})
+
+    @patch("apps.hik_adapter.client.requests.request")
+    @patch("apps.hik_adapter.client.HikPartnerClient.get_access_token")
+    def test_request_raises_for_transparent_failure_without_gateway_error_code(
+        self, mock_get_token, mock_request
+    ):
+        mock_get_token.return_value = "token-abc"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.ok = True
+        mock_response.json.return_value = {
+            "statusCode": 0,
+            "statusString": "Invalid Operation",
+            "subStatusCode": "0x4000804F",
+        }
+        mock_request.return_value = mock_response
+
+        client = HikPartnerClient(
+            base_url="https://api.example.com",
+            api_key="key",
+            api_secret="secret",
+            dry_run=False,
+        )
+
+        with self.assertRaises(HikPartnerError) as cm:
+            client.request("PUT", "/api/test", json={})
+
+        self.assertEqual(cm.exception.error_code, "0x4000804F")
+        self.assertIn("Invalid Operation", str(cm.exception))
+
     @patch("apps.hik_adapter.client.HikPartnerClient.request")
     def test_service_executes_command_and_logs_event(self, mock_client_request):
         mock_client_request.return_value = {"code": "0", "msg": "success", "data": {}}
@@ -225,6 +289,44 @@ class HikAdapterTests(TestCase):
         self.assertEqual(kwargs["method"], "PUT")
         self.assertIn("/api/hpcgw/v1/device/transparent/", kwargs["path"])
         self.assertEqual(kwargs["json"]["Operate"]["moduleOperateCode"], "1234")
+
+    @override_settings(
+        HIK_PARTNER={
+            "BASE_URL": "https://api.example.com",
+            "API_KEY": "key",
+            "API_SECRET": "secret-with-symbols-and-longer-than-32-characters",
+            "WEBHOOK_SIGN_SECRET": "",
+            "DRY_RUN": False,
+        }
+    )
+    @patch("apps.hik_adapter.client.HikPartnerClient.save_webhook_config")
+    def test_save_webhook_config_omits_sign_secret_when_using_api_secret_default(
+        self, mock_save_webhook_config
+    ):
+        service = HikPartnerService()
+
+        service.save_webhook_config(callback_url="https://example.com/api/v1/alarms/webhook/")
+
+        self.assertIsNone(mock_save_webhook_config.call_args.kwargs["sign_secret"])
+
+    @override_settings(
+        HIK_PARTNER={
+            "BASE_URL": "https://api.example.com",
+            "API_KEY": "key",
+            "API_SECRET": "secret",
+            "WEBHOOK_SIGN_SECRET": "Webhook123",
+            "DRY_RUN": False,
+        }
+    )
+    @patch("apps.hik_adapter.client.HikPartnerClient.save_webhook_config")
+    def test_save_webhook_config_sends_dedicated_webhook_secret(
+        self, mock_save_webhook_config
+    ):
+        service = HikPartnerService()
+
+        service.save_webhook_config(callback_url="https://example.com/api/v1/alarms/webhook/")
+
+        self.assertEqual(mock_save_webhook_config.call_args.kwargs["sign_secret"], "Webhook123")
 
     @patch("apps.hik_adapter.client.HikPartnerClient.request")
     def test_service_handles_api_failure(self, mock_client_request):

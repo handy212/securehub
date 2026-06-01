@@ -287,6 +287,25 @@ class HikWebhookView(APIView):
     """
     permission_classes = [permissions.AllowAny]
 
+    @staticmethod
+    def _extract_messages(event_data):
+        if isinstance(event_data, list):
+            return event_data
+        if not isinstance(event_data, dict):
+            return []
+
+        raw = event_data.get("list")
+        if raw is None:
+            data = event_data.get("data")
+            if isinstance(data, dict):
+                raw = data.get("list")
+            elif data is not None:
+                raw = data
+
+        if raw is None:
+            raw = [event_data]
+        return raw if isinstance(raw, list) else [raw]
+
     def get(self, request, *args, **kwargs):
         """
         Webhook validation handshake — per API guide §2.10.
@@ -297,7 +316,7 @@ class HikWebhookView(APIView):
         timestamp = request.headers.get("X-Hook-Timestamp", "")
         batch_id = request.headers.get("X-Hook-Batch-Id", "")
         
-        if not timestamp:
+        if not timestamp or not batch_id:
             return Response(
                 {"code": "1", "msg": "Missing verification headers"},
                 status=status.HTTP_400_BAD_REQUEST
@@ -332,8 +351,8 @@ class HikWebhookView(APIView):
             batch_id,
         )
 
-        if not signature_header or not timestamp:
-            logger.warning("Webhook Verification: missing signature or timestamp")
+        if not signature_header or not timestamp or not batch_id:
+            logger.warning("Webhook Verification: missing signature, timestamp, or batch id")
             return False
 
         # Reject requests older than 1 minute per Hik webhook guidance.
@@ -348,28 +367,14 @@ class HikWebhookView(APIView):
 
         secret = HikPartnerService.get_webhook_sign_secret().encode("utf-8")
         
-        # During verification/ping, batch_id might be missing or empty.
-        # String format per guide §2.10: "{X-Hook-Timestamp}.{batchId}"
-        # If batchId is missing, the dot might still be there or not.
-        # We'll try both common variations if batch_id is empty.
+        message = f"{timestamp}.{batch_id}".encode("utf-8")
+        expected = "sha256=" + hmac.new(secret, message, hashlib.sha256).hexdigest()
         
-        msg_variants = [f"{timestamp}.{batch_id or ''}".encode("utf-8")]
-        if not batch_id:
-            msg_variants.append(f"{timestamp}".encode("utf-8"))
-
-        found_match = False
-        for message in msg_variants:
-            expected = "sha256=" + hmac.new(secret, message, hashlib.sha256).hexdigest()
-            if hmac.compare_digest(expected, signature_header):
-                found_match = True
-                logger.info("Webhook Verification: signature MATCHED for message: %s", message)
-                break
-        
-        if not found_match:
+        if not hmac.compare_digest(expected, signature_header):
             logger.warning(
                 "Webhook Verification: signature MISMATCH. got=%s, expected_one=%s",
                 signature_header,
-                expected, # Log the last expected one for debugging
+                expected,
             )
             return False
 
@@ -385,15 +390,25 @@ class HikWebhookView(APIView):
 
         request_id = str(__import__("uuid").uuid4())[:8]
         event_data = request.data
+        header_batch_id = request.headers.get("X-Hook-Batch-Id", "")
 
-        # Safe message extraction — handle list, dict wrapper, or single event
-        if isinstance(event_data, list):
-            messages = event_data
-        elif isinstance(event_data, dict):
-            raw = event_data.get("list") or event_data.get("data") or [event_data]
-            messages = raw if isinstance(raw, list) else [raw]
-        else:
-            messages = []
+        if isinstance(event_data, dict):
+            body_batch_id = event_data.get("batchId")
+            if body_batch_id and str(body_batch_id) != header_batch_id:
+                logger.warning(
+                    "WEBHOOK[%s]: batch id mismatch header=%s body=%s",
+                    request_id,
+                    header_batch_id,
+                    body_batch_id,
+                )
+                return Response(
+                    {"code": "1", "msg": "Batch id mismatch"},
+                    status=status.HTTP_401_UNAUTHORIZED,
+                )
+
+        # Safe message extraction — handle list, dict wrapper, nested data/list,
+        # or a single event. Hik webhook bodies include batchId beside list.
+        messages = self._extract_messages(event_data)
 
         # Filter out non-dict and empty entries
         messages = [m for m in messages if isinstance(m, dict) and m]
