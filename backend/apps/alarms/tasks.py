@@ -1,7 +1,9 @@
 import logging
+import tempfile
 import uuid
 import zlib
 from contextlib import contextmanager
+from pathlib import Path
 
 from celery import shared_task
 from django.conf import settings
@@ -17,10 +19,31 @@ logger = logging.getLogger(__name__)
 def _non_overlapping_task_lock(lock_name: str):
     """
     Use a Postgres advisory lock to keep slow polling tasks from stacking up.
-    SQLite/dev falls through because it usually runs one process anyway.
+    SQLite/dev uses a filesystem lock so multi-process workers do not collide
+    on the single-writer database.
     """
     if connection.vendor != "postgresql":
-        yield True
+        try:
+            import fcntl
+        except ImportError:
+            yield True
+            return
+
+        lock_id = zlib.crc32(lock_name.encode("utf-8"))
+        lock_path = Path(tempfile.gettempdir()) / f"securehub-task-{lock_id}.lock"
+        lock_file = lock_path.open("w")
+        acquired = False
+        try:
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+            except BlockingIOError:
+                acquired = False
+            yield acquired
+        finally:
+            if acquired:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            lock_file.close()
         return
 
     lock_id = zlib.crc32(lock_name.encode("utf-8"))
@@ -664,28 +687,33 @@ def initial_site_discovery(self, site_id: str) -> dict:
     if not service.client.is_configured() or service.client.dry_run:
         return {"skipped": True, "reason": "not configured or dry_run"}
 
-    try:
-        device_result = service.sync_site_devices(site)
-        if site.latitude is None or site.longitude is None:
-            service.geocode_site_location(site)
-        service.sync_alarm_status(site)
+    with _non_overlapping_task_lock(f"hik_site_sync:{site_id}") as acquired:
+        if not acquired:
+            logger.info("initial_site_discovery: sync already active for site %s; skipping overlap", site.name)
+            return {"skipped": True, "reason": "site sync already active"}
+
         try:
-            health_result = service.refresh_site_health(site)
-        except Exception as health_exc:
-            logger.warning(
-                "initial_site_discovery: health refresh failed for site %s: %s",
+            device_result = service.sync_site_devices(site)
+            if site.latitude is None or site.longitude is None:
+                service.geocode_site_location(site)
+            service.sync_alarm_status(site)
+            try:
+                health_result = service.refresh_site_health(site)
+            except Exception as health_exc:
+                logger.warning(
+                    "initial_site_discovery: health refresh failed for site %s: %s",
+                    site.name,
+                    health_exc,
+                )
+                health_result = {"health_warning": str(health_exc)}
+        except Exception as exc:
+            logger.error(
+                "initial_site_discovery: failed for site %s: %s",
                 site.name,
-                health_exc,
+                exc,
+                exc_info=True,
             )
-            health_result = {"health_warning": str(health_exc)}
-    except Exception as exc:
-        logger.error(
-            "initial_site_discovery: failed for site %s: %s",
-            site.name,
-            exc,
-            exc_info=True,
-        )
-        raise self.retry(exc=exc)
+            raise self.retry(exc=exc)
 
     return {
         "site_id": site_id,
@@ -711,11 +739,16 @@ def sync_hik_site_devices(self, site_id: str) -> dict:
     if not service.client.is_configured() or service.client.dry_run:
         return {"skipped": True, "reason": "not configured or dry_run"}
 
-    try:
-        return service.sync_site_devices(site)
-    except Exception as exc:
-        logger.error("sync_hik_site_devices: failed for site %s: %s", site.name, exc, exc_info=True)
-        raise self.retry(exc=exc)
+    with _non_overlapping_task_lock(f"hik_site_sync:{site_id}") as acquired:
+        if not acquired:
+            logger.info("sync_hik_site_devices: sync already active for site %s; skipping overlap", site.name)
+            return {"skipped": True, "reason": "site sync already active"}
+
+        try:
+            return service.sync_site_devices(site)
+        except Exception as exc:
+            logger.error("sync_hik_site_devices: failed for site %s: %s", site.name, exc, exc_info=True)
+            raise self.retry(exc=exc)
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=30)
@@ -733,21 +766,26 @@ def sync_hik_alarm_status(self, site_id: str) -> dict:
     if not service.client.is_configured() or service.client.dry_run:
         return {"skipped": True, "reason": "not configured or dry_run"}
 
-    try:
-        device_result = service.sync_site_devices(site)
-        service.sync_alarm_status(site)
+    with _non_overlapping_task_lock(f"hik_site_sync:{site_id}") as acquired:
+        if not acquired:
+            logger.info("sync_hik_alarm_status: sync already active for site %s; skipping overlap", site.name)
+            return {"skipped": True, "reason": "site sync already active"}
+
         try:
-            health_result = service.refresh_site_health(site)
-        except Exception as health_exc:
-            logger.warning(
-                "sync_hik_alarm_status: health refresh failed for site %s: %s",
-                site.name,
-                health_exc,
-            )
-            health_result = {"health_warning": str(health_exc)}
-    except Exception as exc:
-        logger.error("sync_hik_alarm_status: failed for site %s: %s", site.name, exc, exc_info=True)
-        raise self.retry(exc=exc)
+            device_result = service.sync_site_devices(site)
+            service.sync_alarm_status(site)
+            try:
+                health_result = service.refresh_site_health(site)
+            except Exception as health_exc:
+                logger.warning(
+                    "sync_hik_alarm_status: health refresh failed for site %s: %s",
+                    site.name,
+                    health_exc,
+                )
+                health_result = {"health_warning": str(health_exc)}
+        except Exception as exc:
+            logger.error("sync_hik_alarm_status: failed for site %s: %s", site.name, exc, exc_info=True)
+            raise self.retry(exc=exc)
 
     return {
         "site_id": site_id,
