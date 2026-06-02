@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
+import 'package:flutter/services.dart';
 import '../../../core/models/site.dart';
 import '../../../core/theme/app_theme.dart';
 
@@ -8,10 +8,16 @@ class SubsystemCard extends StatelessWidget {
     super.key,
     required this.subsystem,
     required this.onTap,
+    this.onArmAway,
+    this.onArmStay,
+    this.isHero = false,
   });
 
   final Subsystem subsystem;
   final VoidCallback onTap;
+  final VoidCallback? onArmAway;
+  final VoidCallback? onArmStay;
+  final bool isHero;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +51,13 @@ class SubsystemCard extends StatelessWidget {
                 ? 'Alarm'
                 : 'Disarmed';
 
+    final cardBg = AppTheme.surfaceContainerLowest;
+    final borderColor = hasAlarm
+        ? AppTheme.error.withValues(alpha: 0.3)
+        : (isArmed
+            ? AppTheme.primary.withValues(alpha: 0.2)
+            : AppTheme.outlineVariant.withValues(alpha: 0.16));
+
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(22),
@@ -56,118 +69,119 @@ class SubsystemCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(22),
           child: Ink(
+            padding: EdgeInsets.all(isHero ? 20 : 12),
             decoration: BoxDecoration(
+              color: cardBg,
               borderRadius: BorderRadius.circular(22),
               border: Border.all(
-                color: AppTheme.outlineVariant.withValues(alpha: 0.16),
+                color: borderColor,
+                width: hasAlarm || isArmed ? 1.5 : 1,
               ),
-              image: const DecorationImage(
-                image: AssetImage('assets/images/area.png'),
+              image: DecorationImage(
+                image: const AssetImage('assets/images/area.png'),
                 fit: BoxFit.cover,
+                opacity: 0.06, // Faded background image
+                colorFilter: ColorFilter.mode(
+                  cardBg.withValues(alpha: 0.9),
+                  BlendMode.screen,
+                ),
               ),
             ),
-            child: Stack(
+            child: Row(
               children: [
-                Positioned.fill(
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(22),
-                      gradient: LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          Colors.black.withValues(alpha: 0.08),
-                          Colors.black.withValues(alpha: 0.18),
-                          Colors.black.withValues(alpha: 0.45),
-                        ],
-                        stops: const [0.0, 0.45, 1.0],
-                      ),
-                    ),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Stack(
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Align(
-                        alignment: Alignment.topLeft,
-                        child: Row(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            _GlassBadge(
-                              child: Icon(
-                                statusIcon,
-                                color: statusColor,
-                                size: 18,
-                              ),
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            padding: EdgeInsets.all(isHero ? 12 : 10),
+                            decoration: BoxDecoration(
+                              color: statusColor.withValues(alpha: 0.08),
+                              borderRadius: BorderRadius.circular(16),
                             ),
-                            const Spacer(),
-                            if (issueCount > 0)
-                              _StatusPill(
-                                count: issueCount,
-                                label: issueLabel,
-                                isError: alarmZonesCount > 0,
-                              ),
-                          ],
-                        ),
-                      ),
-                      Align(
-                        alignment: Alignment.bottomLeft,
-                        child: Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.fromLTRB(10, 8, 10, 8),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.82),
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(
-                              color: Colors.white.withValues(alpha: 0.34),
+                            child: Icon(
+                              statusIcon,
+                              color: statusColor,
+                              size: isHero ? 24 : 18,
                             ),
                           ),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
+                          const SizedBox(width: 8),
+                          if (issueCount > 0)
+                            _StatusPill(
+                              count: issueCount,
+                              label: issueLabel,
+                              isError: alarmZonesCount > 0,
+                            ),
+                        ],
+                      ),
+                      const Spacer(),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            subsystem.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              fontSize: isHero ? 18 : 12,
+                              color: AppTheme.primary,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Wrap(
+                            spacing: 4,
+                            runSpacing: 4,
                             children: [
-                              Text(
-                                subsystem.name,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: GoogleFonts.inter(
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 12,
-                                  color: AppTheme.primary,
+                              _TagPill(
+                                label: statusLabel,
+                                foreground: statusColor,
+                                background: statusColor.withValues(
+                                  alpha: 0.12,
                                 ),
                               ),
-                              const SizedBox(height: 4),
-                              Wrap(
-                                spacing: 4,
-                                runSpacing: 4,
-                                children: [
-                                  _TagPill(
-                                    label: statusLabel,
-                                    foreground: statusColor,
-                                    background: statusColor.withValues(
-                                      alpha: 0.12,
-                                    ),
+                              if (openZonesCount > 0)
+                                _TagPill(
+                                  label: '$openZonesCount open',
+                                  foreground: AppTheme.onTertiaryContainer,
+                                  background: AppTheme.tertiaryFixed.withValues(
+                                    alpha: 0.92,
                                   ),
-                                  if (openZonesCount > 0)
-                                    _TagPill(
-                                      label: '$openZonesCount open',
-                                      foreground:
-                                          AppTheme.onTertiaryContainer,
-                                      background:
-                                          AppTheme.tertiaryFixed.withValues(
-                                        alpha: 0.92,
-                                      ),
-                                    ),
-                                ],
-                              ),
+                                ),
                             ],
                           ),
-                        ),
+                        ],
                       ),
                     ],
                   ),
                 ),
+                if (isHero) ...[
+                  const SizedBox(width: 16),
+                  Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      _QuickActionCircle(
+                        icon: Icons.exit_to_app_rounded,
+                        color: isArmedAway ? AppTheme.primary : AppTheme.secondary,
+                        isActive: isArmedAway,
+                        onTap: onArmAway,
+                        tooltip: 'Arm Away',
+                      ),
+                      const SizedBox(height: 12),
+                      _QuickActionCircle(
+                        icon: Icons.home_rounded,
+                        color: isArmedStay ? AppTheme.primary : AppTheme.secondary,
+                        isActive: isArmedStay,
+                        onTap: onArmStay,
+                        tooltip: 'Arm Stay',
+                      ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),
@@ -177,21 +191,55 @@ class SubsystemCard extends StatelessWidget {
   }
 }
 
-class _GlassBadge extends StatelessWidget {
-  const _GlassBadge({required this.child});
+class _QuickActionCircle extends StatelessWidget {
+  const _QuickActionCircle({
+    required this.icon,
+    required this.color,
+    required this.isActive,
+    required this.onTap,
+    required this.tooltip,
+  });
 
-  final Widget child;
+  final IconData icon;
+  final Color color;
+  final bool isActive;
+  final VoidCallback? onTap;
+  final String tooltip;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(10),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.72),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.42)),
+    return Tooltip(
+      message: tooltip,
+      child: GestureDetector(
+        onTap: () {
+          HapticFeedback.lightImpact();
+          onTap?.call();
+        },
+        child: Container(
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            color: isActive ? color : Colors.white,
+            shape: BoxShape.circle,
+            border: Border.all(
+              color: isActive ? Colors.transparent : AppTheme.outlineVariant.withValues(alpha: 0.2),
+              width: 1,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Icon(
+            icon,
+            color: isActive ? Colors.white : color,
+            size: 20,
+          ),
+        ),
       ),
-      child: child,
     );
   }
 }
@@ -217,7 +265,7 @@ class _TagPill extends StatelessWidget {
       ),
       child: Text(
         label,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 8,
           fontWeight: FontWeight.w800,
           letterSpacing: 0.35,
@@ -252,7 +300,7 @@ class _StatusPill extends StatelessWidget {
       ),
       child: Text(
         '$count ${label.toUpperCase()}',
-        style: GoogleFonts.inter(
+        style: TextStyle(
           color: isError ? AppTheme.error : AppTheme.onTertiaryContainer,
           fontSize: 8,
           fontWeight: FontWeight.w800,
@@ -262,3 +310,4 @@ class _StatusPill extends StatelessWidget {
     );
   }
 }
+

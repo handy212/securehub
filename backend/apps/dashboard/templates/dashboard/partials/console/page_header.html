@@ -1,0 +1,15 @@
+{% comment %}
+Left column title stack. Parent should wrap in a flex row with actions on the right.
+
+Required `with`:
+  page_title
+
+Optional:
+  page_subtitle
+{% endcomment %}
+<div>
+    <h1 class="console-page-title">{{ page_title }}</h1>
+    {% if page_subtitle %}
+    <p class="console-page-subtitle">{{ page_subtitle }}</p>
+    {% endif %}
+</div>

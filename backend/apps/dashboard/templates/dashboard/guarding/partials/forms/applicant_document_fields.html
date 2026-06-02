@@ -1,0 +1,16 @@
+<div class="form-group">
+    <label>Document type *</label>
+    <select name="document_type" required>{% for value,label in applicant_document_types %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+</div>
+<div class="form-group">
+    <label>Title *</label>
+    <input name="title" required data-modal-initial-focus>
+</div>
+<div class="form-group">
+    <label>File *</label>
+    <input name="file" type="file" required class="!h-auto py-2">
+</div>
+<div class="form-group">
+    <label>Reference number</label>
+    <input name="reference_number">
+</div>

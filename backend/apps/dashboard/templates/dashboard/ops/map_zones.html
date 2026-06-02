@@ -1,0 +1,253 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Map Zones | SecureHub{% endblock %}
+{% block header_title %}Map Zones{% endblock %}
+
+{% block content %}
+<div class="space-y-3" x-data="{ createModal: false, editModal: null, deleteModal: null, expandedZones: {} }">
+
+    <div class="mb-3">
+        {% url 'dashboard:site-map' as map_url %}
+        {% include "dashboard/partials/console/breadcrumbs.html" with breadcrumb_parent_url=map_url breadcrumb_parent_label="Global map" breadcrumb_current="Zones" %}
+        <div class="console-page-toolbar !mb-0 !pb-2">
+            {% include "dashboard/partials/console/page_title_bar.html" with page_title="Operations zones" count=zones|length count_suffix="total" %}
+            <div class="console-page-actions">
+                <a href="{% url 'dashboard:site-map' %}" class="btn-console-secondary">Back to map</a>
+                <button type="button" @click="createModal = true" class="btn-console inline-flex items-center gap-2">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                    New zone
+                </button>
+            </div>
+        </div>
+    </div>
+
+    {% if messages %}
+    <div class="space-y-2">
+        {% for msg in messages %}
+        <div class="px-3 py-2 rounded text-[11px] font-bold {% if msg.tags == 'error' %}bg-red-50 border border-red-200 text-red-700 {% elif msg.tags == 'success' %}bg-emerald-50 border border-emerald-200 text-emerald-700 {% else %}bg-blue-50 border border-blue-200 text-blue-700{% endif %}">
+            {{ msg }}
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div class="grid gap-2 sm:grid-cols-4">
+        <div class="console-kpi-tile !rounded-lg !p-3">
+            <p class="console-stat-label">Active zones</p>
+            <p class="console-stat-value-xs mt-1 !text-lg">{{ zone_summary.active }}</p>
+        </div>
+        <div class="console-kpi-tile !rounded-lg !p-3">
+            <p class="console-stat-label">Hidden zones</p>
+            <p class="console-stat-value-xs mt-1 !text-lg">{{ zone_summary.hidden }}</p>
+        </div>
+        <div class="console-kpi-tile !rounded-lg !p-3">
+            <p class="console-stat-label">Assigned sites</p>
+            <p class="console-stat-value-xs mt-1 !text-lg">{{ zone_summary.assigned_sites }}</p>
+        </div>
+        <div class="console-kpi-tile !rounded-lg !p-3">
+            <p class="console-stat-label">Unassigned sites</p>
+            <p class="console-stat-value-xs mt-1 !text-lg">{{ zone_summary.unassigned_sites }}</p>
+        </div>
+    </div>
+
+    <div class="console-table-card">
+        <div class="flex flex-col gap-2 border-b border-slate-100 px-4 py-3 dark:border-slate-800 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+                <h2 class="console-panel-title">Zone management</h2>
+                <p class="console-meta mt-0.5">Create zones here, then assign sites from the site profile.</p>
+            </div>
+            <a href="{% url 'dashboard:sites' %}" class="btn-console-secondary shrink-0 py-1.5 text-[11px]">Site directory</a>
+        </div>
+        <div class="console-table-wrap console-table-wrap--scroll">
+            <table class="console-table min-w-[640px]">
+                <thead class="console-thead">
+                    <tr>
+                        <th scope="col" class="console-th">Zone</th>
+                        <th scope="col" class="console-th">Order</th>
+                        <th scope="col" class="console-th">Sites</th>
+                        <th scope="col" class="console-th">Status</th>
+                        <th scope="col" class="console-th text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="console-tbody">
+                    {% for zone in zones %}
+                    <tr class="hover:bg-slate-50/50 transition-colors">
+                        <td class="console-td">
+                            <div class="flex items-center gap-2">
+                                <button type="button"
+                                        @click="expandedZones['{{ zone.pk }}'] = !expandedZones['{{ zone.pk }}']"
+                                        :aria-expanded="expandedZones['{{ zone.pk }}'] ? 'true' : 'false'"
+                                        aria-controls="zone-sites-{{ zone.pk }}"
+                                        class="btn-console-secondary border-slate-200 p-1 hover:border-brand/20 hover:text-brand"
+                                        title="Show related sites">
+                                    <svg :class="expandedZones['{{ zone.pk }}'] ? 'rotate-90' : ''" class="transition-transform" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="m9 18 6-6-6-6"/></svg>
+                                </button>
+                                <span class="w-3 h-3 flex-shrink-0 rounded-full" style="background-color: {{ zone.color }}"></span>
+                                <p class="text-[11px] font-semibold tracking-tight text-slate-900 dark:text-slate-100">{{ zone.name }}</p>
+                            </div>
+                            {% if zone.description %}<p class="console-meta ml-5 mt-0.5">{{ zone.description }}</p>{% endif %}
+                        </td>
+                        <td class="console-td">
+                            <span class="console-row-title tabular-nums">{{ zone.sort_order }}</span>
+                        </td>
+                        <td class="console-td">
+                            <a href="{% url 'dashboard:sites' %}?zone={{ zone.pk }}" class="console-row-title tabular-nums text-brand hover:underline">{{ zone.site_count }}</a>
+                        </td>
+                        <td class="console-td">
+                            {% if zone.is_active %}
+                            <span class="badge-console badge-console-emerald">Active</span>
+                            {% else %}
+                            <span class="badge-console badge-console-slate">Hidden</span>
+                            {% endif %}
+                        </td>
+                        <td class="console-td text-right">
+                            <div class="flex items-center justify-end gap-1.5">
+                                <button type="button" @click="editModal = '{{ zone.pk }}'"
+                                        class="btn-console-secondary border-slate-200 p-1.5 hover:border-brand/20 hover:text-brand" title="Edit">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                </button>
+                                <button type="button" @click="deleteModal = '{{ zone.pk }}'"
+                                        class="btn-console-secondary border-slate-200 p-1.5 hover:border-red-200 hover:text-red-500" title="Delete">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="3 6 5 6 21 6"/><path d="M19 6 18 20H6L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4h6v2"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr id="zone-sites-{{ zone.pk }}" x-show="expandedZones['{{ zone.pk }}']" x-cloak>
+                        <td colspan="5" class="border-b border-slate-100 bg-slate-50/70 px-4 py-3 dark:border-slate-800 dark:bg-slate-900/40">
+                            {% if zone.sites.all %}
+                            <div class="overflow-hidden rounded border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-950">
+                                <table class="w-full min-w-[560px] text-left">
+                                    <thead class="bg-slate-50 text-[10px] font-bold uppercase tracking-wide text-slate-400 dark:bg-slate-900 dark:text-slate-500">
+                                        <tr>
+                                            <th class="px-3 py-2">Site</th>
+                                            <th class="px-3 py-2">Location</th>
+                                            <th class="px-3 py-2">Hik site ID</th>
+                                            <th class="px-3 py-2">Status</th>
+                                            <th class="px-3 py-2 text-right">Open</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                                        {% for site in zone.sites.all %}
+                                        <tr>
+                                            <td class="px-3 py-2">
+                                                <a href="{% url 'dashboard:site-console' site.pk %}" class="text-[11px] font-semibold text-slate-900 hover:text-brand dark:text-slate-100">{{ site.name }}</a>
+                                                {% if site.address %}<p class="console-meta mt-0.5">{{ site.address }}</p>{% endif %}
+                                            </td>
+                                            <td class="px-3 py-2 text-[11px] font-medium text-slate-600 dark:text-slate-300">
+                                                {% if site.city or site.country %}
+                                                {{ site.city }}{% if site.city and site.country %}, {% endif %}{{ site.country }}
+                                                {% else %}
+                                                <span class="console-meta">Not set</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-3 py-2 font-mono text-[10px] text-slate-500">{{ site.hik_site_id }}</td>
+                                            <td class="px-3 py-2">
+                                                {% if site.is_active %}
+                                                <span class="badge-console badge-console-emerald">Active</span>
+                                                {% else %}
+                                                <span class="badge-console badge-console-slate">Inactive</span>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-3 py-2 text-right">
+                                                <a href="{% url 'dashboard:site-console' site.pk %}" class="btn-console-secondary border-slate-200 px-2 py-1 text-[10px] hover:border-brand/20 hover:text-brand">View</a>
+                                            </td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                            {% else %}
+                            <div class="rounded border border-dashed border-slate-200 bg-white px-3 py-4 text-center text-[11px] font-semibold text-slate-400 dark:border-slate-800 dark:bg-slate-950">
+                                No sites assigned to this zone.
+                            </div>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="console-td px-4 py-16 text-center text-xs text-slate-400">
+                            No zones yet. Create zones to group sites and guards on the global map.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% for zone in zones %}
+    <template x-if="editModal === '{{ zone.pk }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit Zone" modal_subtitle=zone.name modal_close="editModal = null" modal_max_width="max-w-sm" %}
+                <form action="{% url 'dashboard:map-zone-update' zone.pk %}" method="POST" class="form-perfex space-y-4">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Zone name</label>
+                        <input type="text" name="name" required value="{{ zone.name }}" class="w-full" data-modal-initial-focus>
+                    </div>
+                    <div class="form-group">
+                        <label>Colour</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" name="color" value="{{ zone.color }}" class="w-10 h-9 rounded border border-slate-200 cursor-pointer p-0.5">
+                            <span class="text-[10px] text-slate-400 font-semibold">Map marker colour</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Sort order</label>
+                        <input type="number" name="sort_order" min="0" value="{{ zone.sort_order }}" class="w-full">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" name="description" placeholder="Optional" value="{{ zone.description }}" class="w-full">
+                    </div>
+                    <label class="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
+                        <span class="console-row-title">Active on map</span>
+                        <input type="checkbox" name="is_active" class="h-3 w-3 rounded text-brand" {% if zone.is_active %}checked{% endif %}>
+                    </label>
+                    <button type="submit" class="btn-console w-full justify-center py-3">Save changes</button>
+                </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="deleteModal === '{{ zone.pk }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Delete Zone" modal_subtitle="Sites will become unassigned" modal_close="deleteModal = null" modal_max_width="max-w-sm" %}
+                <p class="text-sm text-slate-600 dark:text-slate-300">Delete <strong class="text-slate-900 dark:text-slate-100">{{ zone.name }}</strong>? Assigned sites will appear under Unassigned on the map.</p>
+                    <form action="{% url 'dashboard:map-zone-delete' zone.pk %}" method="POST" class="mt-4 flex gap-2">
+                        {% csrf_token %}
+                        <button type="button" @click="deleteModal = null" class="btn-console-secondary flex-1 justify-center py-2.5">Cancel</button>
+                        <button type="submit" class="btn-console-danger flex-1 justify-center border-transparent bg-red-600 py-2.5 text-white hover:bg-red-700">Delete</button>
+                    </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    <template x-if="createModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="New Zone" modal_close="createModal = false" modal_max_width="max-w-sm" modal_title_id="zone-create-modal-title" %}
+                <form action="{% url 'dashboard:map-zones' %}" method="POST" class="form-perfex space-y-4">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Zone name</label>
+                        <input type="text" name="name" required placeholder="e.g. Accra Central, East Legon…" class="w-full" data-modal-initial-focus>
+                    </div>
+                    <div class="form-group">
+                        <label>Colour</label>
+                        <div class="flex items-center gap-2">
+                            <input type="color" name="color" value="#6366f1" class="w-10 h-9 rounded border border-slate-200 cursor-pointer p-0.5">
+                            <span class="text-[10px] text-slate-400 font-semibold">Map marker colour</span>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Sort order</label>
+                        <input type="number" name="sort_order" min="0" value="0" class="w-full">
+                    </div>
+                    <div class="form-group">
+                        <label>Description</label>
+                        <input type="text" name="description" placeholder="Optional" class="w-full">
+                    </div>
+                    <button type="submit" class="btn-console w-full justify-center py-3">Create zone</button>
+                </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+</div>
+{% endblock %}

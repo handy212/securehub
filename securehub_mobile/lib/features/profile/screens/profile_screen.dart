@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/auth/auth_notifier.dart';
 import '../../../core/biometric/biometric_lock_service.dart';
@@ -23,7 +22,7 @@ class ProfileScreen extends ConsumerWidget {
       appBar: AppBar(
         title: Text(
           'Profile',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
             fontSize: 17,
             letterSpacing: -0.5,
@@ -60,7 +59,7 @@ class ProfileScreen extends ConsumerWidget {
                         profile?.user.lastName,
                         profile?.user.username,
                       ),
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 32,
                         color: AppTheme.onPrimary,
                         fontWeight: FontWeight.w800,
@@ -77,7 +76,7 @@ class ProfileScreen extends ConsumerWidget {
                         ? '${profile.user.firstName} ${profile.user.lastName}'
                               .trim()
                         : profile.user.username,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w800,
                       letterSpacing: -0.5,
@@ -87,7 +86,7 @@ class ProfileScreen extends ConsumerWidget {
                   const SizedBox(height: 4),
                   Text(
                     '@${profile.user.username}',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       color: AppTheme.onSurfaceVariant,
                       fontSize: 14,
                       fontWeight: FontWeight.w500,
@@ -118,7 +117,7 @@ class ProfileScreen extends ConsumerWidget {
                         const SizedBox(width: 8),
                         Text(
                           'MONITORED ACCOUNT',
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             fontSize: 10,
                             fontWeight: FontWeight.w900,
                             letterSpacing: 1.2,
@@ -168,43 +167,47 @@ class ProfileScreen extends ConsumerWidget {
 
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: Container(
-              decoration: BoxDecoration(
-                color: AppTheme.error.withValues(alpha: 0.04),
-                borderRadius: BorderRadius.circular(20),
-                border: Border.all(
-                  color: AppTheme.error.withValues(alpha: 0.1),
-                ),
-              ),
-              child: ListTile(
-                onTap: () {
-                  HapticFeedback.mediumImpact();
-                  _showLogoutDialog(context, ref);
-                },
-                leading: Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
+            child: Material(
+              color: AppTheme.error.withValues(alpha: 0.04),
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
+              child: Container(
+                decoration: BoxDecoration(
+                  border: Border.all(
                     color: AppTheme.error.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Icon(
-                    Icons.logout_rounded,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: ListTile(
+                  onTap: () {
+                    HapticFeedback.mediumImpact();
+                    _showLogoutDialog(context, ref);
+                  },
+                  leading: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: AppTheme.error.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(
+                      Icons.logout_rounded,
+                      color: AppTheme.error,
+                      size: 20,
+                    ),
+                  ),
+                  title: Text(
+                    'Sign out of session',
+                    style: TextStyle(
+                      color: AppTheme.error,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
+                    ),
+                  ),
+                  trailing: const Icon(
+                    Icons.chevron_right_rounded,
                     color: AppTheme.error,
                     size: 20,
                   ),
-                ),
-                title: Text(
-                  'Sign out of session',
-                  style: GoogleFonts.inter(
-                    color: AppTheme.error,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                  ),
-                ),
-                trailing: const Icon(
-                  Icons.chevron_right_rounded,
-                  color: AppTheme.error,
-                  size: 20,
                 ),
               ),
             ),
@@ -226,7 +229,7 @@ class ProfileScreen extends ConsumerWidget {
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(28)),
         title: Text(
           'Sign Out',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontWeight: FontWeight.w800,
             color: AppTheme.primary,
             letterSpacing: -0.5,
@@ -234,7 +237,7 @@ class ProfileScreen extends ConsumerWidget {
         ),
         content: Text(
           'Are you sure you want to sign out on this device?',
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: AppTheme.onSurfaceVariant,
             fontSize: 14,
             height: 1.4,
@@ -245,7 +248,7 @@ class ProfileScreen extends ConsumerWidget {
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
               'CANCEL',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.onSurfaceVariant,
                 fontWeight: FontWeight.w600,
               ),
@@ -350,7 +353,7 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
             'APP SECURITY',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.5,
@@ -358,11 +361,10 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(20),
-          ),
+        Material(
+          color: AppTheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
           child: SwitchListTile(
             secondary: Container(
               padding: const EdgeInsets.all(8),
@@ -378,7 +380,7 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
             ),
             title: Text(
               'Identity verification',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontWeight: FontWeight.w700,
                 fontSize: 14,
               ),
@@ -387,7 +389,7 @@ class _BiometricTileState extends ConsumerState<_BiometricTile> {
               _available
                   ? 'Require Face ID or fingerprint to reopen the app'
                   : 'Require Face ID or fingerprint to reopen the app.',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 12,
                 color: AppTheme.onSurfaceVariant,
               ),
@@ -432,7 +434,7 @@ class _SiteSection extends ConsumerWidget {
               padding: const EdgeInsets.only(left: 4, bottom: 12),
               child: Text(
                 'ACTIVE SITE',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
@@ -440,11 +442,10 @@ class _SiteSection extends ConsumerWidget {
                 ),
               ),
             ),
-            Container(
-              decoration: BoxDecoration(
-                color: AppTheme.surfaceContainerLow,
-                borderRadius: BorderRadius.circular(20),
-              ),
+            Material(
+              color: AppTheme.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(20),
+              clipBehavior: Clip.antiAlias,
               child: ListTile(
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 20,
@@ -464,7 +465,7 @@ class _SiteSection extends ConsumerWidget {
                 ),
                 title: Text(
                   selectedSite.name,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                   ),
@@ -473,7 +474,7 @@ class _SiteSection extends ConsumerWidget {
                   selectedSite.city.isNotEmpty
                       ? selectedSite.city
                       : 'Authorized Hub',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 12,
                     color: AppTheme.onSurfaceVariant,
                   ),
@@ -533,7 +534,7 @@ class _SiteSection extends ConsumerWidget {
               const SizedBox(height: 32),
               Text(
                 'SWITCH ACTIVE SITE',
-                style: GoogleFonts.inter(
+                style: TextStyle(
                   fontSize: 10,
                   fontWeight: FontWeight.w800,
                   letterSpacing: 1.5,
@@ -548,52 +549,58 @@ class _SiteSection extends ConsumerWidget {
                   itemBuilder: (context, i) {
                     final site = sites[i];
                     final isSelected = site.id == currentId;
-                    return Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      decoration: BoxDecoration(
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 8),
+                      child: Material(
                         color: isSelected
                             ? AppTheme.primary.withValues(alpha: 0.04)
                             : Colors.transparent,
                         borderRadius: BorderRadius.circular(16),
-                        border: Border.all(
-                          color: isSelected
-                              ? AppTheme.primary.withValues(alpha: 0.1)
-                              : Colors.transparent,
-                        ),
-                      ),
-                      child: GestureDetector(
-                        onTapDown: (_) => HapticFeedback.selectionClick(),
-                        child: ListTile(
-                          leading: Icon(
-                            Icons.business_rounded,
-                            color: isSelected
-                                ? AppTheme.primary
-                                : AppTheme.outlineVariant,
-                          ),
-                          title: Text(
-                            site.name,
-                            style: GoogleFonts.inter(
-                              fontWeight: isSelected
-                                  ? FontWeight.w700
-                                  : FontWeight.w500,
+                        clipBehavior: Clip.antiAlias,
+                        child: Container(
+                          decoration: BoxDecoration(
+                            border: Border.all(
                               color: isSelected
-                                  ? AppTheme.primary
-                                  : AppTheme.onSurface,
+                                  ? AppTheme.primary.withValues(alpha: 0.1)
+                                  : Colors.transparent,
+                            ),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: GestureDetector(
+                            onTapDown: (_) => HapticFeedback.selectionClick(),
+                            child: ListTile(
+                              leading: Icon(
+                                Icons.business_rounded,
+                                color: isSelected
+                                    ? AppTheme.primary
+                                    : AppTheme.outlineVariant,
+                              ),
+                              title: Text(
+                                site.name,
+                                style: TextStyle(
+                                  fontWeight: isSelected
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  color: isSelected
+                                      ? AppTheme.primary
+                                      : AppTheme.onSurface,
+                                ),
+                              ),
+                              trailing: isSelected
+                                  ? const Icon(
+                                      Icons.check_circle_rounded,
+                                      color: AppTheme.secondary,
+                                    )
+                                  : null,
+                              onTap: () {
+                                HapticFeedback.mediumImpact();
+                                ref
+                                    .read(selectedSiteProvider.notifier)
+                                    .select(site.id);
+                                Navigator.pop(context);
+                              },
                             ),
                           ),
-                          trailing: isSelected
-                              ? const Icon(
-                                  Icons.check_circle_rounded,
-                                  color: AppTheme.secondary,
-                                )
-                              : null,
-                          onTap: () {
-                            HapticFeedback.mediumImpact();
-                            ref
-                                .read(selectedSiteProvider.notifier)
-                                .select(site.id);
-                            Navigator.pop(context);
-                          },
                         ),
                       ),
                     );
@@ -622,7 +629,7 @@ class _ProfileSection extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 12),
           child: Text(
             title.toUpperCase(),
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.5,
@@ -630,11 +637,10 @@ class _ProfileSection extends StatelessWidget {
             ),
           ),
         ),
-        Container(
-          decoration: BoxDecoration(
-            color: AppTheme.surfaceContainerLow,
-            borderRadius: BorderRadius.circular(20),
-          ),
+        Material(
+          color: AppTheme.surfaceContainerLow,
+          borderRadius: BorderRadius.circular(20),
+          clipBehavior: Clip.antiAlias,
           child: Column(children: children),
         ),
       ],
@@ -655,34 +661,38 @@ class _InfoTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ListTile(
-      contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-      leading: Container(
-        padding: const EdgeInsets.all(8),
-        decoration: BoxDecoration(
-          color: AppTheme.surfaceContainerLowest,
-          borderRadius: BorderRadius.circular(10),
+    return Material(
+      color: Colors.transparent,
+      child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
+        leading: Container(
+          padding: const EdgeInsets.all(8),
+          decoration: BoxDecoration(
+            color: AppTheme.surfaceContainerLowest,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: AppTheme.primary, size: 20),
         ),
-        child: Icon(icon, color: AppTheme.primary, size: 20),
-      ),
-      title: Text(
-        label,
-        style: GoogleFonts.inter(
-          fontSize: 11,
-          fontWeight: FontWeight.w600,
-          color: AppTheme.onSurfaceVariant,
-          letterSpacing: 0.2,
+        title: Text(
+          label,
+          style: TextStyle(
+            fontSize: 11,
+            fontWeight: FontWeight.w600,
+            color: AppTheme.onSurfaceVariant,
+            letterSpacing: 0.2,
+          ),
         ),
-      ),
-      subtitle: Text(
-        value,
-        style: GoogleFonts.inter(
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
-          color: AppTheme.primary,
-          letterSpacing: -0.2,
+        subtitle: Text(
+          value,
+          style: TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.primary,
+            letterSpacing: -0.2,
+          ),
         ),
       ),
     );
   }
 }
+

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../../core/models/site.dart';
 import '../../../core/theme/app_theme.dart';
@@ -85,10 +84,11 @@ class _HealthTag extends StatelessWidget {
           Icon(icon, size: 10, color: onColor),
           const SizedBox(width: 4),
           Text(label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                   fontSize: 9, color: onColor, fontWeight: FontWeight.w700)),
         ],
       ),
     );
   }
 }
+

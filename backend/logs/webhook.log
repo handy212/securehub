@@ -1,4 +1,2 @@
-DEBUG 2026-04-23 10:59:42,740 client 298031 REQ[7ce29842] POST /api/hpcgw/webhook/v1/config/save
 Detecting ngrok tunnel...
-Registering Webhook: https://8ef3-197-251-215-82.ngrok-free.app/api/v1/alarms/webhook/
-✕ Connection error: Hik-Partner API error CCF000001: unknown error (path=/api/hpcgw/webhook/v1/config/save, req=7ce29842)
+No active ngrok tunnels found. Is ngrok running?

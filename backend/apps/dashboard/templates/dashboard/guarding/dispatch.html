@@ -1,0 +1,379 @@
+{% extends "dashboard/base.html" %}
+{% load guarding_location %}
+{% block title %}Dispatch / SOS | SecureHub{% endblock %}
+{% block header_title %}Guard Dispatch{% endblock %}
+{% block content %}
+{% include "dashboard/guarding/_nav.html" %}
+{{ dispatch_tab_counts|json_script:"dispatch-poll-data" }}
+<div class="space-y-3" @click.window="enableAlertSound()" x-data="{
+        tab: (() => {
+            const allowed = ['sos', 'tasks', 'policies'];
+            const fromUrl = new URLSearchParams(window.location.search).get('tab');
+            if (allowed.includes(fromUrl)) return fromUrl;
+            return {% if counts.open_panic %}'sos'{% elif counts.open_dispatch %}'tasks'{% else %}'sos'{% endif %};
+        })(),
+        pollCounts: JSON.parse(document.getElementById('dispatch-poll-data').textContent),
+        pollUrl: '{% url 'dashboard:guarding-dispatch-poll' %}',
+        pollHandle: null,
+        pollLabel: 'Counts synced',
+        previousOpenPanic: null,
+        audioCtx: null,
+        soundReady: false,
+        lastAlertSoundAt: 0,
+        createModal: false,
+        panicModal: false,
+        editPanicId: null,
+        editTaskId: null,
+        setTab(name) {
+            this.tab = name;
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', name);
+            window.history.replaceState({}, '', url);
+        },
+        init() {
+            this.refreshDispatchPoll();
+            this.pollHandle = setInterval(() => this.refreshDispatchPoll(), 5000);
+        },
+        destroy() {
+            if (this.pollHandle) clearInterval(this.pollHandle);
+        },
+        refreshDispatchPoll() {
+            fetch(this.pollUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+                .then(r => r.ok ? r.json() : Promise.reject())
+                .then(data => {
+                    if (data.dispatch_tab_counts) {
+                        const nextOpenPanic = data.dispatch_tab_counts.open_panic || 0;
+                        const increased = this.previousOpenPanic !== null && nextOpenPanic > this.previousOpenPanic;
+                        const repeatDue = nextOpenPanic > 0 && Date.now() - this.lastAlertSoundAt > 10000;
+                        if (increased || repeatDue) {
+                            this.playAlertSound();
+                        }
+                        if (increased) {
+                            window.dispatchEvent(new CustomEvent('notify', { detail: { message: 'New guard SOS received', type: 'error' } }));
+                            this.setTab('sos');
+                        }
+                        this.previousOpenPanic = nextOpenPanic;
+                        this.pollCounts = data.dispatch_tab_counts;
+                    }
+                    const t = data.generated_at ? new Date(data.generated_at) : new Date();
+                    this.pollLabel = `Counts synced ${t.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+                })
+                .catch(() => { this.pollLabel = 'Count sync failed'; });
+        },
+        enableAlertSound() {
+            if (this.soundReady) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                this.audioCtx = this.audioCtx || new AudioCtx();
+                this.audioCtx.resume();
+                this.soundReady = true;
+                if ((this.pollCounts.open_panic || 0) > 0) this.playAlertSound();
+            } catch (_) {}
+        },
+        playAlertSound() {
+            if (!this.soundReady) return;
+            try {
+                const AudioCtx = window.AudioContext || window.webkitAudioContext;
+                if (!AudioCtx) return;
+                const ctx = this.audioCtx || new AudioCtx();
+                this.audioCtx = ctx;
+                if (ctx.state === 'suspended') ctx.resume();
+                [0, 180, 360].forEach((offset) => {
+                    const osc = ctx.createOscillator();
+                    const gain = ctx.createGain();
+                    osc.type = 'sine';
+                    osc.frequency.value = 880;
+                    gain.gain.setValueAtTime(0.0001, ctx.currentTime + offset / 1000);
+                    gain.gain.exponentialRampToValueAtTime(0.25, ctx.currentTime + offset / 1000 + 0.02);
+                    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + offset / 1000 + 0.14);
+                    osc.connect(gain);
+                    gain.connect(ctx.destination);
+                    osc.start(ctx.currentTime + offset / 1000);
+                    osc.stop(ctx.currentTime + offset / 1000 + 0.16);
+                });
+                this.lastAlertSoundAt = Date.now();
+            } catch (_) {}
+        },
+    }">
+    <div class="console-page-toolbar !mb-0 !pb-2">
+        <div class="min-w-0 flex-1">
+            {% include "dashboard/partials/console/page_header.html" with page_title="Dispatch / SOS" page_subtitle="Panic response, task queue, and auto-dispatch policies" %}
+        </div>
+        <div class="console-page-actions justify-start sm:justify-end">
+            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[10px] font-medium text-slate-500 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-300" x-text="pollLabel"></span>
+            <span class="inline-flex items-center rounded-full border px-2 py-0.5 text-[10px] font-medium"
+                  :class="soundReady ? 'border-emerald-200 bg-emerald-50 text-emerald-600 dark:border-emerald-900/50 dark:bg-emerald-950/30 dark:text-emerald-400' : 'border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900/50 dark:bg-amber-950/30 dark:text-amber-300'"
+                  x-text="soundReady ? 'Sound armed' : 'Click to enable sound'"></span>
+            <a href="{% url 'dashboard:site-map' %}?focus=guards" class="btn-console-secondary py-1.5 text-[11px]">Field map</a>
+            <button type="button" @click="panicModal = true; setTab('sos')" class="btn-console-secondary border-red-200 text-red-600 hover:bg-red-50 dark:border-red-900/50 dark:text-red-400 dark:hover:bg-red-950/30">Manual SOS</button>
+            <button type="button" @click="createModal = true; setTab('tasks')" class="btn-console-danger">New dispatch</button>
+        </div>
+    </div>
+
+    {% include "dashboard/guarding/_kpi_strip.html" %}
+
+    {% include "dashboard/guarding/_dispatch_tabs.html" %}
+
+    <section x-cloak x-show="tab === 'sos'" role="tabpanel">
+        <div class="console-table-card overflow-hidden border-red-200 dark:border-red-900/40">
+            <div class="console-card-section-title border-b border-red-100 bg-red-50/80 text-red-800 dark:border-red-900/40 dark:bg-red-950/30 dark:text-red-300">
+                SOS / Panic alerts
+            </div>
+            <div class="console-table-wrap console-table-wrap--scroll max-h-[min(70vh,640px)]">
+                <table class="console-table min-w-[820px]">
+                    <thead class="console-thead">
+                        <tr>
+                            <th scope="col" class="console-th">Guard</th>
+                            <th scope="col" class="console-th">Site</th>
+                            <th scope="col" class="console-th">Status</th>
+                            <th scope="col" class="console-th">Opened</th>
+                            <th scope="col" class="console-th text-right">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody class="console-tbody">
+                        {% for alert in panic_alerts %}
+                        <tr class="align-top {% if alert.status == 'open' %}bg-red-50/60 dark:bg-red-950/20{% endif %}">
+                            <td class="console-td">
+                                <div class="console-row-title">{{ alert.guard.full_name }}</div>
+                                <div class="console-meta">{{ alert.note|truncatechars:48|default:"No note" }}</div>
+                            </td>
+                            <td class="console-td">
+                                <div>{{ alert.site.name|default:"—" }}</div>
+                                <div class="console-meta">{{ alert|decoded_location }}</div>
+                                {% with url=alert|maps_url coords=alert|coordinates %}
+                                {% if url %}<a href="{{ url }}" target="_blank" rel="noopener" class="console-text-link text-[11px]">{{ coords }}</a>{% endif %}
+                                {% endwith %}
+                            </td>
+                            <td class="console-td"><span class="badge-console badge-console-red">{{ alert.get_status_display }}</span></td>
+                            <td class="console-td whitespace-nowrap tabular-nums">{{ alert.created_at|date:"Y-m-d H:i" }}</td>
+                            <td class="console-td text-right">
+                                <div class="flex flex-wrap justify-end gap-1.5">
+                                    {% if alert.status == 'open' %}
+                                    <form method="post" action="{% url 'dashboard:guarding-panic-action' alert.id 'acknowledge' %}">{% csrf_token %}<button type="submit" class="btn-console py-1.5 text-[11px]">Ack</button></form>
+                                    {% endif %}
+                                    {% if alert.status != 'resolved' %}
+                                    <form method="post" action="{% url 'dashboard:guarding-panic-action' alert.id 'resolve' %}">{% csrf_token %}<button type="submit" class="btn-console-approve py-1.5 text-[11px]">Resolve</button></form>
+                                    {% endif %}
+                                    <button type="button" class="btn-console-secondary py-1.5 text-[11px]" @click="editPanicId = '{{ alert.id }}'">Edit</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="console-td console-empty-state">No panic alerts.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section x-cloak x-show="tab === 'tasks'" role="tabpanel">
+        <div class="console-table-card overflow-hidden">
+            <div class="console-card-section-title">Dispatch tasks</div>
+            <div class="console-table-wrap console-table-wrap--scroll max-h-[min(70vh,640px)]">
+                <table class="console-table min-w-[920px]">
+                    <thead class="console-thead">
+                        <tr>
+                            <th scope="col" class="console-th">Task</th>
+                            <th scope="col" class="console-th">Guard</th>
+                            <th scope="col" class="console-th">Status</th>
+                            <th scope="col" class="console-th">Priority</th>
+                            <th scope="col" class="console-th text-right">Progress</th>
+                        </tr>
+                    </thead>
+                    <tbody class="console-tbody">
+                        {% for task in dispatch_tasks %}
+                        <tr class="align-top">
+                            <td class="console-td">
+                                <div class="console-row-title">{{ task.title }}</div>
+                                <div class="console-meta">{{ task.site.name|default:"No site" }} · {{ task.description|truncatechars:56|default:"—" }}</div>
+                            </td>
+                            <td class="console-td">{{ task.assigned_guard.full_name|default:"Unassigned" }}</td>
+                            <td class="console-td"><span class="badge-console badge-console-slate">{{ task.get_status_display }}</span></td>
+                            <td class="console-td">
+                                <span class="badge-console {% if task.priority == 'critical' or task.priority == 'high' %}badge-console-amber{% else %}badge-console-slate{% endif %}">{{ task.get_priority_display }}</span>
+                            </td>
+                            <td class="console-td text-right">
+                                <div class="flex flex-wrap justify-end gap-1">
+                                    {% if task.status == 'open' %}
+                                    <form method="post" class="inline-flex flex-wrap items-center gap-1" action="{% url 'dashboard:guarding-dispatch-action' task.id 'assign' %}">
+                                        {% csrf_token %}
+                                        <select name="guard_id" class="console-inline-select h-7 max-w-[8.5rem] py-0 text-[11px]">{% for guard in guards %}<option value="{{ guard.id }}">{{ guard.full_name }}</option>{% endfor %}</select>
+                                        <button type="submit" class="btn-console py-1 text-[11px]">Assign</button>
+                                    </form>
+                                    {% endif %}
+                                    {% if task.status == 'assigned' %}
+                                    <form method="post" action="{% url 'dashboard:guarding-dispatch-action' task.id 'accept' %}">{% csrf_token %}<button type="submit" class="btn-console py-1 text-[11px]">Accept</button></form>
+                                    {% endif %}
+                                    {% if task.status == 'accepted' %}
+                                    <form method="post" action="{% url 'dashboard:guarding-dispatch-action' task.id 'en-route' %}">{% csrf_token %}<button type="submit" class="btn-console-secondary py-1 text-[11px]">En route</button></form>
+                                    {% endif %}
+                                    {% if task.status == 'en_route' %}
+                                    <form method="post" action="{% url 'dashboard:guarding-dispatch-action' task.id 'arrive' %}">{% csrf_token %}<button type="submit" class="btn-console py-1 text-[11px]">Arrive</button></form>
+                                    {% endif %}
+                                    {% if task.status == 'arrived' %}
+                                    <form method="post" action="{% url 'dashboard:guarding-dispatch-action' task.id 'resolve' %}">{% csrf_token %}<button type="submit" class="btn-console-approve py-1 text-[11px]">Resolve</button></form>
+                                    {% endif %}
+                                    {% if task.status != 'resolved' and task.status != 'cancelled' %}
+                                    <form method="post" action="{% url 'dashboard:guarding-dispatch-action' task.id 'cancel' %}">{% csrf_token %}<button type="submit" class="btn-console-danger py-1 text-[11px]">Cancel</button></form>
+                                    {% endif %}
+                                    <button type="button" class="btn-console-secondary py-1 text-[11px]" @click="editTaskId = '{{ task.id }}'">Edit</button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr><td colspan="5" class="console-td console-empty-state">No dispatch tasks.</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section x-cloak x-show="tab === 'policies'" role="tabpanel" class="space-y-3">
+        <div class="console-table-card p-3">
+            <p class="console-label text-slate-500">When enabled, emergencies and/or alarms automatically create guard dispatch tasks for the site.</p>
+        </div>
+        <div class="space-y-3">
+            {% for row in site_dispatch_policies %}
+            {% with policy=row.policy site=row.site %}
+            <div class="console-table-card overflow-hidden">
+                <form method="post" class="space-y-3 p-3 sm:p-4">
+                    {% csrf_token %}
+                    <input type="hidden" name="action" value="save_dispatch_policy">
+                    <input type="hidden" name="site_id" value="{{ site.id }}">
+                    <div class="flex flex-wrap items-start justify-between gap-3 border-b border-slate-100 pb-3 dark:border-slate-800">
+                        <div class="min-w-0">
+                            <p class="console-row-title">{{ site.name }}</p>
+                            <p class="console-meta">{% if policy and policy.is_active %}Policy active{% elif policy %}Policy paused{% else %}No policy — defaults on save{% endif %}</p>
+                        </div>
+                        <button type="submit" class="btn-console shrink-0 py-1.5 text-[11px]">Save</button>
+                    </div>
+                    <div class="flex flex-wrap gap-x-4 gap-y-2 console-label text-slate-600 dark:text-slate-400">
+                        <label class="inline-flex items-center gap-1.5"><input type="checkbox" name="is_active" {% if not policy or policy.is_active %}checked{% endif %}> Active</label>
+                        <label class="inline-flex items-center gap-1.5"><input type="checkbox" name="auto_from_emergency" {% if not policy or policy.auto_from_emergency %}checked{% endif %}> Emergency → dispatch</label>
+                        <label class="inline-flex items-center gap-1.5"><input type="checkbox" name="auto_from_alarm" {% if policy and policy.auto_from_alarm %}checked{% endif %}> Alarm → dispatch</label>
+                        <label class="inline-flex items-center gap-1.5"><input type="checkbox" name="auto_assign_nearest" {% if policy and policy.auto_assign_nearest %}checked{% endif %}> Auto-assign nearest</label>
+                    </div>
+                    <div class="grid gap-2 sm:max-w-xs">
+                        <label class="console-label text-slate-500">
+                            Default priority
+                            <select name="default_priority" class="console-inline-select mt-1 w-full">
+                                {% for value,label in priorities %}
+                                <option value="{{ value }}" {% if policy and policy.default_priority == value %}selected{% elif not policy and value == 'high' %}selected{% endif %}>{{ label }}</option>
+                                {% endfor %}
+                            </select>
+                        </label>
+                    </div>
+                    <details class="group rounded-lg border border-slate-100 bg-slate-50/50 dark:border-slate-800 dark:bg-slate-900/40">
+                        <summary class="cursor-pointer list-none px-3 py-2 console-label text-slate-500 marker:content-none [&::-webkit-details-marker]:hidden">
+                            <span class="group-open:hidden">Show alarm severities</span>
+                            <span class="hidden group-open:inline">Hide alarm severities</span>
+                        </summary>
+                        <div class="flex flex-wrap gap-x-3 gap-y-2 border-t border-slate-100 px-3 py-2 console-label text-slate-600 dark:border-slate-800 dark:text-slate-400">
+                            {% for value,label in alarm_severity_options %}
+                            <label class="inline-flex items-center gap-1">
+                                <input type="checkbox" name="alarm_severities" value="{{ value }}" {% if policy and value in policy.alarm_severities %}checked{% endif %}>
+                                {{ label }}
+                            </label>
+                            {% endfor %}
+                            <span class="w-full text-[10px] text-slate-400">Leave empty to include all severities.</span>
+                        </div>
+                    </details>
+                </form>
+            </div>
+            {% endwith %}
+            {% empty %}
+            <p class="console-empty-state console-table-card">No sites available.</p>
+            {% endfor %}
+        </div>
+    </section>
+
+    {% for alert in panic_alerts %}
+    <template x-if="editPanicId === '{{ alert.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit panic alert" modal_subtitle=alert.guard.full_name modal_close="editPanicId = null" modal_max_width="max-w-2xl" modal_title_id="panic-edit-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="update_panic_alert"><input type="hidden" name="alert_id" value="{{ alert.id }}">
+            <div class="grid gap-2 sm:grid-cols-2">
+                <select name="guard_id" required data-modal-initial-focus>{% for guard in guards %}<option value="{{ guard.id }}" {% if alert.guard_id == guard.id %}selected{% endif %}>{{ guard.full_name }}</option>{% endfor %}</select>
+                <select name="site_id"><option value="">No site</option>{% for site in sites %}<option value="{{ site.id }}" {% if alert.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}</select>
+            </div>
+            <select name="assignment_id"><option value="">No assignment</option>{% for assignment in assignments %}<option value="{{ assignment.id }}" {% if alert.assignment_id == assignment.id %}selected{% endif %}>{{ assignment.guard.full_name }} · {{ assignment.shift.post.name }}</option>{% endfor %}</select>
+            <select name="status">{% for value,label in panic_statuses %}<option value="{{ value }}" {% if alert.status == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            <div class="grid grid-cols-3 gap-2"><input name="latitude" value="{{ alert.latitude|default:'' }}" placeholder="Latitude"><input name="longitude" value="{{ alert.longitude|default:'' }}" placeholder="Longitude"><input name="accuracy_m" value="{{ alert.accuracy_m|default:'' }}" placeholder="Accuracy"></div>
+            <textarea name="note" class="w-full" placeholder="Note">{{ alert.note }}</textarea>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="editPanicId = null">Cancel</button>
+                <button type="submit" class="btn-console">Save</button>
+            </div>
+        </form>
+        <form method="post" class="px-5 pb-5">{% csrf_token %}<input type="hidden" name="action" value="delete_panic_alert"><input type="hidden" name="alert_id" value="{{ alert.id }}"><button type="submit" class="btn-console-danger" onclick="return confirm('Delete alert?');">Delete</button></form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for task in dispatch_tasks %}
+    <template x-if="editTaskId === '{{ task.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit dispatch task" modal_subtitle=task.title modal_close="editTaskId = null" modal_max_width="max-w-2xl" modal_title_id="task-edit-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="update_task"><input type="hidden" name="task_id" value="{{ task.id }}">
+            <input name="title" value="{{ task.title }}" required placeholder="Task title" data-modal-initial-focus>
+            <div class="grid gap-2 sm:grid-cols-3">
+                <select name="site_id"><option value="">No site</option>{% for site in sites %}<option value="{{ site.id }}" {% if task.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}</select>
+                <select name="guard_id"><option value="">Unassigned</option>{% for guard in guards %}<option value="{{ guard.id }}" {% if task.assigned_guard_id == guard.id %}selected{% endif %}>{{ guard.full_name }}</option>{% endfor %}</select>
+                <select name="priority">{% for value,label in priorities %}<option value="{{ value }}" {% if task.priority == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select>
+            </div>
+            <textarea name="description" class="w-full" placeholder="Task details">{{ task.description }}</textarea>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="editTaskId = null">Cancel</button>
+                <button type="submit" class="btn-console">Save</button>
+            </div>
+        </form>
+        <form method="post" class="px-5 pb-5">{% csrf_token %}<input type="hidden" name="action" value="delete_task"><input type="hidden" name="task_id" value="{{ task.id }}"><button type="submit" class="btn-console-danger" onclick="return confirm('Delete task?');">Delete</button></form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    <template x-if="createModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Create dispatch task" modal_close="createModal = false" modal_max_width="max-w-2xl" modal_title_id="dispatch-create-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="task">
+            <input name="title" required placeholder="Task title" class="w-full" data-modal-initial-focus>
+            <div class="grid gap-3 sm:grid-cols-3">
+                <select name="site_id"><option value="">No site</option>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select>
+                <select name="guard_id"><option value="">Unassigned</option>{% for guard in guards %}<option value="{{ guard.id }}">{{ guard.full_name }}</option>{% endfor %}</select>
+                <select name="priority">{% for value,label in priorities %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+            </div>
+            <textarea name="description" placeholder="Task details" class="w-full"></textarea>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="createModal = false">Cancel</button>
+                <button type="submit" class="btn-console-danger">Create</button>
+            </div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="panicModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Create panic alert" modal_close="panicModal = false" modal_max_width="max-w-2xl" modal_title_id="panic-create-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="panic_alert">
+            <div class="grid gap-3 sm:grid-cols-3">
+                <select name="guard_id" required data-modal-initial-focus>{% for guard in guards %}<option value="{{ guard.id }}">{{ guard.full_name }}</option>{% endfor %}</select>
+                <select name="site_id"><option value="">No site</option>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select>
+                <select name="status">{% for value,label in panic_statuses %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select>
+            </div>
+            <select name="assignment_id"><option value="">No assignment</option>{% for assignment in assignments %}<option value="{{ assignment.id }}">{{ assignment.guard.full_name }} · {{ assignment.shift.post.name }}</option>{% endfor %}</select>
+            <div class="grid gap-3 sm:grid-cols-3"><input name="latitude" placeholder="Latitude"><input name="longitude" placeholder="Longitude"><input name="accuracy_m" placeholder="Accuracy m"></div>
+            <textarea name="note" placeholder="Alert note" class="w-full"></textarea>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="panicModal = false">Cancel</button>
+                <button type="submit" class="btn-console-danger">Create SOS</button>
+            </div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+</div>
+</div>
+</div>
+{% endblock %}

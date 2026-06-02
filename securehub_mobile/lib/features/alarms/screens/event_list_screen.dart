@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 
 import '../../../core/models/alarm_event.dart';
@@ -76,13 +75,13 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text('Security Log',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                           fontSize: 28,
                           fontWeight: FontWeight.w800,
                           color: AppTheme.primary,
                           letterSpacing: -0.5)),
                   Text('Chronological audit of all activity',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                           fontSize: 12, color: AppTheme.onSurfaceVariant)),
                 ],
               ),
@@ -120,7 +119,7 @@ class _EventListScreenState extends ConsumerState<EventListScreen> {
                         ),
                         const SizedBox(height: 24),
                         Text('No activity recorded',
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 fontSize: 18,
                                 color: AppTheme.primary)),
@@ -208,7 +207,7 @@ class _EventGroup extends StatelessWidget {
           padding: const EdgeInsets.only(left: 4, bottom: 12, top: 12),
           child: Text(
             date.toUpperCase(),
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 1.5,
@@ -287,7 +286,7 @@ class _EventTile extends StatelessWidget {
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(event.displayTitle.toUpperCase(),
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                                 fontWeight: FontWeight.w900,
                                 fontSize: 13,
                                 letterSpacing: 0.2,
@@ -296,7 +295,7 @@ class _EventTile extends StatelessWidget {
                           const SizedBox(height: 2),
                           Text(
                             event.displaySubtitle,
-                            style: GoogleFonts.inter(
+                            style: TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.w600,
                                 color: AppTheme.onSurfaceVariant),
@@ -397,7 +396,7 @@ class _ErrorBody extends StatelessWidget {
             const SizedBox(height: 12),
             Text(message,
                 textAlign: TextAlign.center,
-                style: const TextStyle(color: AppTheme.onSurfaceVariant)),
+                style: TextStyle(color: AppTheme.onSurfaceVariant)),
             const SizedBox(height: 16),
             FilledButton(onPressed: onRetry, child: const Text('Retry')),
           ],
@@ -406,3 +405,5 @@ class _ErrorBody extends StatelessWidget {
     );
   }
 }
+
+

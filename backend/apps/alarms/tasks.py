@@ -1,13 +1,63 @@
 import logging
+import tempfile
 import uuid
+import zlib
+from contextlib import contextmanager
+from pathlib import Path
 
 from celery import shared_task
 from django.conf import settings
+from django.db import connection
 from django.utils import timezone
 
 from apps.alarms.event_labels import humanize_event_label
 
 logger = logging.getLogger(__name__)
+
+
+@contextmanager
+def _non_overlapping_task_lock(lock_name: str):
+    """
+    Use a Postgres advisory lock to keep slow polling tasks from stacking up.
+    SQLite/dev uses a filesystem lock so multi-process workers do not collide
+    on the single-writer database.
+    """
+    if connection.vendor != "postgresql":
+        try:
+            import fcntl
+        except ImportError:
+            yield True
+            return
+
+        lock_id = zlib.crc32(lock_name.encode("utf-8"))
+        lock_path = Path(tempfile.gettempdir()) / f"securehub-task-{lock_id}.lock"
+        lock_file = lock_path.open("w")
+        acquired = False
+        try:
+            try:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+            except BlockingIOError:
+                acquired = False
+            yield acquired
+        finally:
+            if acquired:
+                fcntl.flock(lock_file.fileno(), fcntl.LOCK_UN)
+            lock_file.close()
+        return
+
+    lock_id = zlib.crc32(lock_name.encode("utf-8"))
+    acquired = False
+    with connection.cursor() as cursor:
+        cursor.execute("SELECT pg_try_advisory_lock(%s)", [lock_id])
+        acquired = bool(cursor.fetchone()[0])
+
+    try:
+        yield acquired
+    finally:
+        if acquired:
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT pg_advisory_unlock(%s)", [lock_id])
 
 
 @shared_task(bind=True, max_retries=3, default_retry_delay=5)
@@ -409,39 +459,10 @@ def _send_generic_fcm_notification(user, title: str, body: str, data: dict = Non
     Core logic to send an FCM push notification to all active devices 
     registered for the user.
     """
-    from apps.accounts.models import FCMDevice
-    from apps.alarms.firebase import get_firebase_messaging
+    from apps.communication.push import send_push_to_user
 
-    messaging = get_firebase_messaging()
-    if messaging is None:
-        return 0
-
-    devices = list(FCMDevice.objects.filter(user=user, is_active=True))
-    if not devices:
-        return 0
-
-    sent = 0
-    for device in devices:
-        try:
-            messaging.send(
-                messaging.Message(
-                    notification=messaging.Notification(title=title, body=body),
-                    data=data or {},
-                    token=device.token,
-                )
-            )
-            sent += 1
-        # messaging.UnregisteredError is the correct name in many firebase-admin versions
-        except Exception as exc:
-            # Check for unregistered token error (platform specific handling)
-            error_code = getattr(exc, "code", "")
-            if error_code == "unregistered" or "registration-token-not-registered" in str(exc):
-                device.is_active = False
-                device.save(update_fields=["is_active", "updated_at"])
-                logger.info("FCM: deactivated stale token for user %s", user.username)
-            else:
-                logger.error("FCM: send failed for user %s: %s", user.username, exc)
-    return sent
+    result = send_push_to_user(user, title=title, body=body, data=data or {})
+    return result.get("sent", 0)
 
 
 def _send_fcm_notification(user, event) -> int:
@@ -585,25 +606,30 @@ def poll_device_health() -> dict:
     from apps.hik_adapter.services import HikPartnerService
     from apps.sites.models import Site
 
-    service = HikPartnerService()
-    if not service.client.is_configured() or service.client.dry_run:
-        return {"skipped": True, "reason": "not configured or dry_run"}
+    with _non_overlapping_task_lock("poll_device_health") as acquired:
+        if not acquired:
+            logger.info("poll_device_health: previous run still active; skipping overlap")
+            return {"skipped": True, "reason": "previous run still active"}
 
-    sites = Site.objects.filter(is_active=True).exclude(hik_site_id="")
-    panels_total = zones_total = errors = 0
+        service = HikPartnerService()
+        if not service.client.is_configured() or service.client.dry_run:
+            return {"skipped": True, "reason": "not configured or dry_run"}
 
-    for site in sites:
-        try:
-            result = service.refresh_site_health(site)
-            panels_total += result.get("panels_updated", 0)
-            zones_total += result.get("zones_updated", 0)
-        except Exception as exc:
-            logger.error(
-                "poll_device_health: failed for site %s: %s", site.name, exc, exc_info=True
-            )
-            errors += 1
+        sites = Site.objects.filter(is_active=True).exclude(hik_site_id="")
+        panels_total = zones_total = errors = 0
 
-    return {"panels_updated": panels_total, "zones_updated": zones_total, "errors": errors}
+        for site in sites:
+            try:
+                result = service.refresh_site_health(site)
+                panels_total += result.get("panels_updated", 0)
+                zones_total += result.get("zones_updated", 0)
+            except Exception as exc:
+                logger.error(
+                    "poll_device_health: failed for site %s: %s", site.name, exc, exc_info=True
+                )
+                errors += 1
+
+        return {"panels_updated": panels_total, "zones_updated": zones_total, "errors": errors}
 
 
 @shared_task
@@ -618,23 +644,204 @@ def sync_all_alarm_status() -> dict:
     from apps.hik_adapter.services import HikPartnerService
     from apps.sites.models import Site
 
+    with _non_overlapping_task_lock("sync_all_alarm_status") as acquired:
+        if not acquired:
+            logger.info("sync_all_alarm_status: previous run still active; skipping overlap")
+            return {"skipped": True, "reason": "previous run still active"}
+
+        service = HikPartnerService()
+        if not service.client.is_configured() or service.client.dry_run:
+            return {"skipped": True, "reason": "not configured or dry_run"}
+
+        sites = Site.objects.filter(is_active=True).exclude(hik_site_id="")
+        errors = 0
+
+        for site in sites:
+            try:
+                service.sync_alarm_status(site)
+            except Exception as exc:
+                logger.error(
+                    "sync_all_alarm_status: failed for site %s: %s", site.name, exc, exc_info=True
+                )
+                errors += 1
+
+        return {"sites_synced": sites.count() - errors, "errors": errors}
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def initial_site_discovery(self, site_id: str) -> dict:
+    """
+    Run the slow Hik-Partner discovery workflow after a site is created.
+    Keeping this out of the staff HTTP request avoids production timeouts while
+    still filling metadata, location, devices, partitions, zones, and health.
+    """
+    from apps.hik_adapter.services import HikPartnerService
+    from apps.sites.models import Site
+
+    try:
+        site = Site.objects.get(id=site_id)
+    except Site.DoesNotExist:
+        return {"skipped": True, "reason": "site not found"}
+
     service = HikPartnerService()
     if not service.client.is_configured() or service.client.dry_run:
         return {"skipped": True, "reason": "not configured or dry_run"}
 
-    sites = Site.objects.filter(is_active=True).exclude(hik_site_id="")
-    errors = 0
+    with _non_overlapping_task_lock(f"hik_site_sync:{site_id}") as acquired:
+        if not acquired:
+            logger.info("initial_site_discovery: sync already active for site %s; skipping overlap", site.name)
+            return {"skipped": True, "reason": "site sync already active"}
 
-    for site in sites:
         try:
+            device_result = service.sync_site_devices(site)
+            if site.latitude is None or site.longitude is None:
+                service.geocode_site_location(site)
             service.sync_alarm_status(site)
+            try:
+                health_result = service.refresh_site_health(site)
+            except Exception as health_exc:
+                logger.warning(
+                    "initial_site_discovery: health refresh failed for site %s: %s",
+                    site.name,
+                    health_exc,
+                )
+                health_result = {"health_warning": str(health_exc)}
         except Exception as exc:
             logger.error(
-                "sync_all_alarm_status: failed for site %s: %s", site.name, exc, exc_info=True
+                "initial_site_discovery: failed for site %s: %s",
+                site.name,
+                exc,
+                exc_info=True,
             )
-            errors += 1
+            raise self.retry(exc=exc)
 
-    return {"sites_synced": sites.count() - errors, "errors": errors}
+    return {
+        "site_id": site_id,
+        "devices_seen": device_result.get("devices_seen", 0),
+        "synced_panels": device_result.get("synced_panels", 0),
+        "panels_updated": health_result.get("panels_updated", 0),
+        "zones_updated": health_result.get("zones_updated", 0),
+    }
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def sync_hik_site_devices(self, site_id: str) -> dict:
+    """Synchronize Hik devices for one site outside the web request."""
+    from apps.hik_adapter.services import HikPartnerService
+    from apps.sites.models import Site
+
+    try:
+        site = Site.objects.get(id=site_id)
+    except Site.DoesNotExist:
+        return {"skipped": True, "reason": "site not found"}
+
+    service = HikPartnerService()
+    if not service.client.is_configured() or service.client.dry_run:
+        return {"skipped": True, "reason": "not configured or dry_run"}
+
+    with _non_overlapping_task_lock(f"hik_site_sync:{site_id}") as acquired:
+        if not acquired:
+            logger.info("sync_hik_site_devices: sync already active for site %s; skipping overlap", site.name)
+            return {"skipped": True, "reason": "site sync already active"}
+
+        try:
+            return service.sync_site_devices(site)
+        except Exception as exc:
+            logger.error("sync_hik_site_devices: failed for site %s: %s", site.name, exc, exc_info=True)
+            raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def sync_hik_alarm_status(self, site_id: str) -> dict:
+    """Synchronize partitions/zones plus health/peripheral data outside the web request."""
+    from apps.hik_adapter.services import HikPartnerService
+    from apps.sites.models import Site
+
+    try:
+        site = Site.objects.get(id=site_id)
+    except Site.DoesNotExist:
+        return {"skipped": True, "reason": "site not found"}
+
+    service = HikPartnerService()
+    if not service.client.is_configured() or service.client.dry_run:
+        return {"skipped": True, "reason": "not configured or dry_run"}
+
+    with _non_overlapping_task_lock(f"hik_site_sync:{site_id}") as acquired:
+        if not acquired:
+            logger.info("sync_hik_alarm_status: sync already active for site %s; skipping overlap", site.name)
+            return {"skipped": True, "reason": "site sync already active"}
+
+        try:
+            device_result = service.sync_site_devices(site)
+            service.sync_alarm_status(site)
+            try:
+                health_result = service.refresh_site_health(site)
+            except Exception as health_exc:
+                logger.warning(
+                    "sync_hik_alarm_status: health refresh failed for site %s: %s",
+                    site.name,
+                    health_exc,
+                )
+                health_result = {"health_warning": str(health_exc)}
+        except Exception as exc:
+            logger.error("sync_hik_alarm_status: failed for site %s: %s", site.name, exc, exc_info=True)
+            raise self.retry(exc=exc)
+
+    return {
+        "site_id": site_id,
+        "devices_seen": device_result.get("devices_seen", 0),
+        "synced_panels": device_result.get("synced_panels", 0),
+        "panels_updated": health_result.get("panels_updated", 0),
+        "zones_updated": health_result.get("zones_updated", 0),
+        "peripherals_updated": health_result.get("peripherals_updated", 0),
+        "outputs_updated": health_result.get("outputs_updated", 0),
+        "skipped": health_result.get("skipped", False),
+        "reason": health_result.get("reason", ""),
+        "health_warning": health_result.get("health_warning", ""),
+    }
+
+
+@shared_task(bind=True, max_retries=3, default_retry_delay=30)
+def refresh_hik_site_health(self, site_id: str) -> dict:
+    """Refresh health/peripheral data for one site outside the web request."""
+    from apps.hik_adapter.services import HikPartnerService
+    from apps.sites.models import Site
+
+    try:
+        site = Site.objects.get(id=site_id)
+    except Site.DoesNotExist:
+        return {"skipped": True, "reason": "site not found"}
+
+    service = HikPartnerService()
+    if not service.client.is_configured() or service.client.dry_run:
+        return {"skipped": True, "reason": "not configured or dry_run"}
+
+    try:
+        return service.refresh_site_health(site)
+    except Exception as exc:
+        logger.error("refresh_hik_site_health: failed for site %s: %s", site.name, exc, exc_info=True)
+        raise self.retry(exc=exc)
+
+
+@shared_task(bind=True, max_retries=1, default_retry_delay=60)
+def import_hik_sites(self, *, search: str = "", limit: int | None = None) -> dict:
+    """Import all visible Hik sites and sync devices, areas, zones, and health."""
+    from apps.hik_adapter.services import HikPartnerService
+
+    service = HikPartnerService()
+    if not service.client.is_configured() or service.client.dry_run:
+        return {"skipped": True, "reason": "not configured or dry_run"}
+
+    with _non_overlapping_task_lock("import_hik_sites") as acquired:
+        if not acquired:
+            logger.info("import_hik_sites: previous run still active; skipping overlap")
+            return {"skipped": True, "reason": "previous import still active"}
+
+        try:
+            return service.import_hik_sites(search=search, limit=limit)
+        except Exception as exc:
+            logger.error("import_hik_sites: failed: %s", exc, exc_info=True)
+            raise self.retry(exc=exc)
 
 
 def _subscription_access_recipients(subscription):

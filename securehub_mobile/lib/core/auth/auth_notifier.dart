@@ -1,5 +1,6 @@
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
+import '../models/session_profile.dart';
 import '../models/user.dart';
 import '../api/api_client.dart';
 import '../biometric/biometric_lock_service.dart';
@@ -13,8 +14,11 @@ sealed class AuthState {}
 class AuthLoading extends AuthState {}
 
 class AuthAuthenticated extends AuthState {
-  AuthAuthenticated(this.profile);
-  final CustomerProfile profile;
+  AuthAuthenticated(this.session);
+  final SessionProfile session;
+
+  CustomerProfile get profile => session.customer;
+  bool get isGuard => session.isGuard;
 }
 
 class AuthUnauthenticated extends AuthState {}
@@ -28,15 +32,15 @@ class AuthNotifier extends _$AuthNotifier {
   }
 
   Future<void> restoreSession() async {
-    final repo = ref.read(authRepositoryProvider);
-    final hasTokens = await repo.hasStoredTokens();
-    if (!hasTokens) {
-      state = AuthUnauthenticated();
-      return;
-    }
     try {
-      final profile = await repo.fetchProfile();
-      state = AuthAuthenticated(profile);
+      final repo = ref.read(authRepositoryProvider);
+      final hasTokens = await repo.hasStoredTokens();
+      if (!hasTokens) {
+        state = AuthUnauthenticated();
+        return;
+      }
+      final session = await repo.fetchProfile();
+      state = AuthAuthenticated(session);
       ref.read(forceLogoutProvider.notifier).reset();
       // Re-register FCM token on session restore (token may have rotated).
       ref.read(notificationServiceProvider).registerToken();
@@ -48,12 +52,12 @@ class AuthNotifier extends _$AuthNotifier {
   Future<void> login(String username, String password) async {
     state = AuthLoading();
     try {
-      final profile = await ref
+      final session = await ref
           .read(authRepositoryProvider)
           .login(username, password);
-      state = AuthAuthenticated(profile);
+      state = AuthAuthenticated(session);
       ref.read(forceLogoutProvider.notifier).reset();
-      // Register FCM token — fire and forget; non-fatal if it fails.
+      // Register FCM token; non-fatal if it fails.
       ref.read(notificationServiceProvider).registerToken();
     } catch (_) {
       state = AuthUnauthenticated();
@@ -64,10 +68,10 @@ class AuthNotifier extends _$AuthNotifier {
   Future<void> signInWithGoogle() async {
     state = AuthLoading();
     try {
-      final profile = await ref.read(authRepositoryProvider).signInWithGoogle();
-      state = AuthAuthenticated(profile);
+      final session = await ref.read(authRepositoryProvider).signInWithGoogle();
+      state = AuthAuthenticated(session);
       ref.read(forceLogoutProvider.notifier).reset();
-      // Register FCM token — fire and forget; non-fatal if it fails.
+      // Register FCM token; non-fatal if it fails.
       ref.read(notificationServiceProvider).registerToken();
     } catch (_) {
       state = AuthUnauthenticated();

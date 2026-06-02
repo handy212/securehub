@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../core/models/site_runtime_inventory.dart';
 import '../../sites/providers/selected_site_provider.dart';
 import '../../sites/providers/sites_provider.dart';
@@ -158,11 +157,11 @@ class _DeviceListScreenState extends ConsumerState<DeviceListScreen>
                       ),
                       labelColor: Colors.white,
                       unselectedLabelColor: AppTheme.onSurfaceVariant,
-                      labelStyle: GoogleFonts.inter(
+                      labelStyle: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
-                      unselectedLabelStyle: GoogleFonts.inter(
+                      unselectedLabelStyle: TextStyle(
                         fontSize: 13,
                         fontWeight: FontWeight.w600,
                       ),
@@ -221,7 +220,7 @@ class _ZonesTab extends StatelessWidget {
       return Center(
         child: Text(
           'No zones configured',
-          style: GoogleFonts.inter(color: AppTheme.onSurfaceVariant),
+          style: TextStyle(color: AppTheme.onSurfaceVariant),
         ),
       );
     }
@@ -238,7 +237,7 @@ class _ZonesTab extends StatelessWidget {
                   children: [
                     Text(
                       sub.name.toUpperCase(),
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 10,
                         fontWeight: FontWeight.w900,
                         letterSpacing: 1.5,
@@ -293,7 +292,7 @@ class _HardwareTab extends StatelessWidget {
       return Center(
         child: Text(
           'No hardware synced yet',
-          style: GoogleFonts.inter(color: AppTheme.onSurfaceVariant),
+          style: TextStyle(color: AppTheme.onSurfaceVariant),
         ),
       );
     }
@@ -347,7 +346,7 @@ class _HardwareTab extends StatelessWidget {
                 crossAxisCount: 2,
                 mainAxisSpacing: 12,
                 crossAxisSpacing: 12,
-                mainAxisExtent: 130,
+                mainAxisExtent: 150,
               ),
               delegate: SliverChildBuilderDelegate(
                 (context, i) => _PeripheralTile(peripheral: peripherals[i]),
@@ -387,7 +386,7 @@ class _SectionHeading extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(20, 24, 20, 12),
       child: Text(
         title,
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: 10,
           fontWeight: FontWeight.w900,
           letterSpacing: 1.5,
@@ -422,7 +421,7 @@ class _StatChip extends StatelessWidget {
         children: [
           Text(
             '$value',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 13,
               fontWeight: FontWeight.w800,
               color: color,
@@ -431,7 +430,7 @@ class _StatChip extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             label,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
               color: AppTheme.onSurfaceVariant,
@@ -498,7 +497,7 @@ class _HubTile extends StatelessWidget {
               children: [
                 Text(
                   name,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 15,
                     color: AppTheme.primary,
@@ -518,7 +517,7 @@ class _HubTile extends StatelessWidget {
                     const SizedBox(width: 6),
                     Text(
                       isOnline ? 'Online' : 'Offline',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         color: isOnline
@@ -539,7 +538,7 @@ class _HubTile extends StatelessWidget {
                         modelNumber.isNotEmpty ? modelNumber : serialNumber,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 11,
                           color: AppTheme.onSurfaceVariant.withValues(alpha: 0.6),
                         ),
@@ -598,7 +597,7 @@ class _PeripheralTile extends StatelessWidget {
             peripheral.name.isEmpty ? peripheral.typeLabel : peripheral.name,
             maxLines: 2,
             overflow: TextOverflow.ellipsis,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontWeight: FontWeight.w700,
               fontSize: 13,
               color: AppTheme.primary,
@@ -609,7 +608,7 @@ class _PeripheralTile extends StatelessWidget {
             peripheral.number > 0
                 ? '${peripheral.typeLabel} ${peripheral.number}'
                 : peripheral.typeLabel,
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w600,
               color: AppTheme.onSurfaceVariant.withValues(alpha: 0.7),
@@ -625,7 +624,7 @@ class _PeripheralTile extends StatelessWidget {
                       : 'Battery ${ZoneUtils.formatDeviceTypeLabel(peripheral.batteryStatus, fallback: '--')}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 10,
                     color: AppTheme.onSurfaceVariant.withValues(alpha: 0.7),
                   ),
@@ -674,7 +673,7 @@ class _OutputTile extends StatelessWidget {
               children: [
                 Text(
                   output.name.isEmpty ? 'Output ${output.number}' : output.name,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 14,
                     color: AppTheme.primary,
@@ -685,7 +684,7 @@ class _OutputTile extends StatelessWidget {
                   output.number > 0
                       ? 'Output ${output.number}'
                       : 'Alarm Output',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w600,
                     color: AppTheme.onSurfaceVariant.withValues(alpha: 0.7),
@@ -752,7 +751,7 @@ class _ZoneTile extends ConsumerWidget {
                     Expanded(
                       child: Text(
                         zone.name,
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontWeight: FontWeight.w700,
                           fontSize: 15,
                           color: AppTheme.primary,
@@ -768,7 +767,7 @@ class _ZoneTile extends ConsumerWidget {
                   children: [
                     Text(
                       'Zone ${zone.zoneNumber}',
-                      style: GoogleFonts.inter(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: AppTheme.onSurfaceVariant.withValues(alpha: 0.6),
@@ -815,7 +814,7 @@ class _StatusBadge extends StatelessWidget {
       ),
       child: Text(
         state.toUpperCase(),
-        style: GoogleFonts.inter(
+        style: TextStyle(
           fontSize: mini ? 8 : 10,
           fontWeight: FontWeight.w900,
           letterSpacing: 0.5,
@@ -845,7 +844,7 @@ class _MiniBadge extends StatelessWidget {
         const SizedBox(width: 4),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             fontSize: 10,
             fontWeight: FontWeight.w700,
             color: color,
@@ -905,7 +904,7 @@ class _SignalIndicator extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             strength.isEmpty ? 'N/A' : strength.toUpperCase(),
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 8,
               fontWeight: FontWeight.w700,
               color: isLost
@@ -970,3 +969,4 @@ class ZoneTileShimmer extends StatelessWidget {
     );
   }
 }
+

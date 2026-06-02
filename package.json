@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "build:dashboard-css": "npx tailwindcss@3.2.7 -c tailwind.config.js -i backend/apps/dashboard/static/dashboard/css/console.input.css -o backend/apps/dashboard/static/dashboard/css/console.css --minify"
+  },
   "devDependencies": {
     "@toolbox-sdk/server": "^0.30.0",
     "prisma": "^7.6.0"

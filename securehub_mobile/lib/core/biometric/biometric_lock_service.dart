@@ -107,10 +107,12 @@ class BiometricLockService {
       }
       return success;
     } on PlatformException catch (e, stack) {
-      debugPrint(
-        'BIOMETRIC_AUTH_PLATFORM_ERROR: code=${e.code}, message=${e.message}, details=${e.details}',
-      );
-      debugPrintStack(stackTrace: stack);
+      if (kDebugMode) {
+        debugPrint(
+          'BIOMETRIC_AUTH_PLATFORM_ERROR: code=${e.code}, message=${e.message}, details=${e.details}',
+        );
+        debugPrintStack(stackTrace: stack);
+      }
       return false;
     }
   }

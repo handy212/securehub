@@ -1,23 +1,20 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 
+import '../../../core/api/api_client.dart';
 import '../../../core/models/alarm_event.dart';
 import '../../../core/models/site.dart';
 import '../../../core/theme/app_theme.dart';
-import '../../../core/api/api_client.dart';
 import '../../sites/providers/sites_provider.dart';
 import '../providers/alarm_control_provider.dart';
 import '../providers/event_list_provider.dart';
 
 class AlarmAlertScreen extends ConsumerStatefulWidget {
-  const AlarmAlertScreen({
-    super.key,
-    required this.siteId,
-    this.eventId,
-  });
+  const AlarmAlertScreen({super.key, required this.siteId, this.eventId});
 
   final String siteId;
   final String? eventId;
@@ -28,8 +25,8 @@ class AlarmAlertScreen extends ConsumerStatefulWidget {
 
 class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
     with SingleTickerProviderStateMixin {
-  late AnimationController _pulseController;
-  late Animation<double> _pulseAnimation;
+  late final AnimationController _pulseController;
+  late final Animation<double> _pulseAnimation;
 
   @override
   void initState() {
@@ -50,7 +47,7 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
   }
 
   Future<void> _handleEmergencyCall() async {
-    const supportNumber = '030 824 9444'; // Primary support number
+    const supportNumber = '030 824 9444';
     final url = Uri.parse('tel:${supportNumber.replaceAll(' ', '')}');
     if (await canLaunchUrl(url)) {
       await launchUrl(url);
@@ -58,20 +55,26 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
   }
 
   Future<void> _handleDisarm() async {
-    HapticFeedback.mediumImpact();
-    final siteAsync = ref.read(siteDetailProvider(widget.siteId));
-    final site = siteAsync.valueOrNull;
-    if (site == null) return;
+    HapticFeedback.heavyImpact();
 
-    final subsystemIds = site.subsystems.map((s) => s.id).toList();
+    final poll = ref.read(sitePollProvider(widget.siteId)).valueOrNull;
+    var subsystemIds = poll?.subsystems.map((s) => s.id).toList();
+
+    if (subsystemIds == null || subsystemIds.isEmpty) {
+      final site = await ref.read(siteDetailProvider(widget.siteId).future);
+      subsystemIds = site.subsystems.map((s) => s.id).toList();
+    }
+
     if (subsystemIds.isEmpty) return;
 
-    await ref.read(alarmControlNotifierProvider.notifier).sendBulkCommand(
+    await ref
+        .read(alarmControlNotifierProvider.notifier)
+        .sendBulkCommand(
           siteId: widget.siteId,
           subsystemIds: subsystemIds,
           action: 'disarm',
         );
-    
+
     if (mounted) {
       Navigator.of(context).pop();
     }
@@ -79,14 +82,20 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
 
   Future<void> _handleSilence() async {
     HapticFeedback.mediumImpact();
-    final siteAsync = ref.read(siteDetailProvider(widget.siteId));
-    final site = siteAsync.valueOrNull;
-    if (site == null) return;
 
-    final subsystemIds = site.subsystems.map((s) => s.id).toList();
+    final poll = ref.read(sitePollProvider(widget.siteId)).valueOrNull;
+    var subsystemIds = poll?.subsystems.map((s) => s.id).toList();
+
+    if (subsystemIds == null || subsystemIds.isEmpty) {
+      final site = await ref.read(siteDetailProvider(widget.siteId).future);
+      subsystemIds = site.subsystems.map((s) => s.id).toList();
+    }
+
     if (subsystemIds.isEmpty) return;
 
-    await ref.read(alarmControlNotifierProvider.notifier).sendBulkCommand(
+    await ref
+        .read(alarmControlNotifierProvider.notifier)
+        .sendBulkCommand(
           siteId: widget.siteId,
           subsystemIds: subsystemIds,
           action: 'silence',
@@ -97,26 +106,32 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
   Widget build(BuildContext context) {
     final siteAsync = ref.watch(siteDetailProvider(widget.siteId));
     final eventsAsync = ref.watch(eventListNotifierProvider(widget.siteId));
-    
-    // Find the specific event if ID provided, otherwise take the latest alarm
+
     final alarmEvent = widget.eventId != null
         ? eventsAsync.valueOrNull?.firstWhere(
-            (e) => e.id == widget.eventId, 
-            orElse: () => eventsAsync.valueOrNull?.firstOrNull ?? const AlarmEvent())
+            (e) => e.id == widget.eventId,
+            orElse: () =>
+                eventsAsync.valueOrNull?.firstOrNull ?? const AlarmEvent(),
+          )
         : eventsAsync.valueOrNull?.firstWhere(
-            (e) => e.eventCategory == 'alarm', 
-            orElse: () => eventsAsync.valueOrNull?.firstOrNull ?? const AlarmEvent());
+            (e) => e.eventCategory == 'alarm',
+            orElse: () =>
+                eventsAsync.valueOrNull?.firstOrNull ?? const AlarmEvent(),
+          );
 
     final site = siteAsync.valueOrNull;
-    final channels = site?.videoDevices.expand((d) => d.channels).toList() ?? [];
-    final firstOnlineChannel = channels.where((c) => c.isOnline).firstOrNull;
+    final channels =
+        site?.videoDevices.expand((device) => device.channels).toList() ?? [];
+    final firstOnlineChannel = channels
+        .where((channel) => channel.isOnline)
+        .firstOrNull;
+    final headline = alarmEvent?.alertHeadline ?? 'Alarm Triggered';
 
     return Scaffold(
-      backgroundColor: AppTheme.errorContainer,
+      backgroundColor: AppTheme.alarmOverlayBg,
       body: SafeArea(
         child: Column(
           children: [
-            // ── Top Bar ──────────────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
               child: Row(
@@ -125,47 +140,48 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                     width: 40,
                     height: 40,
                     decoration: const BoxDecoration(
-                      color: AppTheme.error,
+                      color: AppTheme.alarmRed,
                       shape: BoxShape.circle,
                     ),
-                    child: const Icon(Icons.security_rounded, color: Colors.white, size: 20),
+                    child: const Icon(
+                      Icons.security_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Text(
                     'SecureHub',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.w800,
-                      color: AppTheme.onErrorContainer,
+                      color: AppTheme.alarmRed,
                     ),
                   ),
                   const Spacer(),
                   Text(
                     'System Live',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.onErrorContainer.withValues(alpha: 0.6),
+                      color: AppTheme.alarmRed.withValues(alpha: 0.6),
                     ),
                   ),
                 ],
               ),
             ),
-
             const Spacer(),
-
-            // ── Pulse Icon ───────────────────────────────────────────────────
             ScaleTransition(
               scale: _pulseAnimation,
               child: Container(
                 width: 120,
                 height: 120,
                 decoration: BoxDecoration(
-                  color: AppTheme.error,
+                  color: AppTheme.alarmRed,
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppTheme.error.withValues(alpha: 0.4),
+                      color: AppTheme.alarmRed.withValues(alpha: 0.4),
                       blurRadius: 40,
                       spreadRadius: 10,
                     ),
@@ -178,23 +194,20 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                 ),
               ),
             ),
-
             const SizedBox(height: 32),
-
-            // ── Alert Typography ─────────────────────────────────────────────
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 32),
               child: Column(
                 children: [
                   Text(
-                    alarmEvent != null && alarmEvent.displayTitle.isNotEmpty
-                        ? 'ALARM TRIGGERED: ${alarmEvent.displayTitle.toUpperCase()}'
+                    alarmEvent != null && headline.isNotEmpty
+                        ? 'ALARM TRIGGERED: ${headline.toUpperCase()}'
                         : 'ALARM TRIGGERED',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 32,
                       fontWeight: FontWeight.w900,
-                      color: AppTheme.onErrorContainer,
+                      color: AppTheme.alarmRed,
                       height: 1.1,
                       letterSpacing: -1,
                     ),
@@ -202,30 +215,33 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                   const SizedBox(height: 12),
                   Text(
                     'IMMEDIATE ACTION REQUIRED',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
-                      color: AppTheme.onErrorContainer.withValues(alpha: 0.8),
+                      color: AppTheme.alarmRed.withValues(alpha: 0.8),
                       letterSpacing: 2,
                     ),
                   ),
                 ],
               ),
             ),
-
             const SizedBox(height: 48),
-
-            // ── Media/Camera Section ────────────────────────────────────────
-            if (alarmEvent != null)
-              _MediaPreview(
-                siteId: widget.siteId,
-                event: alarmEvent,
-                fallbackChannel: firstOnlineChannel,
+            Expanded(
+              child: Center(
+                child: eventsAsync.when(
+                  loading: () => const CircularProgressIndicator(),
+                  error: (err, _) =>
+                      const _AlertFallback(message: 'COULD NOT LOAD EVENT'),
+                  data: (_) => alarmEvent != null
+                      ? _MediaPreview(
+                          siteId: widget.siteId,
+                          event: alarmEvent,
+                          fallbackChannel: firstOnlineChannel,
+                        )
+                      : const _AlertFallback(message: 'NO ACTIVE ALARM FOUND'),
+                ),
               ),
-
-            const Spacer(),
-
-            // ── Action Buttons ───────────────────────────────────────────────
+            ),
             Padding(
               padding: const EdgeInsets.fromLTRB(24, 0, 24, 32),
               child: Column(
@@ -258,17 +274,17 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                     child: FilledButton.icon(
                       onPressed: _handleEmergencyCall,
                       style: FilledButton.styleFrom(
-                        backgroundColor: AppTheme.error,
+                        backgroundColor: AppTheme.alarmRed,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(20),
                         ),
                         elevation: 8,
-                        shadowColor: AppTheme.error.withValues(alpha: 0.4),
+                        shadowColor: AppTheme.alarmRed.withValues(alpha: 0.4),
                       ),
                       icon: const Icon(Icons.emergency_share_rounded, size: 28),
                       label: Text(
                         'EMERGENCY CALL',
-                        style: GoogleFonts.inter(
+                        style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.w900,
                           letterSpacing: 0.5,
@@ -279,10 +295,10 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
                   const SizedBox(height: 16),
                   Text(
                     'Monitoring center has been notified and is on standby.',
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.w600,
-                      color: AppTheme.onErrorContainer.withValues(alpha: 0.5),
+                      color: AppTheme.alarmRed.withValues(alpha: 0.5),
                     ),
                   ),
                 ],
@@ -291,6 +307,34 @@ class _AlarmAlertScreenState extends ConsumerState<AlarmAlertScreen>
           ],
         ),
       ),
+    );
+  }
+}
+
+class _AlertFallback extends StatelessWidget {
+  const _AlertFallback({required this.message});
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(
+          Icons.videocam_off_rounded,
+          color: AppTheme.alarmRed.withValues(alpha: 0.2),
+          size: 48,
+        ),
+        const SizedBox(height: 12),
+        Text(
+          message,
+          style: TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.w700,
+            color: AppTheme.alarmRed.withValues(alpha: 0.4),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -323,34 +367,40 @@ class _MediaPreview extends ConsumerWidget {
         clipBehavior: Clip.antiAlias,
         child: picturesAsync.when(
           loading: () => const Center(child: CircularProgressIndicator()),
-          error: (err, _) => _buildFallback(context, ref, 'MEDIA ERROR'),
+          error: (err, _) => const _AlertFallback(message: 'MEDIA ERROR'),
           data: (pics) {
             if (pics.isNotEmpty) {
+              final media = pics.firstWhere(
+                (pic) => pic.type == 'video',
+                orElse: () => pics.first,
+              );
+              final evidenceLabel =
+                  'EVIDENCE • ${(event.resolvedZoneName ?? event.displayTitle).toUpperCase()}';
               return Stack(
                 children: [
                   Positioned.fill(
-                    child: _PictureView(url: pics.first.url),
+                    child: media.type == 'video'
+                        ? _AlertVideoView(url: media.url)
+                        : _PictureView(url: media.url),
                   ),
-                  _buildBadge(
-                    'EVIDENCE • ${event.zoneName?.toUpperCase() ?? 'ALARM'}',
-                    isLive: false,
-                  ),
+                  _buildBadge(evidenceLabel, isLive: false),
                 ],
               );
             }
-            
-            // Fallback to live camera if event has no media
+
             if (fallbackChannel != null) {
+              final liveLabel =
+                  'LIVE • ${(event.resolvedZoneName ?? fallbackChannel!.name).toUpperCase()}';
               return Stack(
                 children: [
                   Positioned.fill(
-                    child: _LiveStreamView(siteId: siteId, channel: fallbackChannel!),
+                    child: _LiveStreamView(
+                      siteId: siteId,
+                      channel: fallbackChannel!,
+                    ),
                   ),
-                  _buildBadge(
-                    'LIVE • ${fallbackChannel!.name.toUpperCase()}',
-                    isLive: true,
-                  ),
-                  Positioned(
+                  _buildBadge(liveLabel, isLive: true),
+                  const Positioned(
                     bottom: 16,
                     right: 16,
                     child: _VerifyingBadge(),
@@ -359,7 +409,7 @@ class _MediaPreview extends ConsumerWidget {
               );
             }
 
-            return _buildFallback(context, ref, 'NO MEDIA AVAILABLE');
+            return const _AlertFallback(message: 'NO MEDIA AVAILABLE');
           },
         ),
       ),
@@ -373,7 +423,7 @@ class _MediaPreview extends ConsumerWidget {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
         decoration: BoxDecoration(
-          color: AppTheme.error,
+          color: AppTheme.alarmRed,
           borderRadius: BorderRadius.circular(100),
         ),
         child: Row(
@@ -392,7 +442,7 @@ class _MediaPreview extends ConsumerWidget {
             ],
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 10,
                 fontWeight: FontWeight.w800,
                 color: Colors.white,
@@ -403,24 +453,118 @@ class _MediaPreview extends ConsumerWidget {
       ),
     );
   }
+}
 
-  Widget _buildFallback(BuildContext context, WidgetRef ref, String message) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.videocam_off_rounded, color: AppTheme.onSurfaceVariant.withValues(alpha: 0.2), size: 48),
-          const SizedBox(height: 12),
-          Text(
-            message,
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              fontWeight: FontWeight.w700,
-              color: AppTheme.onSurfaceVariant.withValues(alpha: 0.4),
+class _AlertVideoView extends ConsumerStatefulWidget {
+  const _AlertVideoView({required this.url});
+  final String url;
+
+  @override
+  ConsumerState<_AlertVideoView> createState() => _AlertVideoViewState();
+}
+
+class _AlertVideoViewState extends ConsumerState<_AlertVideoView> {
+  VideoPlayerController? _controller;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      final token = await ref.read(accessTokenProvider.future);
+      if (!mounted) return;
+
+      final headers = <String, String>{'User-Agent': 'SecureHubMobile/1.0'};
+      if (token != null && shouldAttachApiAuthHeader(widget.url)) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final controller = VideoPlayerController.networkUrl(
+        Uri.parse(transformUrl(widget.url)),
+        httpHeaders: headers,
+      );
+      await controller.initialize();
+
+      if (!mounted) {
+        await controller.dispose();
+        return;
+      }
+
+      await controller.setVolume(0);
+      await controller.setLooping(true);
+      await controller.play();
+
+      setState(() {
+        _controller = controller;
+      });
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Alarm alert video error: $e');
+      }
+      if (mounted) {
+        setState(() => _error = 'VIDEO UNAVAILABLE');
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final controller = _controller;
+    if (_error != null) {
+      return const _AlertFallback(message: 'VIDEO UNAVAILABLE');
+    }
+    if (controller == null || !controller.value.isInitialized) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        FittedBox(
+          fit: BoxFit.cover,
+          clipBehavior: Clip.hardEdge,
+          child: SizedBox(
+            width: controller.value.size.width,
+            height: controller.value.size.height,
+            child: VideoPlayer(controller),
+          ),
+        ),
+        Positioned(
+          bottom: 12,
+          right: 12,
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              color: Colors.black.withValues(alpha: 0.55),
+              borderRadius: BorderRadius.circular(100),
+            ),
+            child: IconButton(
+              visualDensity: VisualDensity.compact,
+              icon: Icon(
+                controller.value.volume == 0
+                    ? Icons.volume_off_rounded
+                    : Icons.volume_up_rounded,
+                color: Colors.white,
+              ),
+              onPressed: () {
+                controller.setVolume(controller.value.volume == 0 ? 1 : 0);
+                if (mounted) {
+                  setState(() {});
+                }
+              },
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
@@ -433,14 +577,29 @@ class _PictureView extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokenAsync = ref.watch(accessTokenProvider);
     return tokenAsync.when(
-      data: (token) => Image.network(
-        transformUrl(url),
-        headers: url.contains('?X-Amz-') ? {} : {'Authorization': 'Bearer $token'},
-        fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) => const Icon(Icons.broken_image_rounded),
+      data: (token) {
+        final attachAuth = token != null && shouldAttachApiAuthHeader(url);
+        return Image.network(
+          transformUrl(url),
+          headers: attachAuth ? {'Authorization': 'Bearer $token'} : null,
+          fit: BoxFit.cover,
+          errorBuilder: (context, error, stackTrace) => const Center(
+            child: Icon(
+              Icons.broken_image_rounded,
+              size: 48,
+              color: Colors.grey,
+            ),
+          ),
+          loadingBuilder: (context, child, loadingProgress) {
+            if (loadingProgress == null) return child;
+            return const Center(child: CircularProgressIndicator());
+          },
+        );
+      },
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, stackTrace) => const Center(
+        child: Icon(Icons.error_rounded, size: 48, color: Colors.red),
       ),
-      loading: () => const SizedBox.shrink(),
-      error: (_, __) => const Icon(Icons.error_rounded),
     );
   }
 }
@@ -457,22 +616,42 @@ class _LiveStreamView extends ConsumerWidget {
 
     return streamAsync.when(
       data: (url) => tokenAsync.when(
-        data: (token) => Image.network(
-          transformUrl(url),
-          headers: token != null ? {'Authorization': 'Bearer $token'} : null,
-          fit: BoxFit.cover,
-          gaplessPlayback: true,
+        data: (token) {
+          final attachAuth = token != null && shouldAttachApiAuthHeader(url);
+          return Image.network(
+            transformUrl(url),
+            headers: attachAuth ? {'Authorization': 'Bearer $token'} : null,
+            fit: BoxFit.cover,
+            gaplessPlayback: true,
+            errorBuilder: (context, error, stackTrace) => const Center(
+              child: Icon(
+                Icons.videocam_off_rounded,
+                size: 48,
+                color: Colors.grey,
+              ),
+            ),
+            loadingBuilder: (context, child, loadingProgress) {
+              if (loadingProgress == null) return child;
+              return const Center(child: CircularProgressIndicator());
+            },
+          );
+        },
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (error, stackTrace) => const Center(
+          child: Icon(Icons.error_rounded, size: 48, color: Colors.red),
         ),
-        loading: () => const SizedBox.shrink(),
-        error: (_, __) => const Icon(Icons.error_rounded),
       ),
       loading: () => const Center(child: CircularProgressIndicator()),
-      error: (_, __) => const Icon(Icons.error_rounded),
+      error: (error, stackTrace) => const Center(
+        child: Icon(Icons.error_rounded, size: 48, color: Colors.red),
+      ),
     );
   }
 }
 
 class _VerifyingBadge extends StatelessWidget {
+  const _VerifyingBadge();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -488,7 +667,7 @@ class _VerifyingBadge extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             'Verifying Source...',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 11,
               fontWeight: FontWeight.w600,
               color: Colors.white,
@@ -520,7 +699,9 @@ class _AlertActionButton extends StatelessWidget {
       child: ElevatedButton(
         onPressed: onTap,
         style: ElevatedButton.styleFrom(
-          backgroundColor: isPrimary ? AppTheme.primary : AppTheme.surfaceContainerLowest,
+          backgroundColor: isPrimary
+              ? AppTheme.primary
+              : AppTheme.surfaceContainerLowest,
           foregroundColor: isPrimary ? Colors.white : AppTheme.primary,
           elevation: 4,
           shadowColor: Colors.black.withValues(alpha: 0.1),
@@ -536,7 +717,7 @@ class _AlertActionButton extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w800,
                 letterSpacing: 1,
@@ -548,3 +729,4 @@ class _AlertActionButton extends StatelessWidget {
     );
   }
 }
+

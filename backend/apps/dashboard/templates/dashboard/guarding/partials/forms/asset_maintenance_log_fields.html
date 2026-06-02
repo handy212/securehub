@@ -1,0 +1,17 @@
+{# Pass log= when editing #}
+<div class="form-group">
+    <label>Status after service</label>
+    <select name="status_after">
+        {% for value, label in unit_statuses %}
+        <option value="{{ value }}" {% if log and log.status_after == value %}selected{% elif not log and value == 'maintenance' %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+</div>
+<div class="form-group">
+    <label>Notes</label>
+    <textarea name="notes" rows="2" class="w-full">{% if log %}{{ log.notes }}{% endif %}</textarea>
+</div>
+<label class="guarding-check">
+    <input name="completed" type="checkbox" {% if log and log.completed_at %}checked{% endif %}>
+    Mark service complete (returns unit to available if was in maintenance)
+</label>

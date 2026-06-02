@@ -22,6 +22,10 @@ _LAP_ERROR_MESSAGES: dict[str, str] = {
 }
 
 
+def _is_success_status_code(value) -> bool:
+    return str(value).strip() == "1"
+
+
 @dataclass
 class HikPartnerClient:
     base_url: str | None = None
@@ -50,7 +54,8 @@ class HikPartnerClient:
         return urljoin(f"{self.base_url.rstrip('/')}/", path.lstrip("/"))
 
     def is_configured(self) -> bool:
-        return bool(self.base_url and self.api_key and self.api_secret)
+        values = (self.base_url, self.api_key, self.api_secret)
+        return all(value and str(value).strip().upper() != "CHANGE-ME" for value in values)
 
     def get_access_token(self) -> str:
         with self._token_lock:
@@ -100,18 +105,20 @@ class HikPartnerClient:
     ) -> requests.Response:
         """
         Wrap requests.request with simple linear backoff retry.
-        Only retries on connect-level errors (ConnectTimeout, ConnectionError).
-        ReadTimeout is NOT retried: the server may have already processed a
-        state-changing request and retrying would send the command twice.
+        Read timeouts are retried only for safe read methods so slow status
+        polling can recover without replaying panel commands.
         """
-        _retryable = (
+        retryable = (
             requests.exceptions.ConnectTimeout,
             requests.exceptions.ConnectionError,
         )
+        if method.upper() in {"GET", "HEAD", "OPTIONS"}:
+            retryable = (*retryable, requests.exceptions.ReadTimeout)
+
         for attempt in range(retries):
             try:
                 return requests.request(method=method, url=url, **kwargs)
-            except _retryable as exc:
+            except retryable as exc:
                 if attempt == retries - 1:
                     raise
                 delay = attempt + 1  # 1s, 2s, 3s …
@@ -189,10 +196,32 @@ class HikPartnerClient:
                 )
                 return response.text
 
-            # Special case for transparent ISAPI: §A.5.8 JSON_ResponseStatus
+            # Special case for transparent ISAPI: §A.5.8 JSON_ResponseStatus.
             # If statusCode is 1, it is a success regardless of errorCode.
-            if data.get("statusCode") == 1:
-                return data
+            # If statusCode is present and not 1, the device rejected the
+            # operation even when the gateway-level errorCode is absent.
+            if "statusCode" in data:
+                if _is_success_status_code(data.get("statusCode")):
+                    return data
+                error_code = (
+                    data.get("subStatusCode")
+                    or data.get("errorCode")
+                    or data.get("statusCode")
+                )
+                message = (
+                    data.get("statusString")
+                    or data.get("errorMsg")
+                    or data.get("msg")
+                    or _LAP_ERROR_MESSAGES.get(str(error_code))
+                    or "transparent ISAPI request failed"
+                )
+                raise HikPartnerError(
+                    f"Hik-Partner transparent API error {error_code}: {message} "
+                    f"(path={path}, req={request_id})",
+                    error_code=str(error_code),
+                    payload=data,
+                    status_code=response.status_code,
+                )
 
             error_code = data.get("errorCode")
             if error_code is not None and str(error_code) != "0":
@@ -452,6 +481,21 @@ class HikPartnerClient:
             "/api/hpcgw/v2/device/add",
             json={"siteId": site_id, "deviceList": device_list},
         )
+
+    def list_devices(self, site_id: str, page: int = 1, page_size: int = 100) -> dict:
+        """
+        List devices under a Hik site.
+        Per §3.21: device/list is paginated. Passing page/pageSize avoids only
+        receiving the platform default first page on larger production sites.
+        """
+        if self.dry_run:
+            return {"data": {"rows": [], "total": 0, "page": page, "pageSize": page_size}}
+        return self.request(
+            "POST",
+            "/api/hpcgw/v1/device/list",
+            json={"siteId": site_id, "page": page, "pageSize": page_size},
+        )
+
 
     def delete_device(self, device_id: str) -> dict:
         """

@@ -1,0 +1,19 @@
+{% comment %}
+Standard panel section header (neutral border).
+
+Required `with`:
+  eyebrow — small label above title
+  title
+
+Optional:
+  action_url, action_label — link on the right
+{% endcomment %}
+<div class="console-panel-header">
+    <div>
+        <p class="console-label text-slate-400">{{ eyebrow }}</p>
+        <h2 class="console-panel-title mt-0.5">{{ title }}</h2>
+    </div>
+    {% if action_url %}
+    <a href="{{ action_url }}" class="console-panel-link">{{ action_label|default:"View" }}</a>
+    {% endif %}
+</div>

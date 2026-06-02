@@ -1,6 +1,5 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../../../core/api/api_client.dart';
@@ -56,19 +55,23 @@ class AlarmControlNotifier extends _$AlarmControlNotifier {
     String? operatorPassword,
   }) async {
     if (subsystemIds.isEmpty) return;
-    
+
     state = CommandSending();
     HapticFeedback.mediumImpact();
     final dio = ref.read(dioProvider);
-    
+
     try {
       ArmDisarmCommand? lastCmd;
-      
+
       for (final subId in subsystemIds) {
         final key = newIdempotencyKey();
         final body = <String, dynamic>{'idempotency_key': key};
-        if (operatorUsername != null) body['operator_username'] = operatorUsername;
-        if (operatorPassword != null) body['operator_password'] = operatorPassword;
+        if (operatorUsername != null) {
+          body['operator_username'] = operatorUsername;
+        }
+        if (operatorPassword != null) {
+          body['operator_password'] = operatorPassword;
+        }
 
         final resp = await dio.post(
           ApiEndpoints.subsystemCommand(siteId, subId, action),
@@ -81,7 +84,7 @@ class AlarmControlNotifier extends _$AlarmControlNotifier {
         final cmdJson = (raw['data'] as Map<String, dynamic>?) ?? raw;
         lastCmd = ArmDisarmCommand.fromJson(cmdJson);
       }
-      
+
       if (lastCmd != null) {
         state = CommandSuccess(lastCmd);
       }

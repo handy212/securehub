@@ -1,0 +1,181 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}User Management | SecureHub{% endblock %}
+{% block header_title %}System Administrators{% endblock %}
+
+{% block content %}
+<div class="space-y-3" x-data="{ createModal: false, editModal: null, search: '' }">
+    <div class="mb-4">
+        {% include "dashboard/partials/console/breadcrumbs.html" with breadcrumb_current="Manage staff" %}
+        <div class="console-page-toolbar !mb-0 !pb-2">
+            {% include "dashboard/partials/console/page_title_bar.html" with page_title="Users" count=users|length count_suffix="members" %}
+            <div class="console-page-actions">
+                <button type="button" @click="createModal = true" class="btn-console inline-flex items-center gap-2">
+                    New staff user
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12h14"/><path d="M12 5v14"/></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="console-table-card">
+
+        <!-- Search bar -->
+        <div class="console-search-bar">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-slate-400 flex-shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input type="text" x-model="search" placeholder="Filter by username or email…"
+                   class="console-search-input">
+            <button x-show="search" @click="search = ''" class="text-slate-300 hover:text-slate-500 transition-colors text-base leading-none flex-shrink-0">×</button>
+        </div>
+
+        <div class="divide-y divide-slate-100">
+            {% for u in users %}
+            <div class="px-4 py-2.5 flex items-center gap-4 hover:bg-slate-50 transition-colors group"
+                 x-show="!search || '{{ u.username|lower|escapejs }} {{ u.email|lower|escapejs }} {{ u.first_name|lower|escapejs }} {{ u.last_name|lower|escapejs }}'.includes(search.toLowerCase())">
+                <div class="w-8 h-8 rounded bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden relative flex-shrink-0">
+                    <img src="https://ui-avatars.com/api/?name={{ u.username }}&background=f1f5f9&color=64748b&bold=true" class="w-full h-full object-cover" alt="">
+                    <div class="absolute bottom-0 right-0 w-2 h-2 rounded-full border border-white {% if u.is_active %}bg-emerald-500{% else %}bg-slate-300{% endif %}"></div>
+                </div>
+
+                <div class="flex-1 min-w-0">
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <span class="text-[12px] font-semibold text-slate-800">{{ u.username }}</span>
+                        {% if u.is_superuser %}
+                        <span class="badge-console border border-brand/20 bg-brand/10 text-brand">Superuser</span>
+                        {% elif u.operator_profile %}
+                        <span class="badge-console badge-console-slate">{{ u.operator_profile.get_role_display }}</span>
+                        {% endif %}
+                        {% if not u.is_active %}
+                        <span class="badge-console badge-console-slate">Inactive</span>
+                        {% endif %}
+                    </div>
+                    <div class="console-meta truncate mt-0.5">
+                        {% if u.get_full_name %}{{ u.get_full_name }} · {% endif %}<span class="font-mono">{{ u.email }}</span>
+                    </div>
+                </div>
+
+                <div class="text-right flex-shrink-0">
+                    <div class="text-[11px] font-medium text-slate-700 tabular-nums">
+                        {% if u.last_login %}{{ u.last_login|date:"d M Y · H:i" }}{% else %}<span class="text-slate-300 italic">Never</span>{% endif %}
+                    </div>
+                </div>
+
+                <button type="button" @click="editModal = '{{ u.id }}'" class="btn-console-secondary shrink-0">
+                    Edit
+                </button>
+            </div>
+
+            <template x-if="editModal === '{{ u.id }}'">
+                {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit Staff User" modal_subtitle=u.username modal_close="editModal = null" modal_max_width="max-w-md" %}
+                <form action="{% url 'dashboard:user-update' u.id %}" method="POST" class="form-perfex space-y-4">
+                            {% csrf_token %}
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="form-group">
+                                    <label>First Name</label>
+                                    <input type="text" name="first_name" value="{{ u.first_name }}" class="w-full" data-modal-initial-focus>
+                                </div>
+                                <div class="form-group">
+                                    <label>Last Name</label>
+                                    <input type="text" name="last_name" value="{{ u.last_name }}" class="w-full">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <div class="form-group">
+                                    <label>Username</label>
+                                    <input type="text" name="username" value="{{ u.username }}" required class="w-full">
+                                </div>
+                                <div class="form-group">
+                                    <label>Email</label>
+                                    <input type="email" name="email" value="{{ u.email }}" required class="w-full">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label>New Password</label>
+                                <input type="password" name="password" placeholder="Leave blank to keep current" class="w-full">
+                            </div>
+                            <div class="grid grid-cols-2 gap-3">
+                                <label class="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-100 rounded cursor-pointer">
+                                    <span class="console-label">Active</span>
+                                    <input type="checkbox" name="is_active" {% if u.is_active %}checked{% endif %} class="w-4 h-4 rounded border-slate-200 text-brand focus:ring-brand">
+                                </label>
+                                <label class="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-100 rounded cursor-pointer">
+                                    <span class="console-label">Superuser</span>
+                                    <input type="checkbox" name="is_superuser" {% if u.is_superuser %}checked{% endif %} class="w-4 h-4 rounded border-slate-200 text-brand focus:ring-brand">
+                                </label>
+                            </div>
+                            <div class="form-group">
+                                <label>Operator role</label>
+                                <select name="role" class="w-full" {% if u.is_superuser %}disabled{% endif %}>
+                                    {% for value, label in operator_roles %}
+                                    <option value="{{ value }}" {% if u.operator_profile and u.operator_profile.role == value %}selected{% elif not u.operator_profile and value == 'operations' %}selected{% endif %}>{{ label }}</option>
+                                    {% endfor %}
+                                </select>
+                                {% if u.is_superuser %}
+                                <input type="hidden" name="role" value="platform_admin">
+                                <p class="console-meta mt-1">Superusers always receive the platform administrator role.</p>
+                                {% endif %}
+                            </div>
+                            <div class="grid grid-cols-2 gap-2">
+                                <button type="submit" class="btn-console w-full justify-center py-2.5">Save</button>
+                                <button type="submit" formaction="{% url 'dashboard:user-delete' u.id %}" class="btn-console-danger w-full justify-center py-2.5">Delete</button>
+                            </div>
+                        </form>
+                {% include "dashboard/partials/console/modal_end.html" %}
+            </template>
+            {% empty %}
+            <div class="p-24 text-center">
+                <div class="w-16 h-16 bg-slate-50 rounded-3xl flex items-center justify-center text-slate-200 mx-auto mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="8" x2="22" y2="13"/><line x1="22" y1="8" x2="17" y2="13"/></svg>
+                </div>
+                <p class="console-meta italic">No administrators found.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <template x-if="createModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Create Staff User" modal_close="createModal = false" modal_max_width="max-w-md" modal_title_id="user-create-modal-title" %}
+                <form action="{% url 'dashboard:user-create' %}" method="POST" class="form-perfex space-y-4">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" name="first_name" class="w-full" data-modal-initial-focus>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" name="last_name" class="w-full">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" name="username" required class="w-full">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" required class="w-full">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Password</label>
+                        <input type="password" name="password" required class="w-full">
+                    </div>
+                    <div class="form-group">
+                        <label>Operator role</label>
+                        <select name="role" class="w-full">
+                            {% for value, label in operator_roles %}
+                            <option value="{{ value }}" {% if value == 'operations' %}selected{% endif %}>{{ label }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <label class="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-100 rounded cursor-pointer">
+                        <span class="console-label">Grant Superuser</span>
+                        <input type="checkbox" name="is_superuser" class="w-4 h-4 rounded border-slate-200 text-brand focus:ring-brand">
+                    </label>
+                    <button type="submit" class="btn-console w-full justify-center py-2.5">Create Staff User</button>
+                </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+</div>
+{% endblock %}

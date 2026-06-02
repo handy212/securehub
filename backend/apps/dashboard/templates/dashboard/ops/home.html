@@ -1,0 +1,331 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Overview | SecureHub{% endblock %}
+{% block header_title %}Overview{% endblock %}
+
+{% block content %}
+<div class="space-y-3">
+
+    <!-- Toolbar + quick navigation -->
+    <div class="console-page-toolbar !mb-0 !pb-2">
+        {% include "dashboard/partials/console/page_header.html" with page_title="Operations" page_subtitle="Live estate · last 24 hours" %}
+        <div class="console-page-actions flex-wrap">
+            <span class="inline-flex items-center gap-1.5 rounded-full border border-emerald-100 bg-emerald-50 px-2 py-0.5 console-label text-emerald-600 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-400">
+                <span class="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                Live
+            </span>
+            <a href="{% url 'dashboard:site-map' %}" class="btn-console-secondary py-1.5 text-[11px]">Map</a>
+            <a href="{% url 'dashboard:site-map' %}?focus=guards" class="btn-console-secondary py-1.5 text-[11px]">Field map</a>
+            <a href="{% url 'dashboard:emergency' %}" class="btn-console-secondary py-1.5 text-[11px]">
+                Emergency{% if active_emergencies %}<span class="ml-1 rounded bg-red-600 px-1.5 py-px text-[10px] font-semibold text-white">{{ active_emergencies }}</span>{% endif %}
+            </a>
+            <a href="{% url 'dashboard:sites' %}" class="btn-console-secondary py-1.5 text-[11px]">Sites</a>
+        </div>
+    </div>
+
+    <!-- KPI strip -->
+    <div class="console-dash-kpi-strip">
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Sites</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ total_sites }}</p>
+            <p class="console-meta">{{ ready_sites }} ready</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Panels online</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-emerald-600">{{ connected_ratio }}%</p>
+            <p class="console-meta">{{ online_devices }} / {{ total_alarms }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Events 24h</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ events_24h_total }}</p>
+            {% if abs_events_delta %}
+            <p class="console-meta {% if events_delta > 0 %}text-amber-600{% else %}text-emerald-600{% endif %}">
+                {% if events_delta > 0 %}↑{% else %}↓{% endif %} {{ abs_events_delta }} vs yesterday
+            </p>
+            {% else %}
+            <p class="console-meta">vs yesterday</p>
+            {% endif %}
+        </div>
+        <div class="console-kpi-tile border-red-100 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/25">
+            <p class="console-stat-label text-red-500">Critical 24h</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-red-600">{{ critical_events_24h }}</p>
+            <p class="console-meta">{{ high_events_24h }} high</p>
+        </div>
+        <a href="{% url 'dashboard:emergency' %}" class="console-kpi-tile transition-colors hover:border-brand/30 {% if active_emergencies %}border-amber-200 bg-amber-50/70 dark:border-amber-900/50 dark:bg-amber-950/30{% endif %}">
+            <p class="console-stat-label">Emergencies</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums {% if active_emergencies %}text-amber-700{% endif %}">{{ active_emergencies }}</p>
+            <p class="console-meta">active now</p>
+        </a>
+        <a href="{% url 'dashboard:guarding-overview' %}" class="console-kpi-tile transition-colors hover:border-brand/30 {% if guard_sos_count %}border-red-200 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/25{% endif %}">
+            <p class="console-stat-label">Guarding</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ guards_on_duty }} on duty</p>
+            <p class="console-meta">
+                {% if guard_sos_count %}<span class="text-red-600">{{ guard_sos_count }} SOS</span>{% else %}{{ guard_dispatch_count }} dispatch{% endif %}
+            </p>
+        </a>
+    </div>
+
+    <!-- Charts + sidebar -->
+    <div class="grid gap-3 xl:grid-cols-[minmax(0,1fr)_280px]">
+        <section class="console-table-card overflow-hidden">
+            {% url 'dashboard:logs' as logs_url %}
+            {% include "dashboard/partials/console/panel_section_header.html" with eyebrow="Activity" title="Events — 24h" action_url=logs_url action_label="Audit log" %}
+            <div class="flex flex-wrap gap-2 border-b border-slate-100 px-4 py-2 dark:border-slate-800">
+                <span class="badge-console-slate">Total {{ events_24h_total }}</span>
+                <span class="badge-console-red">Critical {{ critical_events_24h }}</span>
+                <span class="badge-console-amber">High {{ high_events_24h }}</span>
+                <span class="badge-console-slate">Peak {{ peak_hour_label }} · {{ peak_hour_count }}</span>
+            </div>
+            <div class="grid gap-3 p-4 lg:grid-cols-[minmax(0,1fr)_200px]">
+                <div class="min-h-[200px]">
+                    <canvas id="activityChart"></canvas>
+                </div>
+                <div class="console-kpi-tile flex flex-col !p-3">
+                    <div class="mb-2 flex items-center justify-between">
+                        <p class="console-stat-label">Mix</p>
+                        <span class="badge-console-slate">24h</span>
+                    </div>
+                    <div class="h-[100px]">
+                        <canvas id="eventMixChart"></canvas>
+                    </div>
+                    <div class="mt-2 space-y-1">
+                        <div class="flex items-center justify-between console-meta">
+                            <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>Alarm</span>
+                            <span class="tabular-nums font-semibold text-slate-700 dark:text-slate-200">{{ alarm_events_24h }}</span>
+                        </div>
+                        <div class="flex items-center justify-between console-meta">
+                            <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>Health</span>
+                            <span class="tabular-nums font-semibold text-slate-700 dark:text-slate-200">{{ health_events_24h }}</span>
+                        </div>
+                        <div class="flex items-center justify-between console-meta">
+                            <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-brand"></span>Arm</span>
+                            <span class="tabular-nums font-semibold text-slate-700 dark:text-slate-200">{{ arm_events_24h }}</span>
+                        </div>
+                        <div class="flex items-center justify-between console-meta">
+                            <span class="flex items-center gap-1.5"><span class="h-1.5 w-1.5 rounded-full bg-slate-400"></span>System</span>
+                            <span class="tabular-nums font-semibold text-slate-700 dark:text-slate-200">{{ system_events_24h }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <aside class="space-y-3">
+            <section class="console-table-card overflow-hidden">
+                {% include "dashboard/partials/console/panel_section_header.html" with eyebrow="Queue" title="Readiness" %}
+                <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                    <div class="console-readiness-row">
+                        <span class="console-meta">Ready</span>
+                        <span class="console-stat-value-xs tabular-nums text-emerald-600">{{ ready_sites }}</span>
+                    </div>
+                    <div class="console-readiness-row">
+                        <span class="console-meta">Onboarding</span>
+                        <span class="console-stat-value-xs tabular-nums text-amber-600">{{ pending_onboarding_sites }}</span>
+                    </div>
+                    <div class="console-readiness-row">
+                        <span class="console-meta">Billing</span>
+                        <span class="console-stat-value-xs tabular-nums">{{ pending_billing_sites }}</span>
+                    </div>
+                    {% if overdue_mrr or suspended_mrr %}
+                    <div class="console-readiness-row bg-red-50/50 dark:bg-red-950/20">
+                        <span class="console-meta text-red-600">MRR at risk</span>
+                        <span class="console-stat-value-xs tabular-nums text-red-600">GH₵{{ overdue_mrr|floatformat:0 }}</span>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="border-t border-slate-100 px-4 py-2 dark:border-slate-800">
+                    <div class="h-1.5 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                        <div class="h-full rounded-full bg-emerald-500 transition-all" style="width: {{ readiness_ratio }}%"></div>
+                    </div>
+                    <p class="console-meta mt-1 text-center">{{ readiness_ratio }}% service-ready</p>
+                </div>
+            </section>
+
+            <section class="console-table-card overflow-hidden p-3">
+                <p class="console-label mb-2 px-0.5">Shortcuts</p>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <form action="{% url 'dashboard:global-sync' %}" method="post" class="contents">
+                        {% csrf_token %}
+                        <button type="submit" class="console-shortcut-btn col-span-2 w-full">
+                            <span class="text-brand">↻</span>
+                            <span class="min-w-0"><span class="console-row-title block truncate">Sync estate</span></span>
+                        </button>
+                    </form>
+                    <form action="{% url 'dashboard:hik-import-sites' %}" method="post" class="contents">
+                        {% csrf_token %}
+                        <button type="submit" class="console-shortcut-btn col-span-2 w-full">
+                            <span class="text-brand">⇄</span>
+                            <span class="min-w-0"><span class="console-row-title block truncate">Import Hik sites</span></span>
+                        </button>
+                    </form>
+                    <a href="{% url 'dashboard:logs' %}" class="console-shortcut-btn">
+                        <span class="console-row-title truncate">Audit</span>
+                    </a>
+                    <a href="{% url 'dashboard:broadcast' %}" class="console-shortcut-btn">
+                        <span class="console-row-title truncate">Broadcast</span>
+                    </a>
+                    <a href="{% url 'dashboard:guarding-dispatch' %}" class="console-shortcut-btn">
+                        <span class="console-row-title truncate">Dispatch</span>
+                    </a>
+                    <a href="{% url 'dashboard:settings' %}" class="console-shortcut-btn">
+                        <span class="console-row-title truncate">Settings</span>
+                    </a>
+                </div>
+            </section>
+        </aside>
+    </div>
+
+    <!-- Top sites + live feed -->
+    <div class="grid gap-3 xl:grid-cols-2">
+        {% if top_sites_events %}
+        <section class="console-table-card overflow-hidden">
+            {% include "dashboard/partials/console/panel_section_header.html" with eyebrow="Ranking" title="Top sites" %}
+            <div class="divide-y divide-slate-100 dark:divide-slate-800">
+                {% for site in top_sites_events %}
+                <a href="{% url 'dashboard:site-console' site.id %}" class="console-feed-row group">
+                    <span class="console-meta w-4 shrink-0 tabular-nums">#{{ forloop.counter }}</span>
+                    <div class="min-w-0 flex-1">
+                        <p class="console-row-title truncate group-hover:text-brand">{{ site.name }}</p>
+                        <div class="mt-1 h-1 overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
+                            <div class="h-full rounded-full bg-brand/50" style="width: {{ site.pct }}%"></div>
+                        </div>
+                    </div>
+                    <span class="console-stat-value-xs shrink-0 tabular-nums">{{ site.count }}</span>
+                </a>
+                {% endfor %}
+            </div>
+        </section>
+        {% endif %}
+
+        <section class="console-table-card overflow-hidden {% if not top_sites_events %}xl:col-span-2{% endif %}">
+            {% url 'dashboard:logs' as logs_url %}
+            {% include "dashboard/partials/console/panel_section_header.html" with eyebrow="Feed" title="Recent events" action_url=logs_url action_label="All events" %}
+            <div class="divide-y divide-slate-100 dark:divide-slate-800 max-h-[320px] overflow-y-auto">
+                {% for event in recent_events_payload %}
+                <a href="/console/sites/{{ event.siteId }}/" class="console-feed-row group">
+                    <span class="h-2 w-2 shrink-0 rounded-full {% if event.severity == 'critical' %}bg-red-500{% elif event.severity == 'high' %}bg-amber-500{% elif event.category == 'health' %}bg-emerald-500{% elif event.category == 'arm' %}bg-brand{% else %}bg-slate-300{% endif %}"></span>
+                    <div class="min-w-0 flex-1">
+                        <p class="console-row-title truncate group-hover:text-brand">{{ event.displayName }}</p>
+                        <p class="console-meta truncate">{{ event.siteName }} · {{ event.locationLabel }}</p>
+                    </div>
+                    <div class="hidden shrink-0 gap-1 sm:flex">
+                        <span class="badge-console {% if event.category == 'alarm' %}badge-console-red{% elif event.category == 'health' %}badge-console-emerald{% elif event.category == 'arm' %}badge-console-sky{% else %}badge-console-slate{% endif %}">{{ event.categoryLabel }}</span>
+                    </div>
+                    <div class="shrink-0 text-right">
+                        <p class="console-stat-value-xs tabular-nums">{{ event.occurredAtTime }}</p>
+                        <p class="console-meta">{{ event.occurredAtDate }}</p>
+                    </div>
+                </a>
+                {% empty %}
+                <p class="console-empty-state">No events in the last 24 hours.</p>
+                {% endfor %}
+            </div>
+        </section>
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script id="chart-data-labels" type="application/json">{{ chart_labels|safe }}</script>
+<script id="chart-data-points" type="application/json">{{ chart_data|safe }}</script>
+<script id="event-mix-labels" type="application/json">{{ event_mix_labels|safe }}</script>
+<script id="event-mix-data" type="application/json">{{ event_mix_data|safe }}</script>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const labels = JSON.parse(document.getElementById('chart-data-labels').textContent);
+        const points = JSON.parse(document.getElementById('chart-data-points').textContent);
+        const mixLabels = JSON.parse(document.getElementById('event-mix-labels').textContent);
+        const mixData = JSON.parse(document.getElementById('event-mix-data').textContent);
+
+        function isDark() { return document.documentElement.classList.contains('dark'); }
+
+        function lineTooltipColors() {
+            return isDark()
+                ? { backgroundColor: '#1e293b', titleColor: '#94a3b8', bodyColor: '#f1f5f9', borderColor: '#334155' }
+                : { backgroundColor: '#fff', titleColor: '#64748b', bodyColor: '#0f172a', borderColor: '#e2e8f0' };
+        }
+
+        function gridColor() { return isDark() ? '#1e293b' : '#f1f5f9'; }
+
+        const ctx = document.getElementById('activityChart').getContext('2d');
+        const activityChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    label: 'Events',
+                    data: points,
+                    borderColor: '#dc2626',
+                    borderWidth: 2,
+                    backgroundColor: 'rgba(220,38,38,0.06)',
+                    fill: true,
+                    tension: 0.35,
+                    pointRadius: 0,
+                    pointHoverRadius: 4,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        mode: 'index',
+                        intersect: false,
+                        ...lineTooltipColors(),
+                        titleFont: { family: 'Inter', size: 10, weight: '600' },
+                        bodyFont: { family: 'Inter', size: 11, weight: '600' },
+                        borderWidth: 1,
+                        padding: 10,
+                        cornerRadius: 8,
+                        displayColors: false,
+                        callbacks: { label(c) { return `${c.parsed.y} events`; } }
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: '#94a3b8', font: { size: 9 }, maxRotation: 0, autoSkip: true, maxTicksLimit: 8 }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: gridColor(), drawBorder: false },
+                        ticks: { color: '#94a3b8', font: { size: 9 }, stepSize: 1, padding: 6 }
+                    }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('eventMixChart').getContext('2d'), {
+            type: 'doughnut',
+            data: {
+                labels: mixLabels,
+                datasets: [{
+                    data: mixData,
+                    backgroundColor: ['#ef4444', '#10b981', '#991b1b', '#64748b'],
+                    borderWidth: 0,
+                    hoverOffset: 3,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '70%',
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        new MutationObserver(() => {
+            const t = lineTooltipColors();
+            activityChart.options.plugins.tooltip.backgroundColor = t.backgroundColor;
+            activityChart.options.plugins.tooltip.titleColor = t.titleColor;
+            activityChart.options.plugins.tooltip.bodyColor = t.bodyColor;
+            activityChart.options.plugins.tooltip.borderColor = t.borderColor;
+            activityChart.options.scales.y.grid.color = gridColor();
+            activityChart.update('none');
+        }).observe(document.documentElement, { attributeFilter: ['class'] });
+    });
+</script>
+{% endblock %}

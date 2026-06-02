@@ -1,0 +1,25 @@
+{% comment %}
+Site-scoped breadcrumb trail: Dashboard / Sites / [site] / optional tail.
+
+Required `with`:
+  site_name
+  site_pk
+
+Optional:
+  tail_label — when set, site name becomes a link and tail is plain text
+{% endcomment %}
+{% url 'dashboard:sites' as sites_url %}
+{% url 'dashboard:site-console' site_pk as site_console_url %}
+<nav class="console-breadcrumb mb-3" aria-label="Breadcrumb">
+    <a href="{% url 'dashboard:home' %}">Dashboard</a>
+    <span class="console-breadcrumb-sep" aria-hidden="true">/</span>
+    <a href="{{ sites_url }}">Sites</a>
+    <span class="console-breadcrumb-sep" aria-hidden="true">/</span>
+    {% if tail_label %}
+    <a href="{{ site_console_url }}">{{ site_name }}</a>
+    <span class="console-breadcrumb-sep" aria-hidden="true">/</span>
+    <span class="console-breadcrumb-current">{{ tail_label }}</span>
+    {% else %}
+    <span class="console-breadcrumb-current">{{ site_name }}</span>
+    {% endif %}
+</nav>

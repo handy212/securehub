@@ -25,6 +25,7 @@ dependencies:
 
   # Networking
   dio: ^5.7.0
+  crypto: ^3.0.6
 
   # Secure token storage
   flutter_secure_storage: ^9.2.2
@@ -48,6 +49,8 @@ dependencies:
   sliver_tools: ^0.2.12
   video_player: ^2.9.1
   url_launcher: ^6.3.1
+  geolocator: ^13.0.2
+  mobile_scanner: ^6.0.2
   shimmer: ^3.0.0
   flutter_native_splash: ^2.4.0
   shared_preferences: ^2.5.3

@@ -1,5 +1,5 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 /// Secure Hub Design System
 /// "The Digital Concierge" — warm, editorial, tonal-layered light theme.
@@ -36,6 +36,8 @@ class AppTheme {
   static const Color errorContainer = Color(0xFFFFDAD6);
   static const Color onError = Color(0xFFFFFFFF);
   static const Color onErrorContainer = Color(0xFF93000A);
+  static const Color alarmRed = Color(0xFFD42121);
+  static const Color alarmOverlayBg = Color(0xFFFFE8E8);
 
   // ── Tertiary — "Bypassed / Warning" ───────────────────────────────────────
   static const Color tertiaryContainer = Color(0xFF411100);
@@ -49,6 +51,9 @@ class AppTheme {
   static const Color surfaceSlate = surfaceContainer;
   // ignore: non_constant_identifier_names
   static const Color glassBorder = outlineVariant;
+
+  // ── Font Helpers ──────────────────────────────────────────────────────────
+  static final String fontFamily = Platform.isIOS ? 'SFPro' : 'Roboto';
 
   // ── Ambient shadow helpers ─────────────────────────────────────────────────
   static List<BoxShadow> get cardShadow => [
@@ -101,16 +106,19 @@ class AppTheme {
         surfaceTint: Color(0xFF5D5E65),
       ),
       scaffoldBackgroundColor: surface,
-      textTheme: GoogleFonts.interTextTheme(
-        base.textTheme,
-      ).apply(bodyColor: onSurface, displayColor: onSurface),
+      textTheme: base.textTheme.apply(
+        fontFamily: fontFamily,
+        bodyColor: onSurface,
+        displayColor: onSurface,
+      ),
       appBarTheme: AppBarTheme(
         backgroundColor: surface,
         surfaceTintColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: false,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: TextStyle(
+          fontFamily: fontFamily,
           color: primary,
           fontSize: 17,
           fontWeight: FontWeight.w800,
@@ -143,8 +151,16 @@ class AppTheme {
           horizontal: 24,
           vertical: 18,
         ),
-        labelStyle: const TextStyle(color: onSurfaceVariant, fontSize: 14),
-        hintStyle: const TextStyle(color: onSurfaceVariant, fontSize: 14),
+        labelStyle: TextStyle(
+          fontFamily: fontFamily,
+          color: onSurfaceVariant,
+          fontSize: 14,
+        ),
+        hintStyle: TextStyle(
+          fontFamily: fontFamily,
+          color: onSurfaceVariant,
+          fontSize: 14,
+        ),
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
@@ -153,7 +169,8 @@ class AppTheme {
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
           shape: const StadiumBorder(),
           elevation: 0,
-          textStyle: GoogleFonts.inter(
+          textStyle: TextStyle(
+            fontFamily: fontFamily,
             fontWeight: FontWeight.w700,
             fontSize: 16,
           ),
@@ -165,7 +182,8 @@ class AppTheme {
           side: BorderSide(color: outlineVariant.withValues(alpha: 0.15)),
           padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 18),
           shape: const StadiumBorder(),
-          textStyle: GoogleFonts.inter(
+          textStyle: TextStyle(
+            fontFamily: fontFamily,
             fontWeight: FontWeight.w600,
             fontSize: 15,
           ),
@@ -174,7 +192,8 @@ class AppTheme {
       textButtonTheme: TextButtonThemeData(
         style: TextButton.styleFrom(
           foregroundColor: primary,
-          textStyle: GoogleFonts.inter(
+          textStyle: TextStyle(
+            fontFamily: fontFamily,
             fontWeight: FontWeight.w600,
             fontSize: 14,
           ),
@@ -187,12 +206,14 @@ class AppTheme {
       listTileTheme: ListTileThemeData(
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 4),
         iconColor: onSurfaceVariant,
-        titleTextStyle: GoogleFonts.inter(
+        titleTextStyle: TextStyle(
+          fontFamily: fontFamily,
           color: onSurface,
           fontSize: 15,
           fontWeight: FontWeight.w500,
         ),
-        subtitleTextStyle: GoogleFonts.inter(
+        subtitleTextStyle: TextStyle(
+          fontFamily: fontFamily,
           color: onSurfaceVariant,
           fontSize: 13,
         ),
@@ -208,7 +229,8 @@ class AppTheme {
       ),
       chipTheme: ChipThemeData(
         backgroundColor: surfaceContainerLow,
-        labelStyle: GoogleFonts.inter(
+        labelStyle: TextStyle(
+          fontFamily: fontFamily,
           color: onSurface,
           fontSize: 12,
           fontWeight: FontWeight.w600,
@@ -219,7 +241,11 @@ class AppTheme {
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
         backgroundColor: primary,
-        contentTextStyle: GoogleFonts.inter(color: onPrimary, fontSize: 14),
+        contentTextStyle: TextStyle(
+          fontFamily: fontFamily,
+          color: onPrimary,
+          fontSize: 14,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       ),
     );

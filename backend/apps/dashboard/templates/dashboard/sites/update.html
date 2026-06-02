@@ -1,0 +1,194 @@
+{% extends "dashboard/base.html" %}
+{% load rbac_tags %}
+
+{% block title %}Site Configuration — {{ site.name }}{% endblock %}
+{% block header_title %}Site Settings{% endblock %}
+
+{% block content %}
+<div class="max-w-5xl mx-auto space-y-3">
+    <div class="space-y-3">
+        {% include "dashboard/partials/site/breadcrumbs.html" with site_name=site.name site_pk=site.pk tail_label="Edit site" %}
+        <div class="console-page-toolbar !mb-0 !pb-2">
+            <div class="space-y-2">
+                <div class="flex items-center gap-3">
+                    <div class="w-11 h-11 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                    </div>
+                    <div>
+                        <h1 class="console-page-title">{{ site.name }}</h1>
+                    </div>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <span class="badge-console-slate px-3 py-2 console-label text-slate-600">{{ site.primary_industry|default:"No Scene" }}</span>
+                <span class="px-3 py-2 rounded-lg border {% if site.is_active %}border-emerald-200 bg-emerald-50 text-emerald-700{% else %}border-red-200 bg-red-50 text-red-600{% endif %} console-label">{% if site.is_active %}Active{% else %}Inactive{% endif %}</span>
+                <span class="badge-console-slate px-3 py-2 console-label text-slate-500">{{ site.hik_site_id }}</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid gap-6 lg:grid-cols-[minmax(0,1fr)_280px]">
+        <div class="console-table-card rounded-2xl">
+            <div class="console-card-section-title flex items-center justify-between gap-3 px-6 py-4">
+                <div>
+                    <h2 class="console-label text-slate-900 dark:text-slate-100">Site Configuration</h2>
+                </div>
+                <span class="badge-console-slate">ID {{ site.id }}</span>
+            </div>
+
+            <form method="POST">
+                {% csrf_token %}
+                <div class="px-6 py-6 form-perfex space-y-6">
+                    <section class="space-y-3">
+                        <div class="flex items-center justify-between">
+                        </div>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="form-group md:col-span-2">
+                                <label>Display Name</label>
+                                <input type="text" name="name" value="{{ site.name }}" required class="w-full">
+                            </div>
+                            <div class="form-group md:col-span-2">
+                                <label>Hik-Partner Pro Site ID</label>
+                                <input type="text" name="hik_site_id" value="{{ site.hik_site_id|default:'' }}" class="w-full font-mono" placeholder="External linkage ID">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="pt-5 border-t border-slate-100 space-y-4">
+                        <h3 class="console-label text-slate-400">Location</h3>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="form-group md:col-span-2">
+                                <label>Street Address</label>
+                                <input type="text" name="address" value="{{ site.address|default:'' }}" class="w-full">
+                            </div>
+                            <div class="form-group">
+                                <label>City</label>
+                                <input type="text" name="city" value="{{ site.city|default:'' }}" class="w-full">
+                            </div>
+                            <div class="form-group">
+                                <label>State / Province</label>
+                                <input type="text" name="state" value="{{ site.state|default:'' }}" class="w-full">
+                            </div>
+                            <div class="form-group">
+                                <label>Country</label>
+                                <input type="text" name="country" value="{{ site.country|default:'' }}" class="w-full">
+                            </div>
+                            <div class="form-group">
+                                <label>Timezone</label>
+                                <select name="timezone" class="w-full">
+                                    <option value="UTC" {% if site.timezone == 'UTC' %}selected{% endif %}>UTC</option>
+                                    <optgroup label="Africa">
+                                        <option value="Africa/Accra" {% if site.timezone == 'Africa/Accra' %}selected{% endif %}>Africa/Accra (GMT +00:00)</option>
+                                        <option value="Africa/Lagos" {% if site.timezone == 'Africa/Lagos' %}selected{% endif %}>Africa/Lagos (WAT +01:00)</option>
+                                        <option value="Africa/Nairobi" {% if site.timezone == 'Africa/Nairobi' %}selected{% endif %}>Africa/Nairobi (EAT +03:00)</option>
+                                        <option value="Africa/Johannesburg" {% if site.timezone == 'Africa/Johannesburg' %}selected{% endif %}>Africa/Johannesburg (SAST +02:00)</option>
+                                        <option value="Africa/Cairo" {% if site.timezone == 'Africa/Cairo' %}selected{% endif %}>Africa/Cairo (EET +02:00)</option>
+                                    </optgroup>
+                                    <optgroup label="Europe">
+                                        <option value="Europe/London" {% if site.timezone == 'Europe/London' %}selected{% endif %}>Europe/London (GMT/BST)</option>
+                                        <option value="Europe/Paris" {% if site.timezone == 'Europe/Paris' %}selected{% endif %}>Europe/Paris (CET +01:00)</option>
+                                    </optgroup>
+                                    <optgroup label="Americas">
+                                        <option value="America/New_York" {% if site.timezone == 'America/New_York' %}selected{% endif %}>America/New_York (EST/EDT)</option>
+                                        <option value="America/Chicago" {% if site.timezone == 'America/Chicago' %}selected{% endif %}>America/Chicago (CST/CDT)</option>
+                                        <option value="America/Los_Angeles" {% if site.timezone == 'America/Los_Angeles' %}selected{% endif %}>America/Los_Angeles (PST/PDT)</option>
+                                    </optgroup>
+                                    <optgroup label="Asia / Pacific">
+                                        <option value="Asia/Dubai" {% if site.timezone == 'Asia/Dubai' %}selected{% endif %}>Asia/Dubai (GST +04:00)</option>
+                                        <option value="Asia/Singapore" {% if site.timezone == 'Asia/Singapore' %}selected{% endif %}>Asia/Singapore (SGT +08:00)</option>
+                                        <option value="Australia/Sydney" {% if site.timezone == 'Australia/Sydney' %}selected{% endif %}>Australia/Sydney (AEST/AEDT)</option>
+                                    </optgroup>
+                                </select>
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="pt-5 border-t border-slate-100 space-y-4">
+                        <h3 class="console-label text-slate-400">Map & Scene</h3>
+                        <div class="grid gap-4 md:grid-cols-2">
+                            <div class="form-group">
+                                <label>Latitude</label>
+                                <input type="text" name="latitude" value="{{ site.latitude|default:'' }}" class="w-full font-mono">
+                            </div>
+                            <div class="form-group">
+                                <label>Longitude</label>
+                                <input type="text" name="longitude" value="{{ site.longitude|default:'' }}" class="w-full font-mono">
+                            </div>
+                            <div class="form-group">
+                                <label>Primary Scene</label>
+                                <select name="primary_industry" class="w-full">
+                                    <option value="">Select Scene...</option>
+                                    {% for scene in scene_options %}
+                                    <option value="{{ scene }}" {% if site.primary_industry == scene %}selected{% endif %}>{{ scene }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>Secondary Label</label>
+                                <input type="text" name="secondary_industry" value="{{ site.secondary_industry|default:'' }}" class="w-full" placeholder="Optional business label">
+                            </div>
+                            <div class="form-group md:col-span-2">
+                                <label>Operations zone</label>
+                                <select name="operations_zone" class="w-full">
+                                    <option value="">Unassigned</option>
+                                    {% for zone in operations_zones %}
+                                    <option value="{{ zone.pk }}" {% if site.operations_zone_id == zone.pk %}selected{% endif %}>{{ zone.name }}{% if not zone.is_active %} (hidden){% endif %}</option>
+                                    {% endfor %}
+                                </select>
+                                {% console_can 'console.manage_sites' as can_manage_zones %}
+                                {% if can_manage_zones %}
+                                <p class="console-meta mt-1"><a href="{% url 'dashboard:map-zones' %}" class="text-brand hover:underline">Manage map zones</a></p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="pt-5 border-t border-slate-100">
+                        <div class="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-200">
+                            <div>
+                                <p class="console-row-title">Active Client</p>
+                            </div>
+                            <label class="relative inline-flex items-center cursor-pointer">
+                                <input type="checkbox" name="is_active" class="sr-only peer" {% if site.is_active %}checked{% endif %}>
+                                <div class="w-11 h-6 bg-slate-200 rounded-full peer peer-checked:bg-brand peer-checked:after:translate-x-full after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:w-5 after:h-5 after:bg-white after:border after:border-slate-300 after:rounded-full after:transition-all"></div>
+                            </label>
+                        </div>
+                    </section>
+                </div>
+
+                <div class="px-6 py-4 bg-slate-50/70 border-t border-slate-100 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <a href="{% url 'dashboard:site-console' site.pk %}" class="btn-console-secondary !min-h-0 py-2 text-[10px]">Back To Site Console</a>
+                    <button type="submit" class="btn-console px-5 py-2.5 shadow-lg">Save Changes</button>
+                </div>
+            </form>
+        </div>
+
+        <div class="space-y-3">
+            <section class="console-table-card rounded-2xl p-5">
+                <h3 class="console-label text-slate-400">Operator Notes</h3>
+                <div class="mt-4 space-y-3 text-[11px] font-medium text-slate-600">
+                    <p>Address changes should be followed by a metadata refresh so geocoding and the map stay accurate.</p>
+                    <p>Use a normalized scene so the map marker icon and legend stay consistent.</p>
+                    <p>Only change the Hik site ID when you are intentionally re-linking this site to a different Hik record.</p>
+                </div>
+            </section>
+
+            <section class="p-5 border border-red-100 bg-red-50/60 rounded-2xl">
+                <div class="flex items-center gap-3 mb-4">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-red-500"><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></svg>
+                    <h3 class="console-label text-red-600">Delete Site</h3>
+                </div>
+                <p class="text-[11px] font-medium text-red-500 leading-relaxed mb-4">This permanently removes linked devices, zone history, and site access records.</p>
+                <form action="{% url 'dashboard:delete-site' site.pk %}" method="POST" class="form-perfex space-y-3">
+                    {% csrf_token %}
+                    <div class="form-group">
+                        <label>Confirm Site Name</label>
+                        <input type="text" name="confirm_name" placeholder="Type '{{ site.name }}' to confirm" class="w-full !border-red-200">
+                    </div>
+                    <button type="submit" class="btn-console-danger w-full justify-center py-2.5">Permanently Delete Site</button>
+                </form>
+            </section>
+        </div>
+    </div>
+</div>
+{% endblock %}

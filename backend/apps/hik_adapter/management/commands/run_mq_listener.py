@@ -34,6 +34,7 @@ class Command(BaseCommand):
 
                 if messages:
                     self.stdout.write(self.style.SUCCESS(f"Received {len(messages)} events"))
+                    failed = 0
                     
                     for msg in messages:
                         try:
@@ -42,11 +43,18 @@ class Command(BaseCommand):
                             if event:
                                 self.stdout.write(self.style.SUCCESS(f"  Processed: {event.event_type} (Serial: {msg.get('deviceSerial')})"))
                         except Exception as e:
+                            failed += 1
                             logger.error("Failed to process message: %s", e)
 
-                    # Confirm batch receipt
-                    if batch_id:
+                    # Confirm batch receipt only after every message is processed.
+                    if batch_id and failed == 0:
                         client.confirm_messages(batch_id)
+                    elif batch_id:
+                        logger.warning(
+                            "Leaving MQ batch %s unacknowledged after %d failure(s)",
+                            batch_id,
+                            failed,
+                        )
                 
             except Exception as e:
                 logger.error("MQ polling error: %s", e)

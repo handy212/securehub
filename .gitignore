@@ -13,11 +13,20 @@ nginx/certs/
 backend/.venv/
 backend/__pycache__/
 backend/db.sqlite3
+backend/*.sqlite3-shm
+backend/*.sqlite3-wal
+backend/*.sqlite3-journal
 backend/firebase/*.json
+backend/guard_applicants/
+backend/guard_documents/
 
-mobile/.dart_tool/
-mobile/.flutter-plugins
-mobile/.flutter-plugins-dependencies
-mobile/.packages
-mobile/build/
-mobile/.idea/
+backups/
+
+securehub_mobile/.dart_tool/
+securehub_mobile/.flutter-plugins
+securehub_mobile/.flutter-plugins-dependencies
+securehub_mobile/.packages
+securehub_mobile/build/
+securehub_mobile/.idea/
+backend/celerybeat-schedule
+backend/logs/*.log

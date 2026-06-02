@@ -1,0 +1,16 @@
+{# Pass depot= when editing #}
+<div class="form-group">
+    <label>Depot name *</label>
+    <input name="name" required value="{% if depot %}{{ depot.name }}{% endif %}" {% if not depot %}data-modal-initial-focus{% endif %}>
+</div>
+<div class="form-group">
+    <label>Site scope</label>
+    <select name="site_id">
+        <option value="">Central (organization-wide)</option>
+        {% for site in sites %}<option value="{{ site.id }}" {% if depot and depot.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}
+    </select>
+    <p class="console-meta mt-1">Leave central for equipment shared across sites.</p>
+</div>
+{% if depot %}
+<label class="guarding-check"><input name="inactive" type="checkbox" {% if not depot.is_active %}checked{% endif %}> Inactive</label>
+{% endif %}

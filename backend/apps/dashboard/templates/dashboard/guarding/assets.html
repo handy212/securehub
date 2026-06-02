@@ -1,0 +1,486 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Guard Assets | SecureHub{% endblock %}
+{% block header_title %}Guard Assets{% endblock %}
+{% block content %}
+{% include "dashboard/guarding/_nav.html" %}
+<div class="space-y-3" x-data="{
+    tab: (() => {
+        const allowed = ['catalog', 'depots', 'stock', 'kits', 'policy', 'manifests'];
+        const fromUrl = new URLSearchParams(window.location.search).get('tab');
+        return allowed.includes(fromUrl) ? fromUrl : 'catalog';
+    })(),
+    policyScope: 'site',
+    createType: false, createUnit: false, createDepot: false, createStock: false, createKit: false, createPolicy: false,
+    editTypeId: null, editDepotId: null, editUnitId: null, editStockId: null,
+    editKitId: null, editKitLineId: null, editPolicyId: null,
+    editMaintenanceId: null, addMaintenanceUnitId: null,
+    setTab(name) {
+        this.tab = name;
+        const url = new URL(window.location.href);
+        url.searchParams.set('tab', name);
+        window.history.replaceState({}, '', url);
+    }
+}">
+    <div class="console-page-toolbar !mb-0 !pb-2">
+        <div class="min-w-0 flex-1">
+            {% include "dashboard/partials/console/page_header.html" with page_title="Assets" page_subtitle="Catalog, depots, stock, post kits, policies, and custody" %}
+        </div>
+        <div class="console-page-actions flex flex-wrap gap-2">
+            <button type="button" class="btn-console py-1.5 text-[11px]" x-cloak x-show="tab === 'catalog'" @click="createType = true">New type</button>
+            <button type="button" class="btn-console-secondary py-1.5 text-[11px]" x-cloak x-show="tab === 'catalog'" @click="createUnit = true">Register unit</button>
+            <button type="button" class="btn-console py-1.5 text-[11px]" x-cloak x-show="tab === 'depots'" @click="createDepot = true">New depot</button>
+            <button type="button" class="btn-console py-1.5 text-[11px]" x-cloak x-show="tab === 'stock'" @click="createStock = true">Set stock</button>
+            <button type="button" class="btn-console py-1.5 text-[11px]" x-cloak x-show="tab === 'kits'" @click="createKit = true">New kit</button>
+            <button type="button" class="btn-console py-1.5 text-[11px]" x-cloak x-show="tab === 'policy'" @click="policyScope = 'site'; createPolicy = true">New policy</button>
+            <a href="{% url 'dashboard:guarding-shifts' %}" class="btn-console-secondary py-1.5 text-[11px]" x-cloak x-show="tab === 'manifests'">Manage on Shifts</a>
+        </div>
+    </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
+
+    <div class="console-dash-kpi-strip lg:grid-cols-4">
+        <div class="console-kpi-tile"><p class="console-stat-label">Open manifests</p><p class="console-stat-value-xs tabular-nums">{{ asset_summary.open_manifests }}</p></div>
+        <div class="console-kpi-tile"><p class="console-stat-label">Units out</p><p class="console-stat-value-xs tabular-nums">{{ asset_summary.units_out }}</p></div>
+        <div class="console-kpi-tile"><p class="console-stat-label">Overdue returns</p><p class="console-stat-value-xs tabular-nums">{{ asset_summary.overdue_returns }}</p></div>
+        <div class="console-kpi-tile"><p class="console-stat-label">Lost (7d)</p><p class="console-stat-value-xs tabular-nums">{{ asset_summary.lost_this_week }}</p></div>
+    </div>
+
+    <nav class="console-table-card flex gap-1 overflow-x-auto px-2 py-1.5" aria-label="Asset sections">
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'catalog' && 'is-active'" @click="setTab('catalog')">Catalog <span class="console-count-pill ml-1">{{ asset_types|length }}</span></button>
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'depots' && 'is-active'" @click="setTab('depots')">Depots <span class="console-count-pill ml-1">{{ depots|length }}</span></button>
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'stock' && 'is-active'" @click="setTab('stock')">Stock <span class="console-count-pill ml-1">{{ stock_levels|length }}</span></button>
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'kits' && 'is-active'" @click="setTab('kits')">Post kits <span class="console-count-pill ml-1">{{ kits|length }}</span></button>
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'policy' && 'is-active'" @click="setTab('policy')">Policies <span class="console-count-pill ml-1">{{ asset_policies|length }}</span></button>
+        <button type="button" class="guarding-intake-tabs__btn whitespace-nowrap" :class="tab === 'manifests' && 'is-active'" @click="setTab('manifests')">
+            Open manifests{% if asset_summary.open_manifests %}<span class="console-count-pill ml-1">{{ asset_summary.open_manifests }}</span>{% endif %}
+        </button>
+    </nav>
+
+    {# Catalog #}
+    <section x-cloak x-show="tab === 'catalog'" class="space-y-4">
+        {% include "dashboard/partials/console/data_table_start.html" with table_title="Asset types" table_scrollable=True table_min_width_class="min-w-[780px]" %}
+        <thead class="console-thead"><tr><th class="console-th">Name</th><th class="console-th">Code</th><th class="console-th">Category</th><th class="console-th">Tracking</th><th class="console-th">Status</th><th class="console-th text-right">Manage</th></tr></thead>
+        <tbody class="console-tbody">
+            {% for t in asset_types %}
+            <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <td class="console-td font-semibold text-slate-900 dark:text-slate-100">{{ t.name }}</td>
+                <td class="console-td font-mono text-xs">{{ t.code }}</td>
+                <td class="console-td">{{ t.get_category_display }}</td>
+                <td class="console-td">{{ t.get_tracking_mode_display }}</td>
+                <td class="console-td">{% if t.is_active %}<span class="badge-console badge-console-emerald">Active</span>{% else %}<span class="badge-console badge-console-slate">Inactive</span>{% endif %}</td>
+                <td class="console-td text-right"><button type="button" class="btn-console-secondary btn-console-sm" @click="editTypeId = '{{ t.id }}'">Edit</button></td>
+            </tr>
+            {% empty %}<tr><td colspan="6" class="console-empty-state">No asset types yet. Add one to start building your catalog.</td></tr>{% endfor %}
+        </tbody>
+        {% include "dashboard/partials/console/data_table_end.html" %}
+
+        {% include "dashboard/partials/console/data_table_start.html" with table_title="Serial-tracked units" table_scrollable=True table_min_width_class="min-w-[960px]" %}
+        <thead class="console-thead"><tr><th class="console-th">Tag</th><th class="console-th">Type</th><th class="console-th">Depot</th><th class="console-th">Site</th><th class="console-th">Status</th><th class="console-th text-right">Manage</th></tr></thead>
+        <tbody class="console-tbody">
+            {% for u in units %}
+            <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <td class="console-td font-mono text-xs font-semibold">{{ u.asset_tag }}</td>
+                <td class="console-td">{{ u.asset_type.name }}</td>
+                <td class="console-td">{{ u.depot.name }}</td>
+                <td class="console-td">{{ u.site.name|default:"Any" }}</td>
+                <td class="console-td"><span class="badge-console {% if u.status == 'available' %}badge-console-emerald{% elif u.status == 'issued' %}badge-console-amber{% else %}badge-console-slate{% endif %}">{{ u.get_status_display }}</span></td>
+                <td class="console-td text-right"><button type="button" class="btn-console-secondary btn-console-sm" @click="editUnitId = '{{ u.id }}'">Edit</button></td>
+            </tr>
+            {% empty %}<tr><td colspan="6" class="console-empty-state">No serial units registered.</td></tr>{% endfor %}
+        </tbody>
+        {% include "dashboard/partials/console/data_table_end.html" %}
+    </section>
+
+    {# Depots #}
+    <section x-cloak x-show="tab === 'depots'" class="space-y-4">
+        {% include "dashboard/partials/console/data_table_start.html" with table_title="Depots" table_scrollable=True %}
+        <thead class="console-thead"><tr><th class="console-th">Name</th><th class="console-th">Scope</th><th class="console-th">Status</th><th class="console-th text-right">Manage</th></tr></thead>
+        <tbody class="console-tbody">
+            {% for d in depots %}
+            <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <td class="console-td font-semibold text-slate-900 dark:text-slate-100">{{ d.name }}</td>
+                <td class="console-td">{{ d.site.name|default:"Central (all sites)" }}</td>
+                <td class="console-td">{% if d.is_active %}<span class="badge-console badge-console-emerald">Active</span>{% else %}<span class="badge-console badge-console-slate">Inactive</span>{% endif %}</td>
+                <td class="console-td text-right"><button type="button" class="btn-console-secondary btn-console-sm" @click="editDepotId = '{{ d.id }}'">Edit</button></td>
+            </tr>
+            {% empty %}<tr><td colspan="4" class="console-empty-state">No depots configured.</td></tr>{% endfor %}
+        </tbody>
+        {% include "dashboard/partials/console/data_table_end.html" %}
+    </section>
+
+    {# Stock #}
+    <section x-cloak x-show="tab === 'stock'" class="space-y-4">
+        {% include "dashboard/partials/console/data_table_start.html" with table_title="Quantity stock levels" table_scrollable=True table_min_width_class="min-w-[720px]" %}
+        <thead class="console-thead"><tr><th class="console-th">Type</th><th class="console-th">Depot</th><th class="console-th">On hand</th><th class="console-th">Reserved</th><th class="console-th">Available</th><th class="console-th text-right">Manage</th></tr></thead>
+        <tbody class="console-tbody">
+            {% for s in stock_levels %}
+            <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <td class="console-td font-semibold">{{ s.asset_type.name }}</td>
+                <td class="console-td">{{ s.depot.name }}</td>
+                <td class="console-td tabular-nums">{{ s.quantity_on_hand }}</td>
+                <td class="console-td tabular-nums">{{ s.quantity_reserved }}</td>
+                <td class="console-td tabular-nums">{{ s.quantity_available }}</td>
+                <td class="console-td text-right"><button type="button" class="btn-console-secondary btn-console-sm" @click="editStockId = '{{ s.id }}'">Edit</button></td>
+            </tr>
+            {% empty %}<tr><td colspan="6" class="console-empty-state">No quantity stock records. Set stock for consumable types.</td></tr>{% endfor %}
+        </tbody>
+        {% include "dashboard/partials/console/data_table_end.html" %}
+    </section>
+
+    {# Post kits #}
+    <section x-cloak x-show="tab === 'kits'" class="space-y-4">
+        {% for kit in kits %}
+        <section class="guarding-record-block">
+            <div class="guarding-record-block__head">
+                <div>
+                    <h3 class="guarding-record-block__title">{{ kit.name }}</h3>
+                    <p class="guarding-record-block__meta">{{ kit.post.site.name }} · {{ kit.post.name }} · {{ kit.lines.count }} line{{ kit.lines.count|pluralize }}</p>
+                </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    {% if kit.is_default %}<span class="badge-console badge-console-emerald">Default</span>{% endif %}
+                    {% if not kit.is_active %}<span class="badge-console badge-console-slate">Inactive</span>{% endif %}
+                    <button type="button" class="btn-console-secondary btn-console-sm" @click="editKitId = '{{ kit.id }}'">Edit kit</button>
+                </div>
+            </div>
+            <ul class="guarding-record-list">
+                {% for line in kit.lines.all %}
+                <li class="guarding-record-list__item">
+                    <div class="min-w-0">
+                        <span class="font-semibold text-slate-900 dark:text-slate-100">{{ line.asset_type.name }}</span>
+                        <span class="console-meta block">Qty {{ line.quantity_required }}{% if line.is_optional %} · optional{% endif %}</span>
+                    </div>
+                    <span class="flex shrink-0 items-center gap-2">
+                        <button type="button" class="text-xs font-semibold text-brand" @click="editKitLineId = '{{ line.id }}'">Edit</button>
+                        <form method="post" onsubmit="return confirm('Remove this kit line?');">{% csrf_token %}
+                            <input type="hidden" name="action" value="delete_kit_line"><input type="hidden" name="kit_line_id" value="{{ line.id }}">
+                            <button type="submit" class="text-xs font-semibold text-red-500">Delete</button>
+                        </form>
+                    </span>
+                </li>
+                {% empty %}
+                <li class="guarding-record-list__empty">No lines yet — add required equipment below.</li>
+                {% endfor %}
+            </ul>
+            <form method="post" class="border-t border-slate-100 p-4 dark:border-slate-800">
+                {% csrf_token %}<input type="hidden" name="action" value="kit_line"><input type="hidden" name="kit_id" value="{{ kit.id }}">
+                <p class="console-label mb-2">Add kit line</p>
+                <div class="grid gap-3 sm:grid-cols-4">
+                    <div class="form-group sm:col-span-2"><label>Asset type</label><select name="asset_type_id">{% for t in asset_types %}<option value="{{ t.id }}">{{ t.code }} — {{ t.name }}</option>{% endfor %}</select></div>
+                    <div class="form-group"><label>Qty required</label><input name="quantity_required" type="number" min="1" value="1"></div>
+                    <div class="form-group flex items-end"><label class="guarding-check mb-2"><input name="is_optional" type="checkbox"> Optional</label></div>
+                </div>
+                <button type="submit" class="btn-console-secondary btn-console-sm mt-2">Add line</button>
+            </form>
+            <form method="post" class="border-t border-slate-100 px-4 py-3 dark:border-slate-800" onsubmit="return confirm('Delete this entire kit?');">{% csrf_token %}
+                <input type="hidden" name="action" value="delete_post_kit"><input type="hidden" name="kit_id" value="{{ kit.id }}">
+                <button type="submit" class="btn-console-danger btn-console-sm">Delete kit</button>
+            </form>
+        </section>
+        {% empty %}
+        <p class="console-empty-state">No post kits yet. Create a kit to define standard equipment per guard post.</p>
+        {% endfor %}
+    </section>
+
+    {# Policies #}
+    <section x-cloak x-show="tab === 'policy'" class="space-y-4">
+        <div class="guarding-callout">
+            <p class="guarding-callout__text">Policies control whether guards must issue and return assets before clock-in/out. Post-level policies override site defaults.</p>
+        </div>
+        {% include "dashboard/partials/console/data_table_start.html" with table_title="Enforcement policies" table_scrollable=True table_min_width_class="min-w-[820px]" %}
+        <thead class="console-thead"><tr><th class="console-th">Scope</th><th class="console-th">Mode</th><th class="console-th">Clock-in</th><th class="console-th">Clock-out</th><th class="console-th">Status</th><th class="console-th text-right">Manage</th></tr></thead>
+        <tbody class="console-tbody">
+            {% for policy in asset_policies %}
+            <tr class="hover:bg-slate-50/70 dark:hover:bg-slate-800/40">
+                <td class="console-td">{% if policy.post %}{{ policy.post.site.name }} · {{ policy.post.name }}{% else %}{{ policy.site.name }} <span class="console-meta">(site)</span>{% endif %}</td>
+                <td class="console-td">{{ policy.get_default_mode_display }}</td>
+                <td class="console-td">{% if policy.enforce_issue_before_clock_in %}Required{% else %}—{% endif %}</td>
+                <td class="console-td">{% if policy.enforce_return_before_clock_out %}Required{% else %}—{% endif %}</td>
+                <td class="console-td">{% if policy.is_active %}<span class="badge-console badge-console-emerald">Active</span>{% else %}<span class="badge-console badge-console-slate">Inactive</span>{% endif %}</td>
+                <td class="console-td text-right"><button type="button" class="btn-console-secondary btn-console-sm" @click="editPolicyId = '{{ policy.id }}'">Edit</button></td>
+            </tr>
+            {% empty %}<tr><td colspan="6" class="console-empty-state">No policies — custody defaults to advisory mode.</td></tr>{% endfor %}
+        </tbody>
+        {% include "dashboard/partials/console/data_table_end.html" %}
+    </section>
+
+    {# Open manifests #}
+    <section x-cloak x-show="tab === 'manifests'" class="space-y-4">
+        <div class="guarding-callout">
+            <p class="guarding-callout__title">Shift custody manifests</p>
+            <p class="guarding-callout__text">Issue, return, and close manifests here or from <a href="{% url 'dashboard:guarding-shifts' %}" class="font-semibold text-brand hover:underline">Shifts</a>.</p>
+        </div>
+        {% include "dashboard/guarding/partials/manifest_operations.html" with manifests=open_manifests show_create_form=True %}
+    </section>
+
+    {# Create modals #}
+    <template x-if="createType">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="New asset type" modal_subtitle="Catalog entry for radios, keys, uniforms, etc." modal_close="createType = false" modal_max_width="max-w-xl" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="asset_type">
+            <div class="space-y-3">{% include "dashboard/guarding/partials/forms/asset_type_fields.html" %}</div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="createType = false">Cancel</button><button type="submit" class="btn-console">Create type</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="createUnit">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Register serial unit" modal_close="createUnit = false" modal_max_width="max-w-xl" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="asset_unit">
+            <div class="space-y-3">{% include "dashboard/guarding/partials/forms/asset_unit_fields.html" %}</div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="createUnit = false">Cancel</button><button type="submit" class="btn-console">Register</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="createDepot">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="New depot" modal_close="createDepot = false" modal_max_width="max-w-lg" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="depot">
+            <div class="space-y-3">{% include "dashboard/guarding/partials/forms/asset_depot_fields.html" %}</div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="createDepot = false">Cancel</button><button type="submit" class="btn-console">Create depot</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="createStock">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Set quantity stock" modal_subtitle="For consumable / quantity-tracked types" modal_close="createStock = false" modal_max_width="max-w-lg" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="stock_adjust">
+            <div class="space-y-3">
+                <div class="form-group"><label>Asset type *</label><select name="asset_type_id" required data-modal-initial-focus>{% for t in asset_types %}{% if t.tracking_mode == 'quantity' %}<option value="{{ t.id }}">{{ t.name }}</option>{% endif %}{% endfor %}</select></div>
+                <div class="form-group"><label>Depot *</label><select name="depot_id" required>{% for d in depots %}<option value="{{ d.id }}">{{ d.name }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Quantity on hand *</label><input name="quantity_on_hand" type="number" min="0" required value="0"></div>
+            </div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="createStock = false">Cancel</button><button type="submit" class="btn-console">Save stock</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="createKit">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="New post kit" modal_close="createKit = false" modal_max_width="max-w-lg" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="post_kit">
+            <div class="space-y-3">
+                <div class="form-group"><label>Post *</label><select name="post_id" required data-modal-initial-focus>{% for post in posts %}<option value="{{ post.id }}">{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Kit name *</label><input name="name" required placeholder="e.g. Night shift kit"></div>
+                <label class="guarding-check"><input name="is_default" type="checkbox"> Default kit for this post</label>
+            </div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="createKit = false">Cancel</button><button type="submit" class="btn-console">Create kit</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="createPolicy">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="New enforcement policy" modal_close="createPolicy = false" modal_max_width="max-w-xl" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="asset_policy">
+            <div class="space-y-3">
+                <div class="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
+                    <button type="button" class="rounded px-3 py-2 text-[11px] font-semibold transition" :class="policyScope === 'site' ? 'bg-white text-brand shadow-sm dark:bg-slate-800' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'" @click="policyScope = 'site'">Site policy</button>
+                    <button type="button" class="rounded px-3 py-2 text-[11px] font-semibold transition" :class="policyScope === 'post' ? 'bg-white text-brand shadow-sm dark:bg-slate-800' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'" @click="policyScope = 'post'">Post override</button>
+                </div>
+                <div class="form-group" x-show="policyScope === 'site'"><label>Site</label><select name="site_id" :disabled="policyScope !== 'site'" data-modal-initial-focus><option value="">— Select site —</option>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select></div>
+                <div class="form-group" x-show="policyScope === 'post'"><label>Post</label><select name="post_id" :disabled="policyScope !== 'post'"><option value="">— Select post —</option>{% for post in posts %}<option value="{{ post.id }}">{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Default mode</label><select name="default_mode">{% for value,label in enforcement_modes %}<option value="{{ value }}">{{ label }}</option>{% endfor %}</select></div>
+                <div class="guarding-checkbox-grid">
+                    <label class="guarding-check"><input name="enforce_issue_before_clock_in" type="checkbox" checked> Require issue before clock-in</label>
+                    <label class="guarding-check"><input name="enforce_return_before_clock_out" type="checkbox" checked> Require return before clock-out</label>
+                    <label class="guarding-check"><input name="allow_supervisor_override" type="checkbox" checked> Allow supervisor override</label>
+                </div>
+            </div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="createPolicy = false">Cancel</button><button type="submit" class="btn-console">Save policy</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    {# Edit modals #}
+    {% for t in asset_types %}
+    <template x-if="editTypeId === '{{ t.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit asset type" modal_subtitle=t.code modal_close="editTypeId = null" modal_max_width="max-w-xl" %}
+        <div class="flex flex-col">
+            <form id="type-edit-{{ t.id }}" method="post" class="form-perfex space-y-3">
+                {% csrf_token %}<input type="hidden" name="action" value="update_asset_type"><input type="hidden" name="asset_type_id" value="{{ t.id }}">
+                {% include "dashboard/guarding/partials/forms/asset_type_fields.html" with asset_type=t %}
+            </form>
+            <form method="post" class="border-t border-slate-100 px-5 py-3 dark:border-slate-800" onsubmit="return confirm('Delete this asset type?');">{% csrf_token %}
+                <input type="hidden" name="action" value="delete_asset_type"><input type="hidden" name="asset_type_id" value="{{ t.id }}">
+                <button type="submit" class="btn-console-danger btn-console-sm">Delete type</button>
+            </form>
+            <div class="console-modal-footer -mx-5 -mb-5"><button type="button" class="btn-console-secondary" @click="editTypeId = null">Cancel</button><button type="submit" class="btn-console" form="type-edit-{{ t.id }}">Save</button></div>
+        </div>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for u in units %}
+    <template x-if="editUnitId === '{{ u.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit unit" modal_subtitle=u.asset_tag modal_close="editUnitId = null" modal_max_width="max-w-xl" %}
+        <div class="flex flex-col">
+            <form id="unit-edit-{{ u.id }}" method="post" class="form-perfex space-y-3">
+                {% csrf_token %}<input type="hidden" name="action" value="update_asset_unit"><input type="hidden" name="unit_id" value="{{ u.id }}">
+                {% include "dashboard/guarding/partials/forms/asset_unit_fields.html" with unit=u %}
+            </form>
+            <div class="border-t border-slate-100 px-5 py-4 dark:border-slate-800">
+                <p class="console-label mb-2">Maintenance history</p>
+                <ul class="guarding-record-list mb-3 max-h-40 overflow-y-auto">
+                    {% for log in u.maintenance_logs.all %}
+                    <li class="guarding-record-list__item text-xs">
+                        <div class="min-w-0">
+                            <span class="font-semibold">{{ log.started_at|date:"M j, Y H:i" }}</span>
+                            <span class="console-meta block">{{ log.status_before|default:"—" }} → {{ log.status_after|default:"—" }}{% if log.completed_at %} · complete{% endif %}</span>
+                            {% if log.notes %}<span class="console-meta block">{{ log.notes|truncatechars:80 }}</span>{% endif %}
+                        </div>
+                        <button type="button" class="text-xs font-semibold text-brand" @click="editMaintenanceId = '{{ log.id }}'">Edit</button>
+                    </li>
+                    {% empty %}
+                    <li class="guarding-record-list__empty">No maintenance records.</li>
+                    {% endfor %}
+                </ul>
+                <button type="button" class="btn-console-secondary btn-console-sm" @click="addMaintenanceUnitId = '{{ u.id }}'">Log maintenance</button>
+            </div>
+            <form method="post" class="border-t border-slate-100 px-5 py-3 dark:border-slate-800" onsubmit="return confirm('Delete this unit?');">{% csrf_token %}
+                <input type="hidden" name="action" value="delete_asset_unit"><input type="hidden" name="unit_id" value="{{ u.id }}">
+                <button type="submit" class="btn-console-danger btn-console-sm">Delete unit</button>
+            </form>
+            <div class="console-modal-footer -mx-5 -mb-5"><button type="button" class="btn-console-secondary" @click="editUnitId = null">Cancel</button><button type="submit" class="btn-console" form="unit-edit-{{ u.id }}">Save</button></div>
+        </div>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for d in depots %}
+    <template x-if="editDepotId === '{{ d.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit depot" modal_subtitle=d.name modal_close="editDepotId = null" modal_max_width="max-w-lg" %}
+        <div class="flex flex-col">
+            <form id="depot-edit-{{ d.id }}" method="post" class="form-perfex space-y-3">
+                {% csrf_token %}<input type="hidden" name="action" value="update_depot"><input type="hidden" name="depot_id" value="{{ d.id }}">
+                {% include "dashboard/guarding/partials/forms/asset_depot_fields.html" with depot=d %}
+            </form>
+            <form method="post" class="border-t border-slate-100 px-5 py-3 dark:border-slate-800" onsubmit="return confirm('Delete this depot?');">{% csrf_token %}
+                <input type="hidden" name="action" value="delete_depot"><input type="hidden" name="depot_id" value="{{ d.id }}">
+                <button type="submit" class="btn-console-danger btn-console-sm">Delete depot</button>
+            </form>
+            <div class="console-modal-footer -mx-5 -mb-5"><button type="button" class="btn-console-secondary" @click="editDepotId = null">Cancel</button><button type="submit" class="btn-console" form="depot-edit-{{ d.id }}">Save</button></div>
+        </div>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for s in stock_levels %}
+    <template x-if="editStockId === '{{ s.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit stock" modal_subtitle=s.asset_type.code modal_close="editStockId = null" modal_max_width="max-w-lg" %}
+        <div class="flex flex-col">
+            <form id="stock-edit-{{ s.id }}" method="post" class="form-perfex space-y-3">
+                {% csrf_token %}<input type="hidden" name="action" value="update_stock"><input type="hidden" name="stock_id" value="{{ s.id }}">
+                <p class="console-meta">{{ s.asset_type.name }} @ {{ s.depot.name }}</p>
+                <div class="form-group"><label>Quantity on hand</label><input name="quantity_on_hand" type="number" min="0" value="{{ s.quantity_on_hand }}" required></div>
+                <div class="form-group"><label>Quantity reserved</label><input name="quantity_reserved" type="number" min="0" value="{{ s.quantity_reserved }}" required></div>
+            </form>
+            <form method="post" class="border-t border-slate-100 px-5 py-3 dark:border-slate-800" onsubmit="return confirm('Delete this stock record?');">{% csrf_token %}
+                <input type="hidden" name="action" value="delete_stock"><input type="hidden" name="stock_id" value="{{ s.id }}">
+                <button type="submit" class="btn-console-danger btn-console-sm">Delete stock</button>
+            </form>
+            <div class="console-modal-footer -mx-5 -mb-5"><button type="button" class="btn-console-secondary" @click="editStockId = null">Cancel</button><button type="submit" class="btn-console" form="stock-edit-{{ s.id }}">Save</button></div>
+        </div>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for kit in kits %}
+    <template x-if="editKitId === '{{ kit.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit post kit" modal_subtitle=kit.name modal_close="editKitId = null" modal_max_width="max-w-xl" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="update_post_kit"><input type="hidden" name="kit_id" value="{{ kit.id }}">
+            <div class="space-y-3">
+                <div class="form-group"><label>Post *</label><select name="post_id" required>{% for post in posts %}<option value="{{ post.id }}" {% if kit.post_id == post.id %}selected{% endif %}>{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Kit name *</label><input name="name" value="{{ kit.name }}" required></div>
+                <label class="guarding-check"><input name="is_default" type="checkbox" {% if kit.is_default %}checked{% endif %}> Default kit for post</label>
+                <label class="guarding-check"><input name="inactive" type="checkbox" {% if not kit.is_active %}checked{% endif %}> Inactive</label>
+            </div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="editKitId = null">Cancel</button><button type="submit" class="btn-console">Save</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for kit in kits %}{% for line in kit.lines.all %}
+    <template x-if="editKitLineId === '{{ line.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit kit line" modal_subtitle=line.asset_type.code modal_close="editKitLineId = null" modal_max_width="max-w-lg" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="update_kit_line"><input type="hidden" name="kit_line_id" value="{{ line.id }}">
+            <div class="space-y-3">
+                <div class="form-group"><label>Asset type</label><select name="asset_type_id" required>{% for at in asset_types %}<option value="{{ at.id }}" {% if line.asset_type_id == at.id %}selected{% endif %}>{{ at.name }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Quantity required</label><input name="quantity_required" type="number" min="1" value="{{ line.quantity_required }}" required></div>
+                <label class="guarding-check"><input name="is_optional" type="checkbox" {% if line.is_optional %}checked{% endif %}> Optional line</label>
+            </div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="editKitLineId = null">Cancel</button><button type="submit" class="btn-console">Save</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}{% endfor %}
+
+    {% for policy in asset_policies %}
+    <template x-if="editPolicyId === '{{ policy.id }}'">
+        {% if policy.post_id %}
+            {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit policy" modal_subtitle=policy.post.name modal_close="editPolicyId = null" modal_max_width="max-w-xl" %}
+        {% else %}
+            {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit policy" modal_subtitle=policy.site.name modal_close="editPolicyId = null" modal_max_width="max-w-xl" %}
+        {% endif %}
+        <div class="flex flex-col" x-data="{ scope: '{% if policy.post_id %}post{% else %}site{% endif %}' }">
+            <form id="policy-edit-{{ policy.id }}" method="post" class="form-perfex space-y-3">
+                {% csrf_token %}<input type="hidden" name="action" value="update_asset_policy"><input type="hidden" name="policy_id" value="{{ policy.id }}">
+                <div class="grid grid-cols-2 gap-1 rounded-lg border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-900">
+                    <button type="button" class="rounded px-3 py-2 text-[11px] font-semibold transition" :class="scope === 'site' ? 'bg-white text-brand shadow-sm dark:bg-slate-800' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'" @click="scope = 'site'">Site policy</button>
+                    <button type="button" class="rounded px-3 py-2 text-[11px] font-semibold transition" :class="scope === 'post' ? 'bg-white text-brand shadow-sm dark:bg-slate-800' : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-slate-200'" @click="scope = 'post'">Post override</button>
+                </div>
+                <div class="form-group" x-show="scope === 'site'"><label>Site</label><select name="site_id" :disabled="scope !== 'site'"><option value="">— Select site —</option>{% for site in sites %}<option value="{{ site.id }}" {% if policy.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}</select></div>
+                <div class="form-group" x-show="scope === 'post'"><label>Post</label><select name="post_id" :disabled="scope !== 'post'"><option value="">— Select post —</option>{% for post in posts %}<option value="{{ post.id }}" {% if policy.post_id == post.id %}selected{% endif %}>{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select></div>
+                <div class="form-group"><label>Default mode</label><select name="default_mode">{% for value,label in enforcement_modes %}<option value="{{ value }}" {% if policy.default_mode == value %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+                <div class="guarding-checkbox-grid">
+                    <label class="guarding-check"><input name="enforce_issue_before_clock_in" type="checkbox" {% if policy.enforce_issue_before_clock_in %}checked{% endif %}> Require issue before clock-in</label>
+                    <label class="guarding-check"><input name="enforce_return_before_clock_out" type="checkbox" {% if policy.enforce_return_before_clock_out %}checked{% endif %}> Require return before clock-out</label>
+                    <label class="guarding-check"><input name="allow_supervisor_override" type="checkbox" {% if policy.allow_supervisor_override %}checked{% endif %}> Allow override</label>
+                    <label class="guarding-check"><input name="inactive" type="checkbox" {% if not policy.is_active %}checked{% endif %}> Inactive</label>
+                </div>
+            </form>
+            <form method="post" class="border-t border-slate-100 px-5 py-3 dark:border-slate-800" onsubmit="return confirm('Delete this policy?');">{% csrf_token %}
+                <input type="hidden" name="action" value="delete_asset_policy"><input type="hidden" name="policy_id" value="{{ policy.id }}">
+                <button type="submit" class="btn-console-danger btn-console-sm">Delete policy</button>
+            </form>
+            <div class="console-modal-footer -mx-5 -mb-5"><button type="button" class="btn-console-secondary" @click="editPolicyId = null">Cancel</button><button type="submit" class="btn-console" form="policy-edit-{{ policy.id }}">Save</button></div>
+        </div>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for u in units %}
+    <template x-if="addMaintenanceUnitId === '{{ u.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Log maintenance" modal_subtitle=u.asset_tag modal_close="addMaintenanceUnitId = null" modal_max_width="max-w-lg" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="maintenance_log"><input type="hidden" name="unit_id" value="{{ u.id }}"><input type="hidden" name="return_tab" value="catalog">
+            <div class="space-y-3">{% include "dashboard/guarding/partials/forms/asset_maintenance_log_fields.html" %}</div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4"><button type="button" class="btn-console-secondary" @click="addMaintenanceUnitId = null">Cancel</button><button type="submit" class="btn-console">Save log</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% for log in u.maintenance_logs.all %}
+    <template x-if="editMaintenanceId === '{{ log.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit maintenance" modal_subtitle=u.asset_tag modal_close="editMaintenanceId = null" modal_max_width="max-w-lg" %}
+        <form method="post" class="form-perfex flex flex-col">
+            {% csrf_token %}<input type="hidden" name="action" value="update_maintenance_log"><input type="hidden" name="log_id" value="{{ log.id }}"><input type="hidden" name="return_tab" value="catalog">
+            <div class="space-y-3">{% include "dashboard/guarding/partials/forms/asset_maintenance_log_fields.html" with log=log %}</div>
+            <div class="console-modal-footer -mx-5 -mb-5 mt-4 flex-wrap gap-2">
+                <button type="button" class="btn-console-secondary" @click="editMaintenanceId = null">Cancel</button>
+                <button type="submit" class="btn-console">Save</button>
+            </div>
+        </form>
+        <form method="post" class="border-t border-slate-100 px-5 py-3 dark:border-slate-800" onsubmit="return confirm('Delete this maintenance log?');">{% csrf_token %}
+            <input type="hidden" name="action" value="delete_maintenance_log"><input type="hidden" name="log_id" value="{{ log.id }}"><input type="hidden" name="return_tab" value="catalog">
+            <button type="submit" class="btn-console-danger btn-console-sm">Delete log</button>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+    {% endfor %}
+</div>
+{% endblock %}

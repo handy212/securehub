@@ -43,8 +43,12 @@ class LoginNotifier extends _$LoginNotifier {
       }
     } on NetworkException {
       state = LoginError('No connection. Please check your network.');
+    } on AppConfigurationException catch (e) {
+      state = LoginError(e.message);
     } catch (e) {
-      debugPrint('LOGIN_NOTIFIER_ERROR: $e');
+      if (kDebugMode) {
+        debugPrint('LOGIN_NOTIFIER_ERROR: $e');
+      }
       state = LoginError('Something went wrong. Please try again.');
     }
   }
@@ -58,8 +62,12 @@ class LoginNotifier extends _$LoginNotifier {
       if (e.toString().toLowerCase().contains('cancelled')) {
         state = LoginIdle(); // Silent fallback on user cancellation
       } else {
-        debugPrint('GOOGLE_LOGIN_NOTIFIER_ERROR: $e');
-        state = LoginError('Google login failed. Please try again.');
+        if (kDebugMode) {
+          debugPrint('GOOGLE_LOGIN_NOTIFIER_ERROR: $e');
+        }
+        state = e is AppConfigurationException
+            ? LoginError(e.message)
+            : LoginError('Google login failed. Please try again.');
       }
     }
   }
@@ -90,7 +98,9 @@ class LoginNotifier extends _$LoginNotifier {
         state = LoginIdle();
       }
     } catch (e) {
-      debugPrint('BIOMETRIC_LOGIN_ERROR: $e');
+      if (kDebugMode) {
+        debugPrint('BIOMETRIC_LOGIN_ERROR: $e');
+      }
       state = LoginError('Something went wrong during biometric login.');
     }
   }

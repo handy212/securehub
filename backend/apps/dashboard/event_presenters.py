@@ -119,6 +119,7 @@ def serialize_console_event(event: AlarmEvent) -> dict:
 
     return {
         "id": str(event.id),
+        "siteId": str(event.site_id),
         "siteName": event.site.name,
         "type": event.event_type,
         "typeLabel": type_label,

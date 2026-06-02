@@ -1,17 +1,36 @@
 # securehub_mobile
 
-A new Flutter project.
+SecureHub customer and guard mobile client (Flutter).
 
-## Getting Started
+## Configuration
 
-This project is a starting point for a Flutter application.
+Release builds require the API base URL:
 
-A few resources to get you started if this is your first Flutter project:
+```bash
+flutter run --dart-define=API_BASE_URL=https://api.example.com
+```
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+Optional TLS certificate pinning (release builds only, when pins are set):
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+```bash
+flutter build apk \
+  --dart-define=API_BASE_URL=https://api.example.com \
+  --dart-define=API_CERT_SHA256_PINS='<pin1>,<pin2>'
+```
+
+Generate a SHA-256 pin from the server certificate:
+
+```bash
+openssl s_client -servername api.example.com -connect api.example.com:443 </dev/null 2>/dev/null \
+  | openssl x509 -outform DER \
+  | openssl dgst -sha256 -binary \
+  | openssl enc -base64
+```
+
+Use multiple comma-separated pins when rotating certificates.
+
+## Tests
+
+```bash
+flutter test
+```

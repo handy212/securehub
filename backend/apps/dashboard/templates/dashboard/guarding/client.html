@@ -1,0 +1,241 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Guarding Portal | SecureHub</title>
+    <link rel="stylesheet" href="{% static 'dashboard/css/console.css' %}">
+    <link rel="icon" href="{% static 'dashboard/logo.png' %}">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+    <style>
+        body { background: #f1f5f9; color: #334155; font-family: Inter, system-ui, sans-serif; }
+        .portal-shell { max-width: 1360px; margin: 0 auto; padding: 18px 20px 36px; }
+        .portal-top { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 14px; }
+        .portal-brand { display: flex; align-items: center; gap: 10px; min-width: 0; }
+        .portal-brand img { width: 32px; height: 32px; border-radius: 6px; object-fit: contain; }
+        .portal-title { margin: 0; color: #0f172a; font-size: 18px; font-weight: 800; letter-spacing: 0; }
+        .portal-subtitle { margin: 1px 0 0; color: #64748b; font-size: 12px; font-weight: 600; }
+        .portal-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; }
+        .portal-button { display: inline-flex; min-height: 32px; align-items: center; justify-content: center; border: 1px solid #cbd5e1; border-radius: 6px; background: #fff; padding: 6px 10px; color: #334155; font-size: 12px; font-weight: 800; text-decoration: none; }
+        .portal-button-primary { border-color: #991b1b; background: #991b1b; color: #fff; }
+        .portal-grid { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; align-items: start; }
+        .portal-card { overflow: hidden; border: 1px solid #dbe3ea; border-radius: 8px; background: #fff; box-shadow: 0 1px 2px rgba(15, 23, 42, .04); }
+        .portal-card-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; border-bottom: 1px solid #e5edf3; background: #f8fafc; padding: 10px 12px; }
+        .portal-card-title { margin: 0; color: #0f172a; font-size: 13px; font-weight: 800; }
+        .portal-card-subtitle { margin: 1px 0 0; color: #64748b; font-size: 11px; font-weight: 600; }
+        .portal-kpis { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+        .portal-kpi { border: 1px solid #dbe3ea; border-radius: 8px; background: #fff; padding: 10px 12px; }
+        .portal-kpi span { display: block; color: #64748b; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .portal-kpi strong { display: block; margin-top: 1px; color: #0f172a; font-family: "JetBrains Mono", monospace; font-size: 19px; font-weight: 700; }
+        .portal-table-wrap { overflow-x: auto; }
+        .portal-table { width: 100%; min-width: 820px; border-collapse: collapse; font-size: 12px; text-align: left; }
+        .portal-table th { border-bottom: 1px solid #e5edf3; background: #f8fafc; padding: 8px 10px; color: #64748b; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .portal-table td { border-bottom: 1px solid #eef3f7; padding: 9px 10px; vertical-align: top; }
+        .portal-table tr:last-child td { border-bottom: 0; }
+        .portal-row-title { color: #0f172a; font-size: 12px; font-weight: 800; }
+        .portal-meta { color: #64748b; font-size: 11px; font-weight: 600; }
+        .portal-stack { display: grid; gap: 14px; }
+        .portal-list { display: grid; }
+        .portal-list-row { display: grid; gap: 7px; border-bottom: 1px solid #eef3f7; padding: 10px 12px; }
+        .portal-list-row:last-child { border-bottom: 0; }
+        .portal-badges { display: flex; flex-wrap: wrap; gap: 5px; }
+        .portal-badge { display: inline-flex; min-height: 20px; align-items: center; border: 1px solid #dbe3ea; border-radius: 999px; background: #f8fafc; padding: 2px 7px; color: #475569; font-size: 10px; font-weight: 900; white-space: nowrap; }
+        .portal-badge-green { border-color: #bbf7d0; background: #ecfdf5; color: #047857; }
+        .portal-badge-amber { border-color: #fde68a; background: #fffbeb; color: #b45309; }
+        .portal-guards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 10px; }
+        .portal-guard { border: 1px solid #dbe3ea; border-radius: 7px; padding: 10px; }
+        .portal-guard-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+        .portal-guard-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 7px; margin-top: 8px; }
+        .portal-field { border-left: 2px solid #e2e8f0; padding-left: 7px; }
+        .portal-field span { display: block; color: #64748b; font-size: 10px; font-weight: 900; text-transform: uppercase; }
+        .portal-field strong { display: block; color: #1e293b; font-size: 12px; font-weight: 800; }
+        .portal-empty { padding: 22px 12px; color: #64748b; font-size: 12px; font-weight: 700; text-align: center; }
+        .portal-ack { display: flex; justify-content: flex-end; gap: 6px; }
+        .portal-ack input { width: 140px; min-height: 30px; border: 1px solid #cbd5e1; border-radius: 6px; padding: 5px 8px; font-size: 12px; }
+        .portal-ack button { min-height: 30px; border: 1px solid #991b1b; border-radius: 6px; background: #991b1b; padding: 5px 9px; color: #fff; font-size: 11px; font-weight: 900; }
+        @media (max-width: 1024px) { .portal-grid { grid-template-columns: 1fr; } .portal-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+        @media (max-width: 720px) { .portal-shell { padding: 14px; } .portal-top { align-items: flex-start; flex-direction: column; } .portal-actions { width: 100%; justify-content: flex-start; } .portal-button { flex: 1 1 auto; } .portal-kpis, .portal-guards, .portal-guard-grid { grid-template-columns: 1fr; } }
+    </style>
+</head>
+<body>
+    <main class="portal-shell">
+        <header class="portal-top">
+            <div class="portal-brand">
+                <img src="{% static 'dashboard/logo.png' %}" alt="SecureHub">
+                <div>
+                    <h1 class="portal-title">Guarding portal</h1>
+                    <p class="portal-subtitle">Reports, patrol proof, attendance, and assigned guard profiles</p>
+                </div>
+            </div>
+            <div class="portal-actions">
+                {% if can_export_reports %}<a href="{% url 'dashboard:client-guarding-reports-export' %}" class="portal-button">Export reports</a>{% endif %}
+                <a href="{% url 'dashboard:logout' %}" class="portal-button portal-button-primary">Sign out</a>
+            </div>
+        </header>
+
+        <section class="portal-kpis">
+            <div class="portal-kpi"><span>Sites</span><strong>{{ client_counts.sites }}</strong></div>
+            <div class="portal-kpi"><span>Reports</span><strong>{{ client_counts.reports }}</strong></div>
+            <div class="portal-kpi"><span>Patrols</span><strong>{{ client_counts.patrols }}</strong></div>
+            <div class="portal-kpi"><span>Attendance</span><strong>{{ client_counts.assignments }}</strong></div>
+            <div class="portal-kpi"><span>Known guards</span><strong>{{ client_counts.guards }}</strong></div>
+        </section>
+
+        <div class="portal-grid">
+            <div class="portal-stack">
+                <section class="portal-card">
+                    <div class="portal-card-header">
+                        <div>
+                            <h2 class="portal-card-title">Know your guard</h2>
+                            <p class="portal-card-subtitle">Current and upcoming coverage for the next 7 days</p>
+                        </div>
+                        <span class="portal-badge portal-badge-green">{{ client_counts.guards }} visible</span>
+                    </div>
+                    {% if known_guard_assignments %}
+                    <div class="portal-guards">
+                        {% for assignment in known_guard_assignments %}
+                        <article class="portal-guard">
+                            <div class="portal-guard-head">
+                                <div>
+                                    <div class="portal-row-title">{{ assignment.guard.full_name }}</div>
+                                    <div class="portal-meta">{{ assignment.guard.employee_number }} · {{ assignment.guard.get_status_display }}</div>
+                                </div>
+                                <span class="portal-badge">{{ assignment.get_status_display }}</span>
+                            </div>
+                            <div class="portal-guard-grid">
+                                <div class="portal-field"><span>Site</span><strong>{{ assignment.shift.post.site.name }}</strong></div>
+                                <div class="portal-field"><span>Post</span><strong>{{ assignment.shift.post.name }}</strong></div>
+                                <div class="portal-field"><span>Start</span><strong>{{ assignment.shift.starts_at|date:"M j, H:i" }}</strong></div>
+                                <div class="portal-field"><span>End</span><strong>{{ assignment.shift.ends_at|date:"H:i" }}</strong></div>
+                            </div>
+                            <div class="portal-badges" style="margin-top: 8px;">
+                                {% for credential in assignment.guard.verified_client_credentials %}
+                                <span class="portal-badge portal-badge-green">{{ credential.name }}</span>
+                                {% empty %}
+                                <span class="portal-badge">No verified credentials shared</span>
+                                {% endfor %}
+                            </div>
+                        </article>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="portal-empty">No current or upcoming guard profiles available.</div>
+                    {% endif %}
+                </section>
+
+                <section class="portal-card">
+                    <div class="portal-card-header">
+                        <div>
+                            <h2 class="portal-card-title">Approved reports</h2>
+                            <p class="portal-card-subtitle">Client-visible reports released by operations</p>
+                        </div>
+                    </div>
+                    <div class="portal-table-wrap">
+                        <table class="portal-table">
+                            <thead><tr><th>Report</th><th>Site / Post</th><th>Guard</th><th>Submitted</th><th style="text-align: right;">Acknowledge</th></tr></thead>
+                            <tbody>
+                                {% for report in reports %}
+                                <tr>
+                                    <td><div class="portal-row-title">{{ report.title }}</div><div class="portal-meta">{{ report.get_report_type_display }} · {{ report.body|truncatechars:100 }}</div></td>
+                                    <td>{{ report.site.name }}<div class="portal-meta">{{ report.post.name|default:"No post" }}</div></td>
+                                    <td>{{ report.guard.full_name|default:"-" }}</td>
+                                    <td style="white-space: nowrap;">{{ report.submitted_at|date:"Y-m-d H:i" }}</td>
+                                    <td>
+                                        {% if report.site_id in acknowledge_site_ids %}
+                                        <form method="post" action="{% url 'dashboard:client-guarding-report-acknowledge' report.id %}" class="portal-ack">{% csrf_token %}<input name="comment" placeholder="Comment"><button type="submit">Ack</button></form>
+                                        {% else %}
+                                        <div style="text-align: right;"><span class="portal-badge">{{ report.client_acknowledgements.count }} ack</span></div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5"><div class="portal-empty">No approved client-visible reports.</div></td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="portal-card">
+                    <div class="portal-card-header">
+                        <div>
+                            <h2 class="portal-card-title">Patrol proof</h2>
+                            <p class="portal-card-subtitle">Scheduled rounds and checkpoint scans</p>
+                        </div>
+                    </div>
+                    <div class="portal-table-wrap">
+                        <table class="portal-table">
+                            <thead><tr><th>Route</th><th>Guard</th><th>Status</th><th>Scans</th><th>Scheduled</th></tr></thead>
+                            <tbody>
+                                {% for round in patrol_rounds %}
+                                <tr>
+                                    <td><div class="portal-row-title">{{ round.route.name }}</div><div class="portal-meta">{{ round.route.post.site.name }} · {{ round.route.post.name }}</div></td>
+                                    <td>{{ round.assignment.guard.full_name|default:"-" }}</td>
+                                    <td><span class="portal-badge">{{ round.get_status_display }}</span></td>
+                                    <td>{{ round.scans.count }}</td>
+                                    <td style="white-space: nowrap;">{{ round.scheduled_start|date:"Y-m-d H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="5"><div class="portal-empty">No patrol rounds visible.</div></td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <section class="portal-card">
+                    <div class="portal-card-header">
+                        <div>
+                            <h2 class="portal-card-title">Attendance</h2>
+                            <p class="portal-card-subtitle">Visible shift assignments for accessible sites</p>
+                        </div>
+                    </div>
+                    <div class="portal-table-wrap">
+                        <table class="portal-table">
+                            <thead><tr><th>Guard</th><th>Post</th><th>Status</th><th>Shift</th></tr></thead>
+                            <tbody>
+                                {% for assignment in assignments %}
+                                <tr>
+                                    <td><div class="portal-row-title">{{ assignment.guard.full_name }}</div></td>
+                                    <td>{{ assignment.shift.post.site.name }}<div class="portal-meta">{{ assignment.shift.post.name }}</div></td>
+                                    <td><span class="portal-badge">{{ assignment.get_status_display }}</span></td>
+                                    <td style="white-space: nowrap;">{{ assignment.shift.starts_at|date:"Y-m-d H:i" }} · {{ assignment.shift.ends_at|date:"H:i" }}</td>
+                                </tr>
+                                {% empty %}
+                                <tr><td colspan="4"><div class="portal-empty">No attendance visible.</div></td></tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            </div>
+
+            <aside class="portal-card">
+                <div class="portal-card-header">
+                    <div>
+                        <h2 class="portal-card-title">Site access</h2>
+                        <p class="portal-card-subtitle">Enabled portal permissions</p>
+                    </div>
+                </div>
+                <div class="portal-list">
+                    {% for access in access_records %}
+                    <div class="portal-list-row">
+                        <div class="portal-row-title">{{ access.site.name }}</div>
+                        <div class="portal-badges">
+                            {% if access.can_view_reports %}<span class="portal-badge">Reports</span>{% endif %}
+                            {% if access.can_view_patrols %}<span class="portal-badge">Patrols</span>{% endif %}
+                            {% if access.can_view_attendance %}<span class="portal-badge">Attendance</span>{% endif %}
+                            {% if access.can_view_guards %}<span class="portal-badge portal-badge-green">Know your guard</span>{% endif %}
+                            {% if access.can_acknowledge_reports %}<span class="portal-badge portal-badge-amber">Ack reports</span>{% endif %}
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="portal-empty">No site access.</div>
+                    {% endfor %}
+                </div>
+            </aside>
+        </div>
+    </main>
+</body>
+</html>

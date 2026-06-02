@@ -3,6 +3,8 @@ import uuid
 from django.conf import settings
 from django.db import models
 
+from apps.accounts.rbac import OperatorRole
+
 
 class CustomerGroup(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -46,12 +48,46 @@ class CustomerProfile(models.Model):
         return self.user.get_username()
 
 
+class StaffOperatorProfile(models.Model):
+    """Role-based access for operator console staff (is_staff users)."""
+
+    Role = OperatorRole
+
+    @staticmethod
+    def default_role_for_user(user) -> str:
+        from .rbac import default_role_for_user
+
+        return default_role_for_user(is_superuser=bool(getattr(user, "is_superuser", False)))
+
+    user = models.OneToOneField(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="operator_profile",
+    )
+    role = models.CharField(
+        max_length=32,
+        choices=OperatorRole.CHOICES,
+        default=OperatorRole.OPERATIONS,
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = "staff operator profile"
+        verbose_name_plural = "staff operator profiles"
+
+    def __str__(self) -> str:
+        return f"{self.user.get_username()} ({self.get_role_display()})"
+
+
 class FCMDevice(models.Model):
     PLATFORM_ANDROID = "android"
     PLATFORM_IOS = "ios"
+    PLATFORM_WEB = "web"
     PLATFORM_CHOICES = (
         (PLATFORM_ANDROID, "Android"),
         (PLATFORM_IOS, "iOS"),
+        (PLATFORM_WEB, "Web"),
     )
 
     user = models.ForeignKey(

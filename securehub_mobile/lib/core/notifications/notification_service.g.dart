@@ -40,7 +40,7 @@ final notificationNavProvider =
     );
 
 typedef _$NotificationNav = AutoDisposeNotifier<String?>;
-String _$criticalAlarmNavHash() => r'0867184fa241c010dbdc84e2177e28b120c101cf';
+String _$criticalAlarmNavHash() => r'cbf5fb4bedbaa3dc0f2afe31ef1f569d5e07e2df';
 
 /// See also [CriticalAlarmNav].
 @ProviderFor(CriticalAlarmNav)

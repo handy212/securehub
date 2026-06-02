@@ -1,0 +1,131 @@
+{% extends 'dashboard/base.html' %}
+{% load guarding_location %}
+
+{% block title %}Emergency | SecureHub{% endblock %}
+{% block header_title %}Emergency{% endblock %}
+
+{% block content %}
+<div class="space-y-3">
+    {% include "dashboard/partials/console/breadcrumbs.html" with breadcrumb_current="Emergency dispatch" %}
+    <div class="console-page-toolbar !mb-0 !pb-2">
+        {% include "dashboard/partials/console/page_title_bar.html" with page_title="Emergency dispatch" %}
+        <div class="console-page-actions">
+            <a href="{% url 'dashboard:site-map' %}" class="btn-console shrink-0 bg-red-600 text-white hover:bg-red-700 dark:bg-red-600 dark:text-white dark:hover:bg-red-700">Open client map</a>
+            <a href="{% url 'dashboard:emergency-services' %}" class="btn-console-secondary">Manage add-ons</a>
+            <a href="{% url 'dashboard:emergency' %}" class="btn-console-secondary">Refresh</a>
+        </div>
+    </div>
+
+    <div class="console-dash-kpi-strip md:grid-cols-2">
+        <div class="console-kpi-tile {% if open_count %}border-red-200 bg-red-50/60 dark:border-red-900/40 dark:bg-red-950/25{% endif %}">
+            <p class="console-stat-label text-red-500">Open queue</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-red-600">{{ open_count }}</p>
+        </div>
+        <div class="console-kpi-tile {% if active_count %}border-amber-200 bg-amber-50/60 dark:border-amber-900/40 dark:bg-amber-950/25{% endif %}">
+            <p class="console-stat-label text-amber-600">Active incidents</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-amber-600">{{ active_count }}</p>
+        </div>
+    </div>
+
+    <div class="console-table-card">
+        <div class="console-card-section-title flex items-center justify-between">
+            <span>Incident Queue</span>
+            <span class="console-label text-slate-400">Latest 100</span>
+        </div>
+        <div class="console-table-wrap console-table-wrap--scroll">
+            <table class="console-table min-w-[1120px]">
+                <thead class="console-thead">
+                    <tr>
+                        <th scope="col" class="console-th whitespace-nowrap">Customer</th>
+                        <th scope="col" class="console-th whitespace-nowrap">Site / Context</th>
+                        <th scope="col" class="console-th whitespace-nowrap">Status</th>
+                        <th scope="col" class="console-th whitespace-nowrap">Assigned</th>
+                        <th scope="col" class="console-th whitespace-nowrap">Location</th>
+                        <th scope="col" class="console-th whitespace-nowrap">Opened</th>
+                        <th scope="col" class="console-th whitespace-nowrap text-right">Actions</th>
+                    </tr>
+                </thead>
+                <tbody class="console-tbody">
+                    {% for item in emergency_requests %}
+                    <tr class="{% if item.status == 'open' %}bg-red-50/50 dark:bg-red-950/20{% endif %}">
+                        <td class="console-td">
+                            <div class="console-stat-value-xs dark:text-slate-100">{{ item.customer.get_full_name|default:item.customer.username }}</div>
+                            <div class="console-meta font-bold">{{ item.contact_phone|default:"No phone" }}</div>
+                        </td>
+                        <td class="console-td">
+                            <div class="text-xs font-bold text-slate-700 dark:text-slate-200">{{ item.site.name|default:"Away from site" }}</div>
+                            <div class="console-label text-slate-400">{{ item.get_trigger_context_display|default:"Unknown" }}</div>
+                        </td>
+                        <td class="console-td">
+                            {% if item.status == 'open' %}
+                            <span class="badge-console badge-console-red">{{ item.get_status_display|default:item.status }}</span>
+                            {% elif item.status == 'resolved' %}
+                            <span class="badge-console badge-console-emerald">{{ item.get_status_display|default:item.status }}</span>
+                            {% elif item.status == 'cancelled' %}
+                            <span class="badge-console badge-console-slate">{{ item.get_status_display|default:item.status }}</span>
+                            {% else %}
+                            <span class="badge-console badge-console-amber">{{ item.get_status_display|default:item.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td class="console-td">
+                            {% if item.assigned_to %}
+                            <div class="console-row-title">{{ item.assigned_to.username }}</div>
+                            {% if item.assignment_note %}<div class="console-meta font-bold">{{ item.assignment_note|truncatechars:28 }}</div>{% endif %}
+                            {% elif item.status != 'resolved' and item.status != 'cancelled' %}
+                            <form method="post" action="{% url 'dashboard:emergency-assign' item.id %}" class="flex flex-wrap items-center gap-1.5">
+                                {% csrf_token %}
+                                <select name="assigned_to" required class="h-8 max-w-[10rem] console-table-card px-2 text-xs font-bold text-slate-700 dark:border-slate-600 dark:bg-slate-800">
+                                    <option value="">Assign</option>
+                                    {% for staff in assignable_staff %}
+                                    <option value="{{ staff.pk }}">{{ staff.username }}</option>
+                                    {% endfor %}
+                                </select>
+                                <button type="submit" class="btn-console shrink-0 py-1.5 text-xs">Set</button>
+                            </form>
+                            {% else %}
+                            <span class="console-label text-slate-300">None</span>
+                            {% endif %}
+                        </td>
+                        <td class="console-td">
+                            <div class="flex flex-col gap-1">
+                                <span class="console-meta">{{ item|decoded_location }}</span>
+                                {% with url=item|maps_url coords=item|coordinates %}
+                                {% if url %}
+                                <a class="text-xs font-bold text-brand hover:underline" target="_blank" rel="noopener" href="{{ url }}">
+                                    {{ coords }}
+                                </a>
+                                {% endif %}
+                                {% endwith %}
+                                <a href="{% url 'dashboard:site-map' %}" class="console-label text-red-600 hover:underline">Client Map</a>
+                            </div>
+                        </td>
+                        <td class="console-td whitespace-nowrap text-xs font-bold text-slate-500">{{ item.created_at|date:"Y-m-d H:i" }}</td>
+                        <td class="console-td whitespace-nowrap text-right">
+                            <div class="flex flex-wrap justify-end gap-2">
+                                {% if item.status == 'open' %}
+                                <form method="post" action="{% url 'dashboard:emergency-action' item.id 'acknowledge' %}">{% csrf_token %}<button type="submit" class="btn-console shrink-0 py-1.5 text-xs">Ack</button></form>
+                                {% endif %}
+                                {% if item.status == 'open' or item.status == 'acknowledged' %}
+                                <form method="post" action="{% url 'dashboard:emergency-action' item.id 'dispatch' %}">{% csrf_token %}<button type="submit" class="shrink-0 rounded-md bg-red-600 px-3 py-1.5 console-label text-white hover:bg-red-700">Dispatch</button></form>
+                                {% endif %}
+                                {% if item.status == 'dispatched' %}
+                                <form method="post" action="{% url 'dashboard:emergency-action' item.id 'arrive' %}">{% csrf_token %}<button type="submit" class="shrink-0 rounded-md bg-amber-600 px-3 py-1.5 console-label text-white hover:bg-amber-700">Arrive</button></form>
+                                {% endif %}
+                                {% if item.status != 'resolved' and item.status != 'cancelled' %}
+                                <form method="post" action="{% url 'dashboard:emergency-action' item.id 'resolve' %}">{% csrf_token %}<button type="submit" class="btn-console-approve shrink-0 px-3 py-1.5 text-xs">Resolve</button></form>
+                                <form method="post" action="{% url 'dashboard:emergency-action' item.id 'cancel' %}">{% csrf_token %}<button type="submit" class="shrink-0 rounded-md bg-slate-500 px-3 py-1.5 console-label text-white hover:bg-slate-600">Cancel</button></form>
+                                {% endif %}
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="7" class="console-td py-10 text-center text-xs font-bold text-slate-400">No emergency requests yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

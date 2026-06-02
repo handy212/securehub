@@ -1,0 +1,258 @@
+{% extends "dashboard/base.html" %}
+
+{% block title %}Customer Directory | SecureHub{% endblock %}
+{% block header_title %}Customers{% endblock %}
+
+{% block content %}
+<div class="space-y-3" x-data="{ createModal: false, editModal: null, search: '{{ current_query|escapejs }}', filter: 'all', groupFilter: '' }">
+    <div class="mb-3">
+        {% include "dashboard/partials/console/breadcrumbs.html" with breadcrumb_current="Customers" %}
+        <div class="console-page-toolbar !mb-0 !pb-2">
+            {% include "dashboard/partials/console/page_title_bar.html" with page_title="Customer directory" count=count_all_customers count_suffix="accounts" %}
+            <div class="console-page-actions">
+                <a href="{% url 'dashboard:customer-groups' %}" class="btn-console-secondary inline-flex items-center gap-1.5">
+                    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                    Groups
+                </a>
+                <button type="button" @click="createModal = true" class="btn-console inline-flex items-center gap-1.5">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 5v14M5 12h14"/></svg>
+                    New customer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="console-dash-kpi-strip sm:grid-cols-3">
+        <div class="console-kpi-tile">
+            <p class="console-stat-label">Total</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums">{{ count_all_customers }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label text-emerald-600">Active</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-emerald-600">{{ count_active_customers }}</p>
+        </div>
+        <div class="console-kpi-tile">
+            <p class="console-stat-label text-amber-600">No site</p>
+            <p class="console-stat-value-xs mt-0.5 tabular-nums text-amber-600">{{ count_no_access }}</p>
+        </div>
+    </div>
+
+    <div class="console-table-card">
+
+        <!-- Search + Filter bar -->
+        <div class="border-b border-slate-100 bg-slate-50/50 px-4 py-2 dark:border-slate-800 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div class="flex items-center gap-2 flex-1">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" class="text-slate-400 flex-shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+                <input type="text" x-model="search" placeholder="Filter by name, username or email&hellip;"
+                       class="console-search-input">
+                <button x-show="search" @click="search = ''" class="text-slate-300 hover:text-slate-500 transition-colors text-sm leading-none flex-shrink-0">&times;</button>
+            </div>
+            <div class="flex items-center gap-1 rounded bg-slate-100 p-1 self-start sm:self-auto flex-wrap">
+                <button @click="filter = 'all'; groupFilter = ''" :class="filter === 'all' && !groupFilter ? 'console-segment-active text-slate-900' : 'text-slate-400 hover:text-slate-600'" class="px-2 py-1 console-label rounded transition-all">All</button>
+                <button @click="filter = 'active'; groupFilter = ''" :class="filter === 'active' && !groupFilter ? 'console-segment-active text-emerald-600' : 'text-slate-400 hover:text-emerald-500'" class="px-2 py-1 console-label rounded transition-all">Active</button>
+                <button @click="filter = 'nosite'; groupFilter = ''" :class="filter === 'nosite' && !groupFilter ? 'console-segment-active text-amber-600' : 'text-slate-400 hover:text-amber-500'" class="px-2 py-1 console-label rounded transition-all">No Site</button>
+                {% for grp in groups %}
+                <button @click="filter = 'all'; groupFilter = '{{ grp.pk }}'" :class="groupFilter === '{{ grp.pk }}' ? 'console-segment-active' : 'text-slate-400 hover:text-slate-600'" class="px-2 py-1 console-label rounded transition-all flex items-center gap-1">
+                    <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background-color: {{ grp.color }}"></span>
+                    {{ grp.name }}
+                </button>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div class="console-table-wrap console-table-wrap--scroll">
+            <table class="console-table min-w-[880px]">
+                <thead class="console-thead">
+                    <tr>
+                        <th scope="col" class="console-th">Account</th>
+                        <th scope="col" class="console-th">Contact</th>
+                        <th scope="col" class="console-th">Sites</th>
+                        <th scope="col" class="console-th text-right"></th>
+                    </tr>
+                </thead>
+                <tbody class="console-tbody">
+                    {% for customer in customers %}
+                    <tr class="hover:bg-slate-50/40 transition-colors"
+                        x-show="
+                            (!groupFilter || groupFilter === '{{ customer.customer_profile.group_id|default:'' }}') &&
+                            (filter === 'all' ||
+                             (filter === 'active' && {{ customer.is_active|yesno:'true,false' }}) ||
+                             (filter === 'nosite' && {{ customer.customersiteaccess_set.exists|yesno:'false,true' }})) &&
+                            (!search || '{{ customer.username|lower|escapejs }} {{ customer.email|lower|escapejs }} {{ customer.first_name|lower|escapejs }} {{ customer.last_name|lower|escapejs }}'.includes(search.toLowerCase()))
+                        ">
+                        <td class="console-td">
+                            <div class="flex flex-wrap items-center gap-1.5">
+                                <span class="text-[11px] font-semibold leading-none tracking-tight text-slate-800 dark:text-slate-100">{{ customer.username }}</span>
+                                <span class="badge-console {% if customer.is_active %}badge-console-emerald{% else %}badge-console-red{% endif %}">{{ customer.is_active|yesno:"Active,Inactive" }}</span>
+                                {% if customer.customer_profile.group %}
+                                <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-semibold leading-none border" style="background-color: {{ customer.customer_profile.group.color }}18; border-color: {{ customer.customer_profile.group.color }}40; color: {{ customer.customer_profile.group.color }}">
+                                    <span class="w-1 h-1 rounded-full flex-shrink-0" style="background-color: {{ customer.customer_profile.group.color }}"></span>{{ customer.customer_profile.group.name }}
+                                </span>
+                                {% endif %}
+                            </div>
+                            {% if customer.first_name or customer.last_name %}<p class="console-meta mt-0.5 uppercase leading-none">{{ customer.first_name }} {{ customer.last_name }}</p>{% endif %}
+                        </td>
+                        <td class="console-td">
+                            <p class="text-[10px] font-bold text-slate-700 leading-none">{{ customer.email }}</p>
+                            {% if customer.customer_profile.phone_number %}<p class="console-meta mt-0.5 leading-none">{{ customer.customer_profile.phone_number }}</p>{% endif %}
+                        </td>
+                        <td class="console-td">
+                            <div class="flex flex-wrap gap-1">
+                                {% for access in customer.customersiteaccess_set.all %}
+                                <span class="px-1.5 py-0.5 rounded bg-slate-50 border border-slate-200 console-label text-slate-600 leading-none">{{ access.site.name }} &middot; {{ access.role }}</span>
+                                {% empty %}
+                                <span class="px-1.5 py-0.5 rounded bg-amber-50 border border-amber-100 console-label text-amber-600 leading-none">No Access</span>
+                                {% endfor %}
+                            </div>
+                        </td>
+                        <td class="console-td text-right">
+                            <div class="flex items-center justify-end gap-2">
+                                <span class="text-xs font-bold tabular-nums text-slate-400">{{ customer.date_joined|date:"d M Y" }}</span>
+                                <button type="button" @click="editModal = '{{ customer.id }}'" class="btn-console-secondary border-transparent p-1.5 hover:border-brand/20 hover:text-brand" title="Edit">
+                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="console-td py-12 text-center console-label text-slate-400">No customer accounts found.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Edit modals -->
+    {% for customer in customers %}
+    <template x-if="editModal === '{{ customer.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit Customer" modal_subtitle=customer.username modal_close="editModal = null" modal_max_width="max-w-md" %}
+                <form action="{% url 'dashboard:customer-update' customer.id %}" method="POST" class="form-perfex space-y-4">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" name="first_name" value="{{ customer.first_name }}" class="w-full" data-modal-initial-focus>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" name="last_name" value="{{ customer.last_name }}" class="w-full">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" name="username" value="{{ customer.username }}" required class="w-full">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" value="{{ customer.email }}" required class="w-full">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" name="phone" value="{{ customer.customer_profile.phone_number }}" class="w-full">
+                        </div>
+                        <div class="form-group">
+                            <label>Group</label>
+                            <select name="group_id" class="w-full">
+                                <option value="">— No Group —</option>
+                                {% for grp in groups %}
+                                <option value="{{ grp.pk }}" {% if customer.customer_profile.group_id == grp.pk %}selected{% endif %}>{{ grp.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>New Password</label>
+                        <input type="password" name="password" placeholder="Leave blank to keep current" class="w-full">
+                    </div>
+                    <label class="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-100 rounded cursor-pointer">
+                        <span class="console-label">Active Account</span>
+                        <input type="checkbox" name="is_active" {% if customer.is_active %}checked{% endif %} class="w-4 h-4 rounded border-slate-200 text-brand focus:ring-brand">
+                    </label>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button type="submit" class="btn-console w-full justify-center py-2.5">Save</button>
+                        <button type="submit" formaction="{% url 'dashboard:customer-delete' customer.id %}" class="btn-console-danger w-full justify-center py-2.5">Delete</button>
+                    </div>
+                </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+
+    <template x-if="createModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Create Customer" modal_close="createModal = false" modal_max_width="max-w-md" modal_title_id="customer-create-modal-title" %}
+                <form action="{% url 'dashboard:customer-create' %}" method="POST" class="form-perfex space-y-4">
+                    {% csrf_token %}
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>First Name</label>
+                            <input type="text" name="first_name" class="w-full" data-modal-initial-focus>
+                        </div>
+                        <div class="form-group">
+                            <label>Last Name</label>
+                            <input type="text" name="last_name" class="w-full">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>Username</label>
+                            <input type="text" name="username" required class="w-full">
+                        </div>
+                        <div class="form-group">
+                            <label>Email</label>
+                            <input type="email" name="email" required class="w-full">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>Phone</label>
+                            <input type="text" name="phone" class="w-full">
+                        </div>
+                        <div class="form-group">
+                            <label>Password</label>
+                            <input type="password" name="password" required class="w-full">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Group</label>
+                        <select name="group_id" class="w-full">
+                            <option value="">— No Group —</option>
+                            {% for grp in groups %}
+                            <option value="{{ grp.pk }}">{{ grp.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="form-group">
+                            <label>Initial Site</label>
+                            <select name="site_id" class="w-full">
+                                <option value="">No site assignment</option>
+                                {% for site in sites %}
+                                <option value="{{ site.id }}">{{ site.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Role</label>
+                            <select name="role" class="w-full">
+                                <option value="owner">Legal Owner</option>
+                                <option value="manager">Operations Manager</option>
+                                <option value="viewer">Audit Only</option>
+                            </select>
+                        </div>
+                    </div>
+                    <label class="flex items-center justify-between px-3 py-2 bg-slate-50 border border-slate-100 rounded cursor-pointer">
+                        <span class="console-label">Grant Alarm Control</span>
+                        <input type="checkbox" name="can_control_alarm" checked class="w-4 h-4 rounded border-slate-200 text-brand focus:ring-brand">
+                    </label>
+                    <button type="submit" class="btn-console w-full justify-center py-2.5">Create Customer</button>
+                </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+</div>
+{% endblock %}

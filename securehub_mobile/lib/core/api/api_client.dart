@@ -5,6 +5,7 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 import '../auth/token_storage.dart';
 import 'auth_interceptor.dart';
+import 'certificate_pinning.dart';
 import 'exceptions.dart';
 
 part 'api_client.g.dart';
@@ -17,13 +18,10 @@ String _getBaseUrl() {
   const envUrl = String.fromEnvironment('API_BASE_URL');
   if (envUrl.isNotEmpty) return envUrl;
 
-  // In release builds with no URL configured, surface a clear error rather
-  // than silently falling back to localhost which will always fail.
+  // In release builds with no URL configured, let API callers surface a clear
+  // in-app error instead of crashing during provider construction.
   if (kReleaseMode) {
-    throw StateError(
-      'API_BASE_URL must be set via --dart-define=API_BASE_URL=<url> '
-      'for release builds.',
-    );
+    return '';
   }
 
   // Local development fallbacks.
@@ -35,8 +33,9 @@ String _getBaseUrl() {
 
 final _baseUrl = _getBaseUrl();
 
-const String googleServerClientId =
-    String.fromEnvironment('GOOGLE_SERVER_CLIENT_ID');
+const String googleServerClientId = String.fromEnvironment(
+  'GOOGLE_SERVER_CLIENT_ID',
+);
 
 // ---------------------------------------------------------------------------
 // Provider
@@ -44,6 +43,13 @@ const String googleServerClientId =
 
 @riverpod
 Dio dio(Ref ref) {
+  if (_baseUrl.isEmpty) {
+    throw const AppConfigurationException(
+      'Secure Hub is missing its production API URL. '
+      'Build with --dart-define=API_BASE_URL=<url>.',
+    );
+  }
+
   final tokenStorage = ref.watch(tokenStorageProvider);
 
   final dioInstance = Dio(
@@ -53,6 +59,11 @@ Dio dio(Ref ref) {
       receiveTimeout: const Duration(seconds: 30),
       headers: {'Content-Type': 'application/json'},
     ),
+  );
+
+  configureCertificatePinning(
+    dioInstance,
+    baseUri: Uri.parse(_baseUrl),
   );
 
   dioInstance.interceptors.add(
@@ -75,14 +86,21 @@ Future<String?> accessToken(Ref ref) {
 }
 
 /// Transforms local URLs (localhost/127.0.0.1) to 10.0.2.2 on Android emulators
-/// to ensure that media assets can be reached from the host machine.
+/// and ensures relative paths are prepended with the base URL.
 String transformUrl(String url) {
   if (url.isEmpty) return '';
-  if (defaultTargetPlatform != TargetPlatform.android) return url;
-  if (!kDebugMode) return url; // Only transform in debug mode
 
-  // Handle case where URL is relative or missing scheme
   String transformed = url;
+
+  // Prepend base URL if it's a relative path
+  if (!transformed.startsWith('http')) {
+    transformed =
+        _baseUrl + (transformed.startsWith('/') ? '' : '/') + transformed;
+  }
+
+  if (defaultTargetPlatform != TargetPlatform.android || !kDebugMode) {
+    return transformed;
+  }
 
   // Only transform if the URL contains localhost or 127.0.0.1
   // to avoid breaking absolute external URLs (S3, etc.)
@@ -93,6 +111,21 @@ String transformUrl(String url) {
   }
 
   return transformed;
+}
+
+/// Returns true when [url] is a relative URL or points back to this app's API.
+/// External signed media URLs should not receive our bearer token headers.
+bool shouldAttachApiAuthHeader(String url) {
+  if (url.isEmpty) return false;
+  if (!url.startsWith('http')) return true;
+
+  final mediaUri = Uri.tryParse(transformUrl(url));
+  final apiUri = Uri.tryParse(transformUrl(_baseUrl));
+  if (mediaUri == null || apiUri == null) return false;
+
+  return mediaUri.scheme == apiUri.scheme &&
+      mediaUri.host == apiUri.host &&
+      mediaUri.port == apiUri.port;
 }
 
 // ---------------------------------------------------------------------------
@@ -138,7 +171,6 @@ Never throwAppException(DioException e) {
     message = e.message ?? 'Unknown error';
   }
 
-  // Sanitize Hikvision technical errors for better UX
   if (message.contains('LAP020011')) {
     message = 'Panel communication error. Please try again in a moment.';
   } else if (message.contains('1073774671')) {

@@ -39,6 +39,8 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this alarm panel device.
         required: true
       tags:
       - alarm-devices
@@ -177,6 +179,16 @@ paths:
               schema:
                 $ref: '#/components/schemas/TokenObtainPair'
           description: ''
+  /api/v1/auth/logout/:
+    post:
+      operationId: auth_logout_create
+      tags:
+      - auth
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/auth/refresh/:
     post:
       operationId: auth_refresh_create
@@ -207,7 +219,6 @@ paths:
   /api/v1/communication/broadcast/:
     get:
       operationId: communication_broadcast_list
-      description: 'Admin-only: create and manage broadcast messages.'
       parameters:
       - name: page
         required: false
@@ -228,7 +239,6 @@ paths:
           description: ''
     post:
       operationId: communication_broadcast_create
-      description: 'Admin-only: create and manage broadcast messages.'
       tags:
       - communication
       requestBody:
@@ -255,7 +265,6 @@ paths:
   /api/v1/communication/broadcast/{id}/:
     get:
       operationId: communication_broadcast_retrieve
-      description: 'Admin-only: create and manage broadcast messages.'
       parameters:
       - in: path
         name: id
@@ -277,7 +286,6 @@ paths:
           description: ''
     put:
       operationId: communication_broadcast_update
-      description: 'Admin-only: create and manage broadcast messages.'
       parameters:
       - in: path
         name: id
@@ -311,7 +319,6 @@ paths:
           description: ''
     patch:
       operationId: communication_broadcast_partial_update
-      description: 'Admin-only: create and manage broadcast messages.'
       parameters:
       - in: path
         name: id
@@ -344,7 +351,6 @@ paths:
           description: ''
     delete:
       operationId: communication_broadcast_destroy
-      description: 'Admin-only: create and manage broadcast messages.'
       parameters:
       - in: path
         name: id
@@ -364,8 +370,8 @@ paths:
     get:
       operationId: communication_messages_list
       description: |-
-        Mobile-facing inbox: returns sent messages addressed to the current user
-        (recipient=null means broadcast to all; recipient=self means individual).
+        Mobile inbox: sent messages addressed to the current user — direct,
+        via their group, or broadcast to all.
       parameters:
       - name: page
         required: false
@@ -384,6 +390,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedBroadcastMessageList'
           description: ''
+  /api/v1/communication/messages/{id}/viewed/:
+    post:
+      operationId: communication_messages_viewed_create
+      description: |-
+        Mobile app calls POST here when the user opens a notification.
+        Idempotent — safe to call multiple times.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - communication
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/hik/arc/{action}/:
     post:
       operationId: hik_arc_create
@@ -534,6 +560,16 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/v1/integrations/hik/health/:
+    get:
+      operationId: integrations_hik_health_retrieve
+      tags:
+      - integrations
+      security:
+      - jwtAuth: []
+      responses:
+        '200':
+          description: No response body
   /api/v1/notifications/register-device/:
     post:
       operationId: notifications_register_device_create
@@ -612,6 +648,8 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this site.
         required: true
       tags:
       - sites
@@ -632,6 +670,8 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this site.
         required: true
       tags:
       - sites
@@ -810,6 +850,8 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this subsystem.
         required: true
       tags:
       - subsystems
@@ -851,6 +893,8 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
+        description: A UUID string identifying this zone.
         required: true
       tags:
       - zones
@@ -898,6 +942,12 @@ components:
         event_type:
           type: string
           maxLength: 64
+        event_name:
+          type: string
+          readOnly: true
+        normalized_event_type:
+          type: string
+          readOnly: true
         event_category:
           $ref: '#/components/schemas/EventCategoryEnum'
         severity:
@@ -929,9 +979,11 @@ components:
         zone_detector_type:
           type: string
           nullable: true
-          description: Return a friendly sensor type label using the same mapping
-            used in the site views.
           readOnly: true
+        performed_by:
+          type: string
+          title: User
+          maxLength: 128
         has_media:
           type: boolean
           description: True if this event has at least one picture/video attachment
@@ -940,15 +992,157 @@ components:
         acknowledged:
           type: boolean
       required:
+      - event_name
       - event_type
       - has_media
       - id
+      - normalized_event_type
       - occurred_at
       - site_name
       - subsystem_name
       - zone_detector_type
       - zone_name
       - zone_number
+    AlarmOutput:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        outputNumber:
+          type: integer
+          readOnly: true
+        status:
+          type: string
+          maxLength: 32
+        tamper:
+          type: boolean
+        batteryStatus:
+          type: string
+          readOnly: true
+        signalStrength:
+          type: string
+          readOnly: true
+        linkage:
+          type: string
+          maxLength: 32
+        duration_const_output_enable:
+          type: boolean
+        is_available:
+          type: boolean
+        accessModuleType:
+          type: string
+          readOnly: true
+        related_access_module_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        module_address:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        subsystemNumbers:
+          type: array
+          items: {}
+          readOnly: true
+        scenarioTypes:
+          type: array
+          items: {}
+          readOnly: true
+        relayAttribute:
+          type: string
+          readOnly: true
+        device_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        model_number:
+          type: string
+          maxLength: 128
+        diagnostics_result:
+          type: string
+          maxLength: 32
+        network_status:
+          type: string
+          maxLength: 16
+        isOnline:
+          type: boolean
+          readOnly: true
+        serial_number:
+          type: string
+          maxLength: 128
+      required:
+      - accessModuleType
+      - batteryStatus
+      - id
+      - isOnline
+      - name
+      - outputNumber
+      - relayAttribute
+      - scenarioTypes
+      - signalStrength
+      - subsystemNumbers
+    AlarmOutputRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        status:
+          type: string
+          maxLength: 32
+        tamper:
+          type: boolean
+        linkage:
+          type: string
+          maxLength: 32
+        duration_const_output_enable:
+          type: boolean
+        is_available:
+          type: boolean
+        related_access_module_id:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        module_address:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        device_number:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: 0
+          format: int64
+          nullable: true
+        model_number:
+          type: string
+          maxLength: 128
+        diagnostics_result:
+          type: string
+          maxLength: 32
+        network_status:
+          type: string
+          maxLength: 16
+        serial_number:
+          type: string
+          maxLength: 128
+      required:
+      - name
     AlarmPanelDevice:
       type: object
       properties:
@@ -965,6 +1159,15 @@ components:
         serialNumber:
           type: string
           readOnly: true
+        modelNumber:
+          type: string
+          readOnly: true
+        firmwareVersion:
+          type: string
+          readOnly: true
+        hardwareVersion:
+          type: string
+          readOnly: true
         hikDeviceId:
           type: string
           readOnly: true
@@ -979,12 +1182,27 @@ components:
           items:
             $ref: '#/components/schemas/Subsystem'
           readOnly: true
+        peripherals:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmPeripheral'
+          readOnly: true
+        outputs:
+          type: array
+          items:
+            $ref: '#/components/schemas/AlarmOutput'
+          readOnly: true
       required:
       - deviceType
+      - firmwareVersion
+      - hardwareVersion
       - hikDeviceId
       - id
       - isOnline
+      - modelNumber
       - name
+      - outputs
+      - peripherals
       - serialNumber
       - site
       - subsystems
@@ -1001,6 +1219,104 @@ components:
       required:
       - name
       - site
+    AlarmPeripheral:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 255
+        peripheralType:
+          type: string
+          readOnly: true
+        peripheralNumber:
+          type: integer
+          readOnly: true
+        serialNumber:
+          type: string
+          readOnly: true
+        peripheral_type_label:
+          type: string
+          maxLength: 64
+        diagnostics_result:
+          type: string
+          maxLength: 32
+        network_status:
+          type: string
+          maxLength: 16
+        batteryStatus:
+          type: string
+          readOnly: true
+        signalStrength:
+          type: string
+          readOnly: true
+        tamper:
+          type: boolean
+        bypassed:
+          type: boolean
+        external_power:
+          type: string
+          maxLength: 32
+        isOnline:
+          type: boolean
+          readOnly: true
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        lastOperationAt:
+          type: string
+          format: date-time
+          readOnly: true
+        lastTriggeredAt:
+          type: string
+          format: date-time
+          readOnly: true
+        metadata: {}
+      required:
+      - batteryStatus
+      - id
+      - isOnline
+      - lastOperationAt
+      - lastTriggeredAt
+      - name
+      - peripheralNumber
+      - peripheralType
+      - serialNumber
+      - signalStrength
+    AlarmPeripheralRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 255
+        peripheral_type_label:
+          type: string
+          maxLength: 64
+        diagnostics_result:
+          type: string
+          maxLength: 32
+        network_status:
+          type: string
+          maxLength: 16
+        tamper:
+          type: boolean
+        bypassed:
+          type: boolean
+        external_power:
+          type: string
+          maxLength: 32
+        last_seen_at:
+          type: string
+          format: date-time
+          nullable: true
+        metadata: {}
+      required:
+      - name
     ArmDisarmCommand:
       type: object
       properties:
@@ -1060,10 +1376,15 @@ components:
           type: string
         message_type:
           $ref: '#/components/schemas/MessageTypeEnum'
+        send_push:
+          type: boolean
+        send_email:
+          type: boolean
+        send_sms:
+          type: boolean
         recipient:
           type: integer
           nullable: true
-          description: Leave blank to send to all mobile users.
         sent_by:
           type: integer
           readOnly: true
@@ -1081,14 +1402,22 @@ components:
           format: date-time
           readOnly: true
           nullable: true
+        view_count:
+          type: integer
+          readOnly: true
+        is_viewed:
+          type: string
+          readOnly: true
       required:
       - body
       - created_at
       - id
+      - is_viewed
       - sent_at
       - sent_by
       - status
       - title
+      - view_count
     BroadcastMessageRequest:
       type: object
       properties:
@@ -1101,10 +1430,15 @@ components:
           minLength: 1
         message_type:
           $ref: '#/components/schemas/MessageTypeEnum'
+        send_push:
+          type: boolean
+        send_email:
+          type: boolean
+        send_sms:
+          type: boolean
         recipient:
           type: integer
           nullable: true
-          description: Leave blank to send to all mobile users.
       required:
       - body
       - title
@@ -1315,10 +1649,15 @@ components:
           minLength: 1
         message_type:
           $ref: '#/components/schemas/MessageTypeEnum'
+        send_push:
+          type: boolean
+        send_email:
+          type: boolean
+        send_sms:
+          type: boolean
         recipient:
           type: integer
           nullable: true
-          description: Leave blank to send to all mobile users.
     SeverityEnum:
       enum:
       - critical
@@ -1347,9 +1686,19 @@ components:
         city:
           type: string
           maxLength: 120
+        state:
+          type: string
+          description: State/Province/Region
+          maxLength: 120
         country:
           type: string
           maxLength: 120
+        primary_industry:
+          type: string
+          maxLength: 128
+        secondary_industry:
+          type: string
+          maxLength: 128
         hikSiteId:
           type: string
           readOnly: true
@@ -1359,6 +1708,16 @@ components:
         isActive:
           type: boolean
           readOnly: true
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,9})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,9})?$
+          nullable: true
         can_control_alarm:
           type: string
           readOnly: true
@@ -1391,13 +1750,33 @@ components:
         city:
           type: string
           maxLength: 120
+        state:
+          type: string
+          description: State/Province/Region
+          maxLength: 120
         country:
           type: string
           maxLength: 120
+        primary_industry:
+          type: string
+          maxLength: 128
+        secondary_industry:
+          type: string
+          maxLength: 128
         timezone:
           type: string
           minLength: 1
           maxLength: 64
+        latitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,9})?$
+          nullable: true
+        longitude:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,3}(?:\.\d{0,9})?$
+          nullable: true
       required:
       - name
     SiteStatus:
@@ -1459,6 +1838,9 @@ components:
         subsystemNumber:
           type: integer
           readOnly: true
+        panelIsOnline:
+          type: boolean
+          readOnly: true
         status:
           $ref: '#/components/schemas/SubsystemStatusEnum'
         zones:
@@ -1469,6 +1851,7 @@ components:
       - hikSubsystemId
       - id
       - name
+      - panelIsOnline
       - site
       - subsystemNumber
       - zones
@@ -1591,6 +1974,34 @@ components:
           type: integer
           readOnly: true
           nullable: true
+        zoneType:
+          type: string
+          readOnly: true
+        reason:
+          type: string
+          readOnly: true
+        healthStatus:
+          type: string
+          readOnly: true
+        modelNumber:
+          type: string
+          readOnly: true
+        accessModuleType:
+          type: string
+          readOnly: true
+        zoneAttribute:
+          type: string
+          readOnly: true
+        shielded:
+          type: boolean
+          readOnly: true
+        magnetOpen:
+          type: boolean
+          readOnly: true
+          nullable: true
+        networkStatus:
+          type: string
+          readOnly: true
         displayType:
           type: string
           readOnly: true
@@ -1598,19 +2009,28 @@ components:
           type: string
           readOnly: true
       required:
+      - accessModuleType
       - chargeValue
       - detectorType
       - deviceNumber
       - deviceType
       - displayType
+      - healthStatus
       - iconType
       - id
       - isOnline
       - lowBattery
+      - magnetOpen
+      - modelNumber
       - name
+      - networkStatus
+      - reason
+      - shielded
       - signalStrength
       - subsystem
+      - zoneAttribute
       - zoneNumber
+      - zoneType
   securitySchemes:
     cookieAuth:
       type: apiKey

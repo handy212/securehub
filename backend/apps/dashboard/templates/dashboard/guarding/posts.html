@@ -1,0 +1,237 @@
+{% extends "dashboard/base.html" %}
+{% block title %}Guard Posts | SecureHub{% endblock %}
+{% block header_title %}Guard Posts{% endblock %}
+{% block content %}
+{% include "dashboard/guarding/_nav.html" %}
+<div class="space-y-3" x-data="{ createModal: false, orderModal: false, editPostId: null, editOrderId: null, editKitId: null, editKitLineId: null }">
+    <div class="console-page-toolbar !mb-0 !pb-2">
+        <div class="min-w-0 flex-1">
+            {% include "dashboard/partials/console/page_header.html" with page_title="Posts" page_subtitle="Guardable locations linked to SecureHub sites" %}
+        </div>
+        <div class="console-page-actions">
+            <button type="button" @click="orderModal = true" class="btn-console-secondary">Post order</button>
+            <button type="button" @click="createModal = true" class="btn-console">New post</button>
+        </div>
+    </div>
+    {% include "dashboard/guarding/_kpi_strip.html" %}
+    {% include "dashboard/guarding/_search_bar.html" with search_placeholder="Search posts…" current_query=current_query %}
+
+    {% include "dashboard/partials/console/data_table_start.html" with table_scrollable=True table_min_width_class="min-w-[980px]" %}
+            <thead class="console-thead">
+                <tr>
+                    <th scope="col" class="console-th">Post</th>
+                    <th scope="col" class="console-th">Site</th>
+                    <th scope="col" class="console-th">Supervisor</th>
+                    <th scope="col" class="console-th">Geofence</th>
+                    <th scope="col" class="console-th">Status</th>
+                    <th scope="col" class="console-th text-right">Manage</th>
+                </tr>
+            </thead>
+            <tbody class="console-tbody">
+                {% for post in posts %}
+                <tr class="align-top">
+                    <td class="console-td">
+                        <div class="font-semibold text-slate-900 dark:text-slate-100">{{ post.name }}</div>
+                        <div class="console-meta font-mono">{{ post.code|default:"No code" }}</div>
+                    </td>
+                    <td class="console-td">{{ post.site.name }}</td>
+                    <td class="console-td">{{ post.supervisor.username|default:"-" }}</td>
+                    <td class="console-td tabular-nums">{{ post.geofence_radius_m }}m</td>
+                    <td class="console-td">{% if post.is_active %}<span class="badge-console badge-console-emerald">Active</span>{% else %}<span class="badge-console badge-console-slate">Inactive</span>{% endif %}</td>
+                    <td class="console-td text-right">
+                        <button type="button" class="btn-console-secondary" @click="editPostId = '{{ post.id }}'">Manage</button>
+                    </td>
+                </tr>
+                {% empty %}
+                <tr><td colspan="6" class="console-td console-empty-state">No guard posts yet.</td></tr>
+                {% endfor %}
+            </tbody>
+    {% include "dashboard/partials/console/data_table_end.html" %}
+
+    <div class="console-table-card">
+        <div class="console-card-section-title">Asset kits (per post)</div>
+        <div class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for kit in asset_kits %}
+            <div class="console-list-row">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between w-full">
+                    <div>
+                        <span class="font-semibold">{{ kit.name }}</span>
+                        <span class="console-meta"> · {{ kit.post.site.name }} / {{ kit.post.name }}{% if kit.is_default %} · default{% endif %}</span>
+                        <ul class="mt-1 text-xs text-slate-600 dark:text-slate-300">
+                            {% for line in kit.lines.all %}
+                            <li class="flex items-center justify-between gap-2">
+                                <span>{{ line.asset_type.name }} × {{ line.quantity_required }}</span>
+                                <span class="flex gap-2">
+                                    <button type="button" class="font-semibold text-brand" @click="editKitLineId = '{{ line.id }}'">Edit</button>
+                                    <form method="post" class="inline" onsubmit="return confirm('Remove line?');">{% csrf_token %}
+                                        <input type="hidden" name="action" value="delete_kit_line"><input type="hidden" name="kit_line_id" value="{{ line.id }}">
+                                        <button type="submit" class="font-semibold text-red-500">Delete</button>
+                                    </form>
+                                </span>
+                            </li>
+                            {% empty %}<li>No lines</li>{% endfor %}
+                        </ul>
+                    </div>
+                    <button type="button" class="btn-console-secondary shrink-0" @click="editKitId = '{{ kit.id }}'">Edit kit</button>
+                </div>
+            </div>
+            {% empty %}
+            <div class="console-empty-state">No kits — add from <a href="{% url 'dashboard:guarding-assets' %}" class="text-brand">Assets</a>.</div>
+            {% endfor %}
+        </div>
+        <form method="post" class="border-t border-slate-100 p-4 grid gap-2 sm:grid-cols-4 dark:border-slate-800">
+            {% csrf_token %}<input type="hidden" name="action" value="post_kit">
+            <select name="post_id" required>{% for post in posts %}<option value="{{ post.id }}">{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select>
+            <input name="name" placeholder="Kit name" required>
+            <label class="flex items-center gap-2 text-xs"><input name="is_default" type="checkbox"> Default</label>
+            <button type="submit" class="btn-console">Add kit</button>
+        </form>
+    </div>
+
+    <div class="console-table-card">
+        <div class="console-card-section-title">Post orders</div>
+        <div class="divide-y divide-slate-100 dark:divide-slate-800">
+            {% for order in post_orders %}
+            <div class="console-list-row">
+                <div class="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                    <div class="min-w-0">
+                        <div class="font-semibold text-slate-900 dark:text-slate-100">{{ order.title }}</div>
+                        <div class="console-meta">{{ order.post.site.name }} · {{ order.post.name }}</div>
+                        <div class="mt-1 text-xs text-slate-600 dark:text-slate-300">{{ order.body|truncatechars:160 }}</div>
+                        <div class="console-meta mt-1">{{ order.effective_from|default:"No start" }} – {{ order.effective_until|default:"No end" }}</div>
+                    </div>
+                    <div class="flex shrink-0 flex-col items-end gap-2">
+                        {% if order.is_active %}<span class="badge-console badge-console-emerald">Active</span>{% else %}<span class="badge-console badge-console-slate">Inactive</span>{% endif %}
+                        <button type="button" class="btn-console-secondary" @click="editOrderId = '{{ order.id }}'">Edit</button>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="console-empty-state">No post orders.</div>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% for post in posts %}
+    <template x-if="editPostId === '{{ post.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit post" modal_subtitle=post.name modal_close="editPostId = null" modal_max_width="max-w-2xl" modal_title_id="post-edit-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="update_post"><input type="hidden" name="post_id" value="{{ post.id }}">
+            <div class="grid gap-2 sm:grid-cols-3">
+                <select name="site_id" required data-modal-initial-focus>{% for site in sites %}<option value="{{ site.id }}" {% if post.site_id == site.id %}selected{% endif %}>{{ site.name }}</option>{% endfor %}</select>
+                <input name="name" value="{{ post.name }}" required placeholder="Post name">
+                <input name="code" value="{{ post.code }}" placeholder="Code">
+            </div>
+            <div class="grid gap-2 sm:grid-cols-2">
+                <select name="supervisor_id"><option value="">No supervisor</option>{% for user in supervisors %}<option value="{{ user.id }}" {% if post.supervisor_id == user.id %}selected{% endif %}>{{ user.username }}</option>{% endfor %}</select>
+                <input name="geofence_radius_m" type="number" min="1" value="{{ post.geofence_radius_m }}">
+            </div>
+            <textarea name="description" class="w-full" placeholder="Post instructions summary">{{ post.description }}</textarea>
+            <label class="flex items-center gap-2 console-label text-slate-500"><input name="inactive" type="checkbox" {% if not post.is_active %}checked{% endif %}> Inactive</label>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="editPostId = null">Cancel</button>
+                <button type="submit" class="btn-console">Save</button>
+            </div>
+        </form>
+        <form method="post" class="px-5 pb-5">{% csrf_token %}<input type="hidden" name="action" value="delete_post"><input type="hidden" name="post_id" value="{{ post.id }}"><button type="submit" class="btn-console-danger" onclick="return confirm('Delete post?');">Delete</button></form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for order in post_orders %}
+    <template x-if="editOrderId === '{{ order.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit post order" modal_subtitle=order.title modal_close="editOrderId = null" modal_max_width="max-w-2xl" modal_title_id="order-edit-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="update_post_order"><input type="hidden" name="order_id" value="{{ order.id }}">
+            <select name="post_id" required data-modal-initial-focus>{% for post in posts %}<option value="{{ post.id }}" {% if order.post_id == post.id %}selected{% endif %}>{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select>
+            <input name="title" value="{{ order.title }}" required placeholder="Order title">
+            <textarea name="body" required class="w-full">{{ order.body }}</textarea>
+            <div class="grid grid-cols-2 gap-2">
+                <input name="effective_from" type="date" value="{{ order.effective_from|date:'Y-m-d' }}">
+                <input name="effective_until" type="date" value="{{ order.effective_until|date:'Y-m-d' }}">
+            </div>
+            <label class="flex items-center gap-2 console-label text-slate-500"><input name="inactive" type="checkbox" {% if not order.is_active %}checked{% endif %}> Inactive</label>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="editOrderId = null">Cancel</button>
+                <button type="submit" class="btn-console">Save</button>
+            </div>
+        </form>
+        <form method="post" class="px-5 pb-5">{% csrf_token %}<input type="hidden" name="action" value="delete_post_order"><input type="hidden" name="order_id" value="{{ order.id }}"><button type="submit" class="text-xs font-semibold text-red-500" onclick="return confirm('Delete order?');">Delete</button></form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+
+    {% for kit in asset_kits %}
+    <template x-if="editKitId === '{{ kit.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit post kit" modal_subtitle=kit.name modal_close="editKitId = null" modal_max_width="max-w-xl" modal_title_id="post-kit-edit-{{ kit.id }}" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="update_post_kit"><input type="hidden" name="kit_id" value="{{ kit.id }}">
+            <select name="post_id" required>{% for post in all_posts %}<option value="{{ post.id }}" {% if kit.post_id == post.id %}selected{% endif %}>{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select>
+            <input name="name" value="{{ kit.name }}" required>
+            <label class="console-label"><input name="is_default" type="checkbox" {% if kit.is_default %}checked{% endif %}> Default kit</label>
+            <label class="console-label"><input name="inactive" type="checkbox" {% if not kit.is_active %}checked{% endif %}> Inactive</label>
+            <div class="flex justify-end gap-2"><button type="button" class="btn-console-secondary" @click="editKitId = null">Cancel</button><button type="submit" class="btn-console">Save</button></div>
+        </form>
+        <form method="post" class="px-5 pb-5" onsubmit="return confirm('Delete kit?');">{% csrf_token %}
+            <input type="hidden" name="action" value="delete_post_kit"><input type="hidden" name="kit_id" value="{{ kit.id }}">
+            <button type="submit" class="text-xs font-semibold text-red-500">Delete kit</button>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}
+    {% for kit in asset_kits %}{% for line in kit.lines.all %}
+    <template x-if="editKitLineId === '{{ line.id }}'">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Edit kit line" modal_subtitle=line.asset_type.code modal_close="editKitLineId = null" modal_max_width="max-w-lg" modal_title_id="post-kitline-edit-{{ line.id }}" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="update_kit_line"><input type="hidden" name="kit_line_id" value="{{ line.id }}">
+            <select name="asset_type_id" required>{% for t in asset_types %}<option value="{{ t.id }}" {% if line.asset_type_id == t.id %}selected{% endif %}>{{ t.name }}</option>{% endfor %}</select>
+            <input name="quantity_required" type="number" min="1" value="{{ line.quantity_required }}" required>
+            <label class="console-label"><input name="is_optional" type="checkbox" {% if line.is_optional %}checked{% endif %}> Optional</label>
+            <div class="flex justify-end gap-2"><button type="button" class="btn-console-secondary" @click="editKitLineId = null">Cancel</button><button type="submit" class="btn-console">Save</button></div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+    {% endfor %}{% endfor %}
+
+    <template x-if="createModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Create post" modal_close="createModal = false" modal_max_width="max-w-2xl" modal_title_id="post-create-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="post">
+            <div class="grid gap-3 sm:grid-cols-3">
+                <select name="site_id" required data-modal-initial-focus>{% for site in sites %}<option value="{{ site.id }}">{{ site.name }}</option>{% endfor %}</select>
+                <input name="name" required placeholder="Post name">
+                <input name="code" placeholder="Code">
+            </div>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <select name="supervisor_id"><option value="">No supervisor</option>{% for user in supervisors %}<option value="{{ user.id }}">{{ user.username }}</option>{% endfor %}</select>
+                <input name="geofence_radius_m" type="number" min="1" value="150" placeholder="Geofence radius">
+            </div>
+            <textarea name="description" placeholder="Post instructions summary" class="w-full"></textarea>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="createModal = false">Cancel</button>
+                <button type="submit" class="btn-console">Create</button>
+            </div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+
+    <template x-if="orderModal">
+        {% include "dashboard/partials/console/modal_start.html" with modal_title="Create post order" modal_close="orderModal = false" modal_max_width="max-w-2xl" modal_title_id="order-create-modal-title" %}
+        <form method="post" class="form-perfex space-y-3">
+            {% csrf_token %}<input type="hidden" name="action" value="post_order">
+            <select name="post_id" required data-modal-initial-focus>{% for post in posts %}<option value="{{ post.id }}">{{ post.site.name }} · {{ post.name }}</option>{% endfor %}</select>
+            <input name="title" required placeholder="Order title">
+            <textarea name="body" required placeholder="Order details" class="w-full"></textarea>
+            <div class="grid gap-3 sm:grid-cols-2"><input name="effective_from" type="date"><input name="effective_until" type="date"></div>
+            <label class="flex items-center gap-2 console-label text-slate-500"><input name="inactive" type="checkbox"> Save inactive</label>
+            <div class="flex flex-wrap justify-end gap-2 border-t border-slate-100 pt-4 dark:border-slate-800">
+                <button type="button" class="btn-console-secondary" @click="orderModal = false">Cancel</button>
+                <button type="submit" class="btn-console">Create</button>
+            </div>
+        </form>
+        {% include "dashboard/partials/console/modal_end.html" %}
+    </template>
+</div>
+</div>
+</div>
+{% endblock %}

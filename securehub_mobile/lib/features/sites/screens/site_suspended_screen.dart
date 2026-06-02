@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../../core/theme/app_theme.dart';
@@ -20,7 +19,7 @@ class SiteSuspendedScreen extends StatelessWidget {
       appBar: AppBar(
         title: Text(
           'Access Suspended',
-          style: GoogleFonts.inter(fontWeight: FontWeight.w800, fontSize: 17),
+          style: TextStyle(fontWeight: FontWeight.w800, fontSize: 17),
         ),
         backgroundColor: Colors.transparent,
         elevation: 0,
@@ -54,7 +53,7 @@ class SiteSuspendedScreen extends StatelessWidget {
                 const SizedBox(height: 28),
                 Text(
                   'BILLING ISSUE',
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                     color: AppTheme.error,
@@ -65,7 +64,7 @@ class SiteSuspendedScreen extends StatelessWidget {
                 Text(
                   'Subscription Suspended',
                   textAlign: TextAlign.center,
-                  style: GoogleFonts.inter(
+                  style: TextStyle(
                     fontSize: 22,
                     fontWeight: FontWeight.w800,
                     color: AppTheme.primary,
@@ -83,7 +82,7 @@ class SiteSuspendedScreen extends StatelessWidget {
                     'Access to this site has been suspended due to an outstanding balance. '
                     'Please contact your security provider to settle the account and restore monitoring.',
                     textAlign: TextAlign.center,
-                    style: GoogleFonts.inter(
+                    style: TextStyle(
                       color: AppTheme.onSurfaceVariant,
                       fontSize: 14,
                       height: 1.6,
@@ -117,3 +116,4 @@ class SiteSuspendedScreen extends StatelessWidget {
     );
   }
 }
+

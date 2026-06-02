@@ -1,0 +1,21 @@
+{% comment %}Requires `dispatch_tab_counts`, Alpine `tab`, `setTab()`, and `pollCounts`.{% endcomment %}
+<nav class="console-tab-bar" role="tablist" aria-label="Dispatch sections">
+    <button type="button" role="tab" :aria-selected="tab === 'sos'" @click="setTab('sos')"
+            :class="tab === 'sos' ? 'console-tab-btn console-tab-btn--active' : 'console-tab-btn'">
+        <span>SOS / Panic</span>
+        <span x-show="pollCounts.open_panic > 0" x-cloak class="console-tab-badge console-tab-badge--alert" x-text="pollCounts.open_panic"></span>
+    </button>
+    <button type="button" role="tab" :aria-selected="tab === 'tasks'" @click="setTab('tasks')"
+            :class="tab === 'tasks' ? 'console-tab-btn console-tab-btn--active' : 'console-tab-btn'">
+        <span>Dispatch tasks</span>
+        <span x-show="pollCounts.open_tasks > 0" x-cloak class="console-tab-badge console-tab-badge--alert" x-text="pollCounts.open_tasks"></span>
+    </button>
+    <button type="button" role="tab" :aria-selected="tab === 'policies'" @click="setTab('policies')"
+            :class="tab === 'policies' ? 'console-tab-btn console-tab-btn--active' : 'console-tab-btn'">
+        <span>Auto-dispatch</span>
+        <span x-show="pollCounts.active_policies > 0" x-cloak class="console-tab-badge" x-text="pollCounts.active_policies"></span>
+    </button>
+</nav>
+<p class="console-tab-hint" x-show="tab === 'sos'" x-cloak>Open panic alerts — acknowledge or resolve, then edit details if needed.</p>
+<p class="console-tab-hint" x-show="tab === 'tasks'" x-cloak>Assign guards and advance tasks through accept → en route → arrive → resolve.</p>
+<p class="console-tab-hint" x-show="tab === 'policies'" x-cloak>Per-site rules for auto-creating dispatch tasks from emergencies and alarms.</p>

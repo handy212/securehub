@@ -1,5 +1,6 @@
 from django.contrib import admin
 from django.urls import include, path
+from django.views.generic import RedirectView
 from django.contrib.staticfiles.urls import staticfiles_urlpatterns
 from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from rest_framework.routers import DefaultRouter
@@ -34,7 +35,8 @@ router.register("subsystems", SubsystemViewSet, basename="subsystem")
 router.register("zones", ZoneViewSet, basename="zone")
 
 urlpatterns = [
-    path("", ApiRootView.as_view(), name="service-root"),
+    path("", RedirectView.as_view(url="/console/", permanent=False), name="service-root"),
+    path("favicon.ico", RedirectView.as_view(url="/static/dashboard/logo.png", permanent=False)),
     path("healthz/", HealthCheckView.as_view(), name="health-check"),
     path("admin/", admin.site.urls),
     path("api/v1/integrations/hik/health/", HikHealthView.as_view(), name="hik-health"),
@@ -79,6 +81,9 @@ urlpatterns = [
     path("api/v1/hik/arc/<str:action>/", ARCServiceView.as_view(), name="hik-arc-service"),
     path("api/v1/alarms/", include("apps.alarms.urls")),
     path("api/v1/communication/", include("apps.communication.urls")),
+    path("api/v1/emergency/", include("apps.emergency.urls")),
+    path("api/v1/guarding/", include("apps.guarding.urls")),
+    path("apply/guard/", include("apps.guarding.urls_public")),
     path("console/", include("apps.dashboard.urls")),
 ]
 

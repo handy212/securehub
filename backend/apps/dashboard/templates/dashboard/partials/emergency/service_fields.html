@@ -1,0 +1,26 @@
+<div class="form-group {% if compact %}md:col-span-1{% endif %}">
+    <label>Plan</label>
+    <select name="plan_id" class="w-full">
+        <option value="">Custom</option>
+        {% for plan in active_plans %}
+        <option value="{{ plan.pk }}" {% if service and service.plan_id == plan.pk %}selected{% endif %}>{{ plan.name }} - GH₵{{ plan.monthly_rate }}</option>
+        {% endfor %}
+    </select>
+</div>
+<div class="form-group">
+    <label>Rate</label>
+    <input name="monthly_rate" type="number" min="0" step="0.01" required value="{{ service.monthly_rate|default:'' }}" class="w-full">
+</div>
+<div class="form-group">
+    <label>Status</label>
+    <select name="status" class="w-full">
+        {% for value,label in statuses %}
+        <option value="{{ value }}" {% if service and service.status == value %}selected{% elif not service and value == 'active' %}selected{% endif %}>{{ label }}</option>
+        {% endfor %}
+    </select>
+</div>
+<div class="form-group">
+    <label>Next Due</label>
+    <input name="next_due_date" type="date" value="{% if service.next_due_date %}{{ service.next_due_date|date:'Y-m-d' }}{% endif %}" class="w-full">
+</div>
+<input type="hidden" name="notes" value="{{ service.notes|default:'' }}">

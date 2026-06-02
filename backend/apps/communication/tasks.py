@@ -16,19 +16,9 @@ logger = logging.getLogger(__name__)
 # ---------------------------------------------------------------------------
 
 def _target_devices(msg):
-    from apps.accounts.models import FCMDevice
-    if msg.recipient:
-        return FCMDevice.objects.filter(user=msg.recipient, is_active=True)
-    if msg.recipient_group_id:
-        return FCMDevice.objects.filter(
-            user__customer_profile__group_id=msg.recipient_group_id,
-            user__customer_profile__is_mobile_user=True,
-            is_active=True,
-        )
-    return FCMDevice.objects.filter(
-        user__customer_profile__is_mobile_user=True,
-        is_active=True,
-    )
+    from apps.communication.push import active_devices_for_broadcast
+
+    return active_devices_for_broadcast(msg)
 
 
 def _target_phones(msg):
@@ -54,39 +44,16 @@ def _target_emails(msg):
 
 
 def _dispatch_push(msg):
-    from apps.alarms.firebase import get_firebase_messaging
+    from apps.communication.push import send_push_to_devices
 
-    messaging = get_firebase_messaging()
-    if messaging is None:
-        logger.warning("FCM not configured — skipping push channel")
-        return {"sent": 0, "failed": 0, "reason": "FCM not configured"}
-
-    tokens = [d.token for d in _target_devices(msg)]
-    if not tokens:
-        return {"sent": 0, "failed": 0, "reason": "no active devices"}
-
-    sent = failed = 0
-    for i in range(0, len(tokens), 500):
-        batch = tokens[i : i + 500]
-        multicast = messaging.MulticastMessage(
-            notification=messaging.Notification(title=msg.title, body=msg.body),
-            data={"type": msg.message_type, "message_id": str(msg.id)},
-            tokens=batch,
-        )
-        try:
-            resp = messaging.send_each_for_multicast(multicast)
-            sent += resp.success_count
-            failed += resp.failure_count
-            if resp.failure_count:
-                from apps.accounts.models import FCMDevice
-                for idx, r in enumerate(resp.responses):
-                    if not r.success and hasattr(r.exception, "code") and r.exception.code == "unregistered":
-                        FCMDevice.objects.filter(token=batch[idx]).update(is_active=False)
-        except Exception as exc:
-            logger.error("FCM multicast error: %s", exc)
-            failed += len(batch)
-
-    return {"sent": sent, "failed": failed}
+    data = {"type": msg.message_type, "message_id": str(msg.id)}
+    data.update(msg.push_data or {})
+    return send_push_to_devices(
+        _target_devices(msg),
+        title=msg.title,
+        body=msg.body,
+        data=data,
+    )
 
 
 def _normalize_phone(phone: str, country_code: str = "233") -> str:

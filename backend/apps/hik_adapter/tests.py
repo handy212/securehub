@@ -2,7 +2,7 @@ import json
 from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from apps.alarms.models import AlarmEvent
@@ -41,6 +41,117 @@ class HikAdapterTests(TestCase):
         
         # Verify database
         self.assertTrue(AlarmPanelDevice.objects.filter(site=self.site, hik_device_id="demo-panel-001").exists())
+
+    @patch("apps.hik_adapter.client.HikPartnerClient.subscribe_events")
+    @patch("apps.hik_adapter.services.HikPartnerService.sync_site_metadata")
+    @patch("apps.hik_adapter.client.HikPartnerClient.list_devices")
+    def test_sync_site_devices_fetches_all_device_pages(
+        self,
+        mock_list_devices,
+        mock_sync_metadata,
+        mock_subscribe_events,
+    ):
+        mock_list_devices.side_effect = [
+            {
+                "data": {
+                    "rows": [
+                        {
+                            "id": "dev-page-1",
+                            "deviceSerial": "SN-PAGE-1",
+                            "deviceName": "Panel Page 1",
+                            "deviceModel": "AX",
+                            "deviceCategory": 3,
+                            "deviceSubCategory": 3,
+                            "deviceOnlineStatus": 1,
+                        }
+                    ],
+                    "total": 2,
+                }
+            },
+            {
+                "data": {
+                    "rows": [
+                        {
+                            "id": "dev-page-2",
+                            "deviceSerial": "SN-PAGE-2",
+                            "deviceName": "Panel Page 2",
+                            "deviceModel": "AX",
+                            "deviceCategory": 3,
+                            "deviceSubCategory": 4,
+                            "deviceOnlineStatus": 0,
+                        }
+                    ],
+                    "total": 2,
+                }
+            },
+        ]
+
+        service = HikPartnerService()
+        service.client.dry_run = False
+
+        result = service.sync_site_devices(self.site)
+
+        self.assertEqual(result["devices_seen"], 2)
+        self.assertTrue(AlarmPanelDevice.objects.filter(serial_number="SN-PAGE-1").exists())
+        self.assertTrue(AlarmPanelDevice.objects.filter(serial_number="SN-PAGE-2").exists())
+        self.assertEqual(mock_list_devices.call_count, 2)
+        mock_subscribe_events.assert_called_once_with(["SN-PAGE-1", "SN-PAGE-2"])
+
+    @patch("apps.hik_adapter.client.HikPartnerClient.search_sites")
+    def test_fetch_all_hik_sites_paginates_site_search(self, mock_search_sites):
+        mock_search_sites.side_effect = [
+            {"data": {"rows": [{"id": "site-1", "siteName": "Site 1"}], "total": 2}},
+            {"data": {"rows": [{"id": "site-2", "siteName": "Site 2"}], "total": 2}},
+        ]
+
+        service = HikPartnerService()
+        service.client.dry_run = False
+
+        rows = service.fetch_all_hik_sites(page_size=1)
+
+        self.assertEqual([row["id"] for row in rows], ["site-1", "site-2"])
+        self.assertEqual(mock_search_sites.call_count, 2)
+
+    @patch("apps.hik_adapter.services.HikPartnerService.refresh_site_health")
+    @patch("apps.hik_adapter.services.HikPartnerService.sync_alarm_status")
+    @patch("apps.hik_adapter.services.HikPartnerService.sync_site_devices")
+    @patch("apps.hik_adapter.services.HikPartnerService.fetch_all_hik_sites")
+    def test_import_hik_sites_creates_site_and_runs_full_sync(
+        self,
+        mock_fetch_all_hik_sites,
+        mock_sync_site_devices,
+        mock_sync_alarm_status,
+        mock_refresh_site_health,
+    ):
+        mock_fetch_all_hik_sites.return_value = [
+            {
+                "id": "hik-import-1",
+                "siteName": "Imported Site",
+                "siteState": "Greater Accra",
+                "siteCity": "Accra",
+                "siteStreet": "Ring Road",
+                "location": "Ring Road, Accra",
+                "timeZone": "222",
+                "primaryIndustry": "Residential",
+            }
+        ]
+        mock_sync_site_devices.return_value = {"devices_seen": 3, "synced_panels": 1}
+
+        service = HikPartnerService()
+        service.client.dry_run = False
+
+        result = service.import_hik_sites()
+
+        site = Site.objects.get(hik_site_id="hik-import-1")
+        self.assertEqual(site.name, "Imported Site")
+        self.assertEqual(site.city, "Accra")
+        self.assertEqual(site.address, "Ring Road, Accra")
+        self.assertEqual(result["created"], 1)
+        self.assertEqual(result["devices_seen"], 3)
+        self.assertEqual(result["synced_panels"], 1)
+        mock_sync_site_devices.assert_called_once_with(site)
+        mock_sync_alarm_status.assert_called_once_with(site)
+        mock_refresh_site_health.assert_called_once_with(site)
 
     @patch("apps.hik_adapter.client.requests.post")
     def test_get_access_token_success(self, mock_post):
@@ -81,6 +192,16 @@ class HikAdapterTests(TestCase):
 
         # Verify expiry is set correctly from expireTime (ms)
         self.assertAlmostEqual(client._token_expires_at, expire_ms / 1000 - 60, delta=5)
+
+    def test_is_configured_rejects_placeholder_credentials(self):
+        client = HikPartnerClient(
+            base_url="https://api.hik-partner.com",
+            api_key="CHANGE-ME",
+            api_secret="CHANGE-ME",
+            dry_run=False,
+        )
+
+        self.assertFalse(client.is_configured())
 
     @patch("apps.hik_adapter.client.requests.request")
     @patch("apps.hik_adapter.client.HikPartnerClient.get_access_token")
@@ -137,6 +258,60 @@ class HikAdapterTests(TestCase):
 
         self.assertEqual(cm.exception.error_code, "LAP006009")
 
+    @patch("apps.hik_adapter.client.requests.request")
+    @patch("apps.hik_adapter.client.HikPartnerClient.get_access_token")
+    def test_request_accepts_transparent_success_status_code_as_string(
+        self, mock_get_token, mock_request
+    ):
+        mock_get_token.return_value = "token-abc"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.ok = True
+        mock_response.json.return_value = {"statusCode": "1", "statusString": "OK"}
+        mock_request.return_value = mock_response
+
+        client = HikPartnerClient(
+            base_url="https://api.example.com",
+            api_key="key",
+            api_secret="secret",
+            dry_run=False,
+        )
+
+        response = client.request("PUT", "/api/test", json={})
+
+        self.assertEqual(response, {"statusCode": "1", "statusString": "OK"})
+
+    @patch("apps.hik_adapter.client.requests.request")
+    @patch("apps.hik_adapter.client.HikPartnerClient.get_access_token")
+    def test_request_raises_for_transparent_failure_without_gateway_error_code(
+        self, mock_get_token, mock_request
+    ):
+        mock_get_token.return_value = "token-abc"
+
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.ok = True
+        mock_response.json.return_value = {
+            "statusCode": 0,
+            "statusString": "Invalid Operation",
+            "subStatusCode": "0x4000804F",
+        }
+        mock_request.return_value = mock_response
+
+        client = HikPartnerClient(
+            base_url="https://api.example.com",
+            api_key="key",
+            api_secret="secret",
+            dry_run=False,
+        )
+
+        with self.assertRaises(HikPartnerError) as cm:
+            client.request("PUT", "/api/test", json={})
+
+        self.assertEqual(cm.exception.error_code, "0x4000804F")
+        self.assertIn("Invalid Operation", str(cm.exception))
+
     @patch("apps.hik_adapter.client.HikPartnerClient.request")
     def test_service_executes_command_and_logs_event(self, mock_client_request):
         mock_client_request.return_value = {"code": "0", "msg": "success", "data": {}}
@@ -170,6 +345,44 @@ class HikAdapterTests(TestCase):
         self.assertEqual(kwargs["method"], "PUT")
         self.assertIn("/api/hpcgw/v1/device/transparent/", kwargs["path"])
         self.assertEqual(kwargs["json"]["Operate"]["moduleOperateCode"], "1234")
+
+    @override_settings(
+        HIK_PARTNER={
+            "BASE_URL": "https://api.example.com",
+            "API_KEY": "key",
+            "API_SECRET": "secret-with-symbols-and-longer-than-32-characters",
+            "WEBHOOK_SIGN_SECRET": "",
+            "DRY_RUN": False,
+        }
+    )
+    @patch("apps.hik_adapter.client.HikPartnerClient.save_webhook_config")
+    def test_save_webhook_config_omits_sign_secret_when_using_api_secret_default(
+        self, mock_save_webhook_config
+    ):
+        service = HikPartnerService()
+
+        service.save_webhook_config(callback_url="https://example.com/api/v1/alarms/webhook/")
+
+        self.assertIsNone(mock_save_webhook_config.call_args.kwargs["sign_secret"])
+
+    @override_settings(
+        HIK_PARTNER={
+            "BASE_URL": "https://api.example.com",
+            "API_KEY": "key",
+            "API_SECRET": "secret",
+            "WEBHOOK_SIGN_SECRET": "Webhook123",
+            "DRY_RUN": False,
+        }
+    )
+    @patch("apps.hik_adapter.client.HikPartnerClient.save_webhook_config")
+    def test_save_webhook_config_sends_dedicated_webhook_secret(
+        self, mock_save_webhook_config
+    ):
+        service = HikPartnerService()
+
+        service.save_webhook_config(callback_url="https://example.com/api/v1/alarms/webhook/")
+
+        self.assertEqual(mock_save_webhook_config.call_args.kwargs["sign_secret"], "Webhook123")
 
     @patch("apps.hik_adapter.client.HikPartnerClient.request")
     def test_service_handles_api_failure(self, mock_client_request):
@@ -390,6 +603,51 @@ class HikAdapterTests(TestCase):
         self.assertEqual(self.site.primary_industry, "House")
         self.assertEqual(self.site.latitude, Decimal("5.603700000"))
         self.assertEqual(self.site.longitude, Decimal("-0.187000000"))
+
+    @patch("apps.hik_adapter.services.requests.get")
+    @patch("apps.hik_adapter.client.HikPartnerClient.search_sites")
+    def test_sync_site_metadata_uses_device_site_name_fallback(self, mock_search_sites, mock_get):
+        mock_search_sites.side_effect = [
+            {"data": {"rows": [], "total": 0}},
+            {
+                "data": {
+                    "rows": [
+                        {
+                            "id": "site-1",
+                            "siteName": "site74",
+                            "siteState": "",
+                            "siteCity": "Accra",
+                            "siteStreet": "oseble street",
+                            "location": "",
+                            "timeZone": "48",
+                        }
+                    ],
+                    "total": 1,
+                }
+            },
+        ]
+        mock_response = MagicMock()
+        mock_response.json.return_value = []
+        mock_response.raise_for_status.return_value = None
+        mock_get.return_value = mock_response
+
+        service = HikPartnerService()
+        service.client.dry_run = False
+
+        service.sync_site_metadata(
+            self.site,
+            device_list=[
+                {
+                    "siteID": "site-1",
+                    "siteName": "site74",
+                }
+            ],
+        )
+
+        self.site.refresh_from_db()
+        self.assertEqual(self.site.name, "site74")
+        self.assertEqual(self.site.city, "Accra")
+        self.assertEqual(self.site.address, "oseble street")
 
     def test_sync_alarm_status_persists_extended_zone_metadata_and_outputs(self):
         self.device.is_online = True

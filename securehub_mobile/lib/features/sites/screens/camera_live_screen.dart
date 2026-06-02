@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import '../../../core/theme/app_theme.dart';
 import '../providers/sites_provider.dart';
 import '../../../core/api/api_client.dart';
@@ -30,25 +29,32 @@ class CameraLiveScreen extends ConsumerWidget {
             child: streamAsync.when(
               data: (url) => AspectRatio(
                 aspectRatio: 16 / 9,
-                child: ref.watch(accessTokenProvider).when(
-                  data: (token) => Image.network(
-                    transformUrl(url),
-                    headers: token != null ? {'Authorization': 'Bearer $token'} : null,
-                    fit: BoxFit.contain,
-                    gaplessPlayback: true,
-                    loadingBuilder: (context, child, loadingProgress) {
-                      if (loadingProgress == null) return child;
-                      return const Center(child: CircularProgressIndicator());
-                    },
-                    errorBuilder: (context, error, stackTrace) => _ErrorIndicator(
-                      message: 'UNABLE TO LOAD STREAM',
+                child: ref
+                    .watch(accessTokenProvider)
+                    .when(
+                      data: (token) => Image.network(
+                        transformUrl(url),
+                        headers: token != null
+                            ? {'Authorization': 'Bearer $token'}
+                            : null,
+                        fit: BoxFit.contain,
+                        gaplessPlayback: true,
+                        loadingBuilder: (context, child, loadingProgress) {
+                          if (loadingProgress == null) return child;
+                          return const Center(
+                            child: CircularProgressIndicator(),
+                          );
+                        },
+                        errorBuilder: (context, error, stackTrace) =>
+                            const _ErrorIndicator(
+                              message: 'UNABLE TO LOAD STREAM',
+                            ),
+                      ),
+                      loading: () =>
+                          const Center(child: CircularProgressIndicator()),
+                      error: (err, _) =>
+                          const _ErrorIndicator(message: 'AUTH ERROR'),
                     ),
-                  ),
-                  loading: () => const Center(child: CircularProgressIndicator()),
-                  error: (err, _) => _ErrorIndicator(
-                    message: 'AUTH ERROR',
-                  ),
-                ),
               ),
               loading: () => const Center(child: CircularProgressIndicator()),
               error: (err, _) => Center(
@@ -57,20 +63,27 @@ class CameraLiveScreen extends ConsumerWidget {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      const Icon(Icons.warning_amber_rounded,
-                          color: AppTheme.error, size: 48),
+                      const Icon(
+                        Icons.warning_amber_rounded,
+                        color: AppTheme.error,
+                        size: 48,
+                      ),
                       const SizedBox(height: 16),
                       Text(
                         'STREAM ERROR',
-                        style: GoogleFonts.inter(
-                            color: Colors.white, fontWeight: FontWeight.w800),
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w800,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       Text(
                         err.toString(),
                         textAlign: TextAlign.center,
-                        style: GoogleFonts.inter(
-                            color: Colors.white54, fontSize: 11),
+                        style: TextStyle(
+                          color: Colors.white54,
+                          fontSize: 11,
+                        ),
                       ),
                     ],
                   ),
@@ -100,8 +113,10 @@ class CameraLiveScreen extends ConsumerWidget {
                 children: [
                   IconButton(
                     onPressed: () => Navigator.of(context).pop(),
-                    icon: const Icon(Icons.arrow_back_ios_new_rounded,
-                        color: Colors.white),
+                    icon: const Icon(
+                      Icons.arrow_back_ios_new_rounded,
+                      color: Colors.white,
+                    ),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
@@ -110,7 +125,7 @@ class CameraLiveScreen extends ConsumerWidget {
                       children: [
                         Text(
                           channelName.toUpperCase(),
-                          style: GoogleFonts.inter(
+                          style: TextStyle(
                             color: Colors.white,
                             fontSize: 16,
                             fontWeight: FontWeight.w800,
@@ -129,7 +144,7 @@ class CameraLiveScreen extends ConsumerWidget {
                             const SizedBox(width: 6),
                             Text(
                               'LIVE MONITORING',
-                              style: GoogleFonts.inter(
+                              style: TextStyle(
                                 color: Colors.white70,
                                 fontSize: 10,
                                 fontWeight: FontWeight.w700,
@@ -163,19 +178,21 @@ class CameraLiveScreen extends ConsumerWidget {
                   ],
                 ),
               ),
-              child: Row(
+              child: const Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
+                  _ControlIcon(icon: Icons.mic_off_rounded, label: 'LISTEN'),
+                  SizedBox(width: 40),
                   _ControlIcon(
-                      icon: Icons.mic_off_rounded, label: 'LISTEN'),
-                  const SizedBox(width: 40),
+                    icon: Icons.photo_camera_rounded,
+                    label: 'SNAPSHOT',
+                  ),
+                  SizedBox(width: 40),
                   _ControlIcon(
-                      icon: Icons.photo_camera_rounded, label: 'SNAPSHOT'),
-                  const SizedBox(width: 40),
-                  _ControlIcon(
-                      icon: Icons.videocam_rounded,
-                      label: 'RECORD',
-                      color: AppTheme.error),
+                    icon: Icons.videocam_rounded,
+                    label: 'RECORD',
+                    color: AppTheme.error,
+                  ),
                 ],
               ),
             ),
@@ -187,8 +204,11 @@ class CameraLiveScreen extends ConsumerWidget {
 }
 
 class _ControlIcon extends StatelessWidget {
-  const _ControlIcon(
-      {required this.icon, required this.label, this.color = Colors.white});
+  const _ControlIcon({
+    required this.icon,
+    required this.label,
+    this.color = Colors.white,
+  });
   final IconData icon;
   final String label;
   final Color color;
@@ -209,7 +229,7 @@ class _ControlIcon extends StatelessWidget {
         const SizedBox(height: 8),
         Text(
           label,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: Colors.white54,
             fontSize: 9,
             fontWeight: FontWeight.w800,
@@ -234,7 +254,7 @@ class _ErrorIndicator extends StatelessWidget {
         const SizedBox(height: 16),
         Text(
           message,
-          style: GoogleFonts.inter(
+          style: TextStyle(
             color: Colors.white24,
             fontSize: 12,
             fontWeight: FontWeight.w900,
@@ -245,3 +265,4 @@ class _ErrorIndicator extends StatelessWidget {
     );
   }
 }
+

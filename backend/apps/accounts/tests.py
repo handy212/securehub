@@ -5,6 +5,18 @@ from django.core.management import call_command
 from django.test import TestCase
 
 from .models import CustomerProfile
+from .profile import build_user_profile_payload
+from apps.guarding.asset_models import (
+    GuardAssetDepot,
+    GuardAssetStock,
+    GuardAssetType,
+    GuardAssetUnit,
+    GuardingAssetPolicy,
+    PostAssetKit,
+    ShiftAssetManifest,
+)
+from apps.guarding.models import ClientPortalAccess
+from apps.sites.models import Site
 
 
 class CustomerProfileSignalTests(TestCase):
@@ -19,4 +31,25 @@ class CustomerProfileSignalTests(TestCase):
 
         self.assertTrue(User.objects.filter(username="owner").exists())
         self.assertTrue(User.objects.filter(username="viewer").exists())
-        self.assertIn("owner / DemoPass123!", stdout.getvalue())
+        self.assertTrue(User.objects.filter(username="guard-client").exists())
+        guard_client = User.objects.get(username="guard-client")
+        self.assertTrue(ClientPortalAccess.objects.filter(user=guard_client, can_view_guards=True).exists())
+        self.assertTrue(Site.objects.filter(hik_site_id="demo-site-001").exists())
+        self.assertTrue(GuardAssetType.objects.filter(code="RADIO-HH").exists())
+        self.assertTrue(GuardAssetDepot.objects.filter(name="Warehouse North Lockup").exists())
+        self.assertTrue(GuardAssetUnit.objects.filter(asset_tag="RAD-DEMO-001", status=GuardAssetUnit.Status.ISSUED).exists())
+        self.assertTrue(GuardAssetStock.objects.filter(asset_type__code="HI-VIS-VEST", quantity_on_hand__gte=1).exists())
+        self.assertTrue(PostAssetKit.objects.filter(name="Main Gate Standard Kit", lines__asset_type__code="SITE-KEY").exists())
+        self.assertTrue(GuardingAssetPolicy.objects.filter(post__name="Main Gate", default_mode=GuardingAssetPolicy.EnforcementMode.STRICT).exists())
+        self.assertTrue(ShiftAssetManifest.objects.filter(assignment__guard__employee_number="G-DEMO-001", lines__status="issued").exists())
+        self.assertIn("Guarding client portal login: guard-client", stdout.getvalue())
+
+    def test_profile_payload_marks_guarding_client_access(self):
+        user = User.objects.create_user(username="client-mobile", password="Secret123!")
+        site = Site.objects.create(name="Client Site", hik_site_id="client-mobile-site")
+        ClientPortalAccess.objects.create(user=user, site=site)
+
+        payload = build_user_profile_payload(user)
+
+        self.assertEqual(payload["account_kind"], "customer")
+        self.assertTrue(payload["has_guarding_client_access"])

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/theme/app_theme.dart';
 
@@ -32,7 +31,7 @@ class SuspensionBanner extends StatelessWidget {
             const SizedBox(height: 20),
             Text(
               'Access Suspended',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w800,
                 color: AppTheme.primary,
@@ -44,7 +43,7 @@ class SuspensionBanner extends StatelessWidget {
               'Your subscription has been suspended due to a billing issue. '
               'Please contact support to reactivate.',
               textAlign: TextAlign.center,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 color: AppTheme.onSurfaceVariant,
                 fontSize: 14,
                 height: 1.5,
@@ -56,3 +55,4 @@ class SuspensionBanner extends StatelessWidget {
     );
   }
 }
+

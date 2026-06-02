@@ -1,15 +1,100 @@
+from django.contrib.auth import views as auth_views
 from django.contrib.auth.views import LogoutView
 from django.urls import path
-from . import views
+
+from apps.dashboard.api_views import GuardDispatchPollView, GuardMapSnapshotPollView
+
+from . import help_views, views
 
 app_name = "dashboard"
 
 urlpatterns = [
     path("login/", views.ConsoleLoginView.as_view(), name="login"),
     path("logout/", LogoutView.as_view(next_page="dashboard:login"), name="logout"),
+    path(
+        "password-reset/",
+        auth_views.PasswordResetView.as_view(
+            template_name="dashboard/auth/password_reset_form.html",
+            email_template_name="dashboard/auth/password_reset_email.txt",
+            subject_template_name="dashboard/auth/password_reset_subject.txt",
+            success_url="/console/password-reset/done/",
+        ),
+        name="password-reset",
+    ),
+    path(
+        "password-reset/done/",
+        auth_views.PasswordResetDoneView.as_view(
+            template_name="dashboard/auth/password_reset_done.html",
+        ),
+        name="password-reset-done",
+    ),
+    path(
+        "password-reset/<uidb64>/<token>/",
+        auth_views.PasswordResetConfirmView.as_view(
+            template_name="dashboard/auth/password_reset_confirm.html",
+            success_url="/console/password-reset/complete/",
+        ),
+        name="password-reset-confirm",
+    ),
+    path(
+        "password-reset/complete/",
+        auth_views.PasswordResetCompleteView.as_view(
+            template_name="dashboard/auth/password_reset_complete.html",
+        ),
+        name="password-reset-complete",
+    ),
     path("", views.DashboardHomeView.as_view(), name="home"),
+    path("help/", help_views.ConsoleHelpIndexView.as_view(), name="help-index"),
+    path("help/<slug:slug>/", help_views.ConsoleHelpPageView.as_view(), name="help-page"),
     path("sites/", views.SiteDirectoryView.as_view(), name="sites"),
     path("map/", views.SiteMapView.as_view(), name="site-map"),
+    path("map/guards/poll/", GuardMapSnapshotPollView.as_view(), name="guard-map-poll"),
+    path("map/zones/", views.MapZoneListView.as_view(), name="map-zones"),
+    path("map/zones/<uuid:pk>/update/", views.MapZoneUpdateView.as_view(), name="map-zone-update"),
+    path("map/zones/<uuid:pk>/delete/", views.MapZoneDeleteView.as_view(), name="map-zone-delete"),
+    path("emergency/", views.EmergencyConsoleView.as_view(), name="emergency"),
+    path("emergency/<uuid:request_id>/assign/", views.EmergencyConsoleAssignView.as_view(), name="emergency-assign"),
+    path("emergency/<uuid:request_id>/<str:action>/", views.EmergencyConsoleActionView.as_view(), name="emergency-action"),
+    path("guarding/", views.GuardingOverviewView.as_view(), name="guarding-overview"),
+    path("guarding/live-map/", views.GuardingLiveMapView.as_view(), name="guarding-live-map"),
+    path("guarding/analytics/", views.GuardingAnalyticsView.as_view(), name="guarding-analytics"),
+    path("guarding/applicants/", views.GuardingApplicantsView.as_view(), name="guarding-applicants"),
+    path("guarding/applicants/<uuid:applicant_id>/hire/", views.GuardingApplicantHireView.as_view(), name="guarding-applicant-hire"),
+    path(
+        "guarding/applicants/<uuid:applicant_id>/application.pdf",
+        views.GuardingApplicantPdfView.as_view(),
+        name="guarding-applicant-pdf",
+    ),
+    path("guarding/guards/", views.GuardingGuardsView.as_view(), name="guarding-guards"),
+    path("guarding/assets/", views.GuardingAssetsView.as_view(), name="guarding-assets"),
+    path("guarding/posts/", views.GuardingPostsView.as_view(), name="guarding-posts"),
+    path("guarding/shifts/", views.GuardingShiftsView.as_view(), name="guarding-shifts"),
+    path("guarding/patrols/", views.GuardingPatrolsView.as_view(), name="guarding-patrols"),
+    path("guarding/patrols/export.csv", views.GuardingPatrolProofExportView.as_view(), name="guarding-patrols-export"),
+    path("guarding/patrols/<uuid:round_id>/complete/", views.GuardingPatrolCompleteView.as_view(), name="guarding-patrol-complete"),
+    path("guarding/checkpoints/<uuid:checkpoint_id>/qr.svg", views.GuardingCheckpointQrView.as_view(), name="guarding-checkpoint-qr"),
+    path("guarding/reports/", views.GuardingReportsView.as_view(), name="guarding-reports"),
+    path("guarding/reports/export.csv", views.GuardingReportExportView.as_view(), name="guarding-reports-export"),
+    path("guarding/reports/<uuid:report_id>/review/", views.GuardingReportReviewView.as_view(), name="guarding-report-review"),
+    path("guarding/back-office/", views.GuardingBackOfficeView.as_view(), name="guarding-backoffice"),
+    path("guarding/timesheets/export.csv", views.GuardingTimesheetExportView.as_view(), name="guarding-timesheets-export"),
+    path("guarding/dispatch/", views.GuardingDispatchView.as_view(), name="guarding-dispatch"),
+    path("guarding/dispatch/poll/", GuardDispatchPollView.as_view(), name="guarding-dispatch-poll"),
+    path("guarding/dispatch/panic/<uuid:alert_id>/<str:action>/", views.GuardingPanicActionView.as_view(), name="guarding-panic-action"),
+    path("guarding/dispatch/tasks/<uuid:task_id>/<str:action>/", views.GuardingDispatchActionView.as_view(), name="guarding-dispatch-action"),
+    path("client/guarding/", views.GuardingClientPortalView.as_view(), name="client-guarding"),
+    path("client/guarding/reports/<uuid:report_id>/acknowledge/", views.GuardingClientReportAcknowledgeView.as_view(), name="client-guarding-report-acknowledge"),
+    path("client/guarding/reports.csv", views.GuardingClientReportExportView.as_view(), name="client-guarding-reports-export"),
+    path("emergency/services/", views.EmergencyServiceManagementView.as_view(), name="emergency-services"),
+    path("emergency/services/plans/create/", views.CreateEmergencyPlanView.as_view(), name="emergency-plan-create"),
+    path("emergency/services/plans/<uuid:plan_id>/update/", views.UpdateEmergencyPlanView.as_view(), name="emergency-plan-update"),
+    path("emergency/services/plans/<uuid:plan_id>/delete/", views.DeleteEmergencyPlanView.as_view(), name="emergency-plan-delete"),
+    path("emergency/services/sites/create/", views.CreateSiteEmergencyServiceView.as_view(), name="site-emergency-create"),
+    path("emergency/services/accounts/create/", views.CreateAccountEmergencyServiceView.as_view(), name="account-emergency-create"),
+    path("emergency/services/sites/<uuid:service_id>/update/", views.UpdateSiteEmergencyServiceView.as_view(), name="site-emergency-update"),
+    path("emergency/services/sites/<uuid:service_id>/delete/", views.DeleteSiteEmergencyServiceView.as_view(), name="site-emergency-delete"),
+    path("emergency/services/accounts/<uuid:service_id>/update/", views.UpdateAccountEmergencyServiceView.as_view(), name="account-emergency-update"),
+    path("emergency/services/accounts/<uuid:service_id>/delete/", views.DeleteAccountEmergencyServiceView.as_view(), name="account-emergency-delete"),
     path("sites/provision/", views.ProvisionSiteView.as_view(), name="provision-site"),
     path("sites/<uuid:pk>/", views.SiteConsoleView.as_view(), name="site-console"),
     path("sites/<uuid:pk>/actions/<str:action>/", views.SiteActionView.as_view(), name="site-action"),
@@ -28,6 +113,7 @@ urlpatterns = [
     path("customers/groups/<uuid:pk>/delete/", views.CustomerGroupDeleteView.as_view(), name="customer-group-delete"),
     path("settings/", views.PlatformSettingsView.as_view(), name="settings"),
     path("sync/global/", views.GlobalSyncView.as_view(), name="global-sync"),
+    path("sync/hik-sites/import/", views.HikImportSitesView.as_view(), name="hik-import-sites"),
     # Subscription management
     path("subscriptions/", views.SubscriptionListView.as_view(), name="subscriptions"),
     path("subscriptions/create/", views.CreateSubscriptionView.as_view(), name="subscription-create"),

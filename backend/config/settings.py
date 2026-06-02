@@ -25,6 +25,11 @@ ALLOWED_HOSTS = [
     for host in os.getenv("DJANGO_ALLOWED_HOSTS", "127.0.0.1,localhost").split(",")
     if host.strip()
 ]
+CSRF_TRUSTED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "").split(",")
+    if origin.strip()
+]
 
 INSTALLED_APPS = [
     "django.contrib.admin",
@@ -44,6 +49,8 @@ INSTALLED_APPS = [
     "apps.hik_adapter",
     "apps.dashboard.apps.DashboardConfig",
     "apps.communication",
+    "apps.emergency",
+    "apps.guarding.apps.GuardingConfig",
 ]
 
 MIDDLEWARE = [
@@ -74,6 +81,7 @@ TEMPLATES = [
                 "django.contrib.auth.context_processors.auth",
                 "django.contrib.messages.context_processors.messages",
                 "apps.dashboard.context_processors.global_dashboard_stats",
+                "apps.accounts.context_processors.console_rbac",
             ],
         },
     },
@@ -126,11 +134,21 @@ TIME_ZONE = "UTC"
 USE_I18N = True
 USE_TZ = True
 
-STATIC_URL = "static/"
+STATIC_URL = "/static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
-if not DEBUG:
-    STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": (
+            "whitenoise.storage.CompressedManifestStaticFilesStorage"
+            if not DEBUG
+            else "django.contrib.staticfiles.storage.StaticFilesStorage"
+        ),
+    },
+}
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 
 REST_FRAMEWORK = {
@@ -140,6 +158,7 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": (
         "rest_framework.permissions.IsAuthenticated",
     ),
+    "EXCEPTION_HANDLER": "config.exceptions.securehub_exception_handler",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
     "DEFAULT_THROTTLE_CLASSES": [
         "rest_framework.throttling.AnonRateThrottle",
@@ -174,33 +193,66 @@ SPECTACULAR_SETTINGS = {
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL", "redis://127.0.0.1:6379/0")
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND", CELERY_BROKER_URL)
+
+# Shared cache (login lockout, site panic capability, etc.). Use Redis in production
+# so counts are consistent across Gunicorn workers. Celery uses DB 0; cache uses DB 1.
+_CACHE_URL = os.getenv("DJANGO_CACHE_URL", "").strip()
+if not _CACHE_URL and not TESTING and not USE_SQLITE:
+    _redis_base = CELERY_BROKER_URL.rsplit("/", 1)[0]
+    _CACHE_URL = f"{_redis_base}/1"
+
+if TESTING:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+            "LOCATION": "securehub-test",
+        }
+    }
+elif _CACHE_URL:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.redis.RedisCache",
+            "LOCATION": _CACHE_URL,
+            "OPTIONS": {
+                "socket_connect_timeout": 5,
+            },
+        }
+    }
+else:
+    CACHES = {
+        "default": {
+            "BACKEND": "django.core.cache.backends.locmem.LocMemCache",
+        }
+    }
 CELERY_TASK_SERIALIZER = "json"
 CELERY_RESULT_SERIALIZER = "json"
 CELERY_ACCEPT_CONTENT = ["json"]
 CELERY_TIMEZONE = TIME_ZONE
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 300  # seconds
+CELERY_TASK_DEFAULT_QUEUE = "celery"
+CELERY_TASK_CREATE_MISSING_QUEUES = True
+CELERY_WORKER_PREFETCH_MULTIPLIER = int(os.getenv("CELERY_WORKER_PREFETCH_MULTIPLIER", "1"))
+CELERY_TASK_ROUTES = {
+    "apps.alarms.tasks.process_webhook_messages": {"queue": "webhook"},
+}
 # Set CELERY_TASK_ALWAYS_EAGER=True in .env to run tasks synchronously (no worker needed — dev only).
-CELERY_TASK_ALWAYS_EAGER = os.getenv("CELERY_TASK_ALWAYS_EAGER", "False").lower() == "true"
+CELERY_TASK_ALWAYS_EAGER = os.getenv(
+    "CELERY_TASK_ALWAYS_EAGER",
+    "True" if TESTING else "False",
+).lower() == "true"
 CELERY_TASK_EAGER_PROPAGATES = CELERY_TASK_ALWAYS_EAGER
+if TESTING:
+    CELERY_BROKER_URL = "memory://"
+    CELERY_RESULT_BACKEND = "cache+memory://"
+    CELERY_TASK_STORE_EAGER_RESULT = True
 
-# MQ long-poll runs every 25 s: the platform blocks up to 20 s per call,
-# so 25 s gives a small buffer between invocations.
+HIK_DELIVERY_MODE = os.getenv("HIK_PARTNER_DELIVERY_MODE", "mq").lower()
+HIK_MQ_POLL_INTERVAL_SECONDS = float(os.getenv("HIK_MQ_POLL_INTERVAL_SECONDS", "25"))
+HIK_DEVICE_HEALTH_INTERVAL_SECONDS = float(os.getenv("HIK_DEVICE_HEALTH_INTERVAL_SECONDS", "300"))
+HIK_STATUS_SYNC_INTERVAL_SECONDS = float(os.getenv("HIK_STATUS_SYNC_INTERVAL_SECONDS", "300"))
+
 CELERY_BEAT_SCHEDULE = {
-    "poll-mq-events": {
-        "task": "apps.alarms.tasks.poll_mq_events",
-        "schedule": 25.0,
-    },
-    # Poll device/zone health (battery, tamper, online status) every 5 minutes
-    "poll-device-health": {
-        "task": "apps.alarms.tasks.poll_device_health",
-        "schedule": 300.0,
-    },
-    # Sync zone states (open/close/arm) from ISAPI every 15 seconds
-    "sync-alarm-status": {
-        "task": "apps.alarms.tasks.sync_all_alarm_status",
-        "schedule": 10.0,
-    },
     # Run once every 24 hours — mark overdue subscriptions and auto-suspend
     "check-subscription-statuses": {
         "task": "apps.alarms.tasks.check_subscription_statuses",
@@ -211,7 +263,37 @@ CELERY_BEAT_SCHEDULE = {
         "task": "apps.alarms.tasks.send_payment_reminders",
         "schedule": 86400.0,
     },
+    # Guard operations: close missed rounds/checks, raise SLA events, and notify guards.
+    "run-guarding-automation": {
+        "task": "apps.guarding.tasks.run_guarding_automation",
+        "schedule": 60.0,
+    },
+    "purge-guard-location-pings": {
+        "task": "apps.guarding.tasks.purge_old_guard_location_pings",
+        "schedule": 86400.0,
+    },
 }
+
+if HIK_DELIVERY_MODE == "mq" and HIK_MQ_POLL_INTERVAL_SECONDS > 0:
+    # MQ long-poll blocks up to 20 s when no events are pending.
+    CELERY_BEAT_SCHEDULE["poll-mq-events"] = {
+        "task": "apps.alarms.tasks.poll_mq_events",
+        "schedule": HIK_MQ_POLL_INTERVAL_SECONDS,
+    }
+
+if HIK_DEVICE_HEALTH_INTERVAL_SECONDS > 0:
+    # Poll device/zone health (battery, tamper, online status).
+    CELERY_BEAT_SCHEDULE["poll-device-health"] = {
+        "task": "apps.alarms.tasks.poll_device_health",
+        "schedule": HIK_DEVICE_HEALTH_INTERVAL_SECONDS,
+    }
+
+if HIK_STATUS_SYNC_INTERVAL_SECONDS > 0:
+    # Sync zone states (open/close/arm) from ISAPI as a safety net for webhook delivery.
+    CELERY_BEAT_SCHEDULE["sync-alarm-status"] = {
+        "task": "apps.alarms.tasks.sync_all_alarm_status",
+        "schedule": HIK_STATUS_SYNC_INTERVAL_SECONDS,
+    }
 
 # Email
 EMAIL_BACKEND = os.getenv(
@@ -229,6 +311,9 @@ SECUREHUB_APP_LINKS = {
     "web": os.getenv("SECUREHUB_WEB_APP_URL", ""),
     "support": os.getenv("SECUREHUB_SUPPORT_URL", ""),
 }
+SECUREHUB_EMERGENCY_SMS_RECIPIENTS = os.getenv("SECUREHUB_EMERGENCY_SMS_RECIPIENTS", "")
+SECUREHUB_EMERGENCY_SMS_PROVIDER = os.getenv("SECUREHUB_EMERGENCY_SMS_PROVIDER", "hubtel")
+SECUREHUB_EMERGENCY_SMS_WEBHOOK_URL = os.getenv("SECUREHUB_EMERGENCY_SMS_WEBHOOK_URL", "")
 SECUREHUB_GOOGLE_AUTO_CREATE_USERS = os.getenv(
     "SECUREHUB_GOOGLE_AUTO_CREATE_USERS",
     "False",
@@ -241,6 +326,7 @@ HIK_PARTNER = {
     "WEBHOOK_SIGN_SECRET": os.getenv("HIK_PARTNER_WEBHOOK_SIGN_SECRET", ""),
     "DELIVERY_MODE": os.getenv("HIK_PARTNER_DELIVERY_MODE", "mq").lower(),
     "DRY_RUN": os.getenv("HIK_PARTNER_DRY_RUN", "True").lower() == "true",
+    "STATUS_TIMEOUT": int(os.getenv("HIK_PARTNER_STATUS_TIMEOUT", "20")),
 }
 
 SITE_GEOCODING = {
@@ -273,7 +359,7 @@ CORS_ALLOWED_ORIGINS = [
     if origin.strip()
 ]
 
-# Security headers
+# Security headers and cookie settings
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = "DENY"
 SECURE_REFERRER_POLICY = "strict-origin-when-cross-origin"

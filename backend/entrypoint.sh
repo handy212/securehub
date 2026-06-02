@@ -35,13 +35,22 @@ case "$1" in
     celery-worker)
         exec celery -A config worker \
             --loglevel=info \
-            --concurrency="${CELERY_CONCURRENCY:-2}"
+            --queues="${CELERY_QUEUES:-celery}" \
+            --concurrency="${CELERY_CONCURRENCY:-2}" \
+            --prefetch-multiplier="${CELERY_WORKER_PREFETCH_MULTIPLIER:-1}"
+        ;;
+    celery-webhook)
+        exec celery -A config worker \
+            --loglevel=info \
+            --queues=webhook \
+            --hostname="webhook@%h" \
+            --concurrency="${CELERY_WEBHOOK_CONCURRENCY:-2}" \
+            --prefetch-multiplier=1
         ;;
     celery-beat)
         exec celery -A config beat \
             --loglevel=info \
-            --scheduler django_celery_beat.schedulers:DatabaseScheduler 2>/dev/null \
-            || exec celery -A config beat --loglevel=info
+            --schedule="${CELERY_BEAT_SCHEDULE_FILE:-/tmp/celerybeat-schedule}"
         ;;
     *)
         exec "$@"

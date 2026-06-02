@@ -1,8 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:url_launcher/url_launcher.dart';
+import 'package:video_player/video_player.dart';
 
 import '../../../core/models/alarm_event.dart';
 import '../../../core/theme/app_theme.dart';
@@ -35,19 +35,25 @@ class EventDetailsInline extends ConsumerWidget {
       children: [
         _DetailRow(label: 'Time', value: _formatDateTime(event.occurredAt)),
         _DetailRow(label: 'Source', value: event.siteName),
-        if (event.subsystemName != null && event.subsystemName!.isNotEmpty)
-          _DetailRow(label: 'Area', value: event.subsystemName!),
+        if (event.resolvedSubsystemName != null &&
+            event.resolvedSubsystemName!.isNotEmpty)
+          _DetailRow(label: 'Area', value: event.resolvedSubsystemName!),
         if (event.performedBy != null && event.performedBy!.isNotEmpty)
           _DetailRow(label: 'User', value: event.performedBy!),
         _DetailRow(label: 'Event Type', value: event.displayTitle),
-        if (event.zoneName != null && event.zoneName!.isNotEmpty)
-          _DetailRow(label: 'Zone', value: '${event.zoneName!} ${event.zoneNumber != null ? '(Z${event.zoneNumber})' : ''}'),
+        if (event.resolvedZoneName != null &&
+            event.resolvedZoneName!.isNotEmpty)
+          _DetailRow(
+            label: 'Zone',
+            value:
+                '${event.resolvedZoneName!} ${event.resolvedZoneNumber != null ? '(Z${event.resolvedZoneNumber})' : ''}',
+          ),
 
         if (event.hasEffectiveMedia) ...[
           const SizedBox(height: 16),
           Text(
             'MEDIA EVIDENCE',
-            style: GoogleFonts.inter(
+            style: TextStyle(
               fontSize: 10,
               fontWeight: FontWeight.w800,
               color: AppTheme.onSurfaceVariant.withValues(alpha: 0.5),
@@ -78,7 +84,7 @@ class _DetailRow extends StatelessWidget {
             width: 100,
             child: Text(
               label,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 color: AppTheme.onSurfaceVariant.withValues(alpha: 0.6),
@@ -90,7 +96,7 @@ class _DetailRow extends StatelessWidget {
             child: Text(
               value,
               textAlign: TextAlign.right,
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,
                 color: AppTheme.onSurface,
@@ -121,7 +127,7 @@ class _MediaSection extends ConsumerWidget {
       ),
       error: (err, _) => Text(
         'Media unavailable: $err',
-        style: GoogleFonts.inter(fontSize: 11, color: AppTheme.error),
+        style: TextStyle(fontSize: 11, color: AppTheme.error),
       ),
       data: (pics) {
         if (pics.isEmpty) {
@@ -133,12 +139,19 @@ class _MediaSection extends ConsumerWidget {
             ),
             child: Row(
               children: [
-                const Icon(Icons.info_outline_rounded, size: 14, color: AppTheme.onSurfaceVariant),
+                const Icon(
+                  Icons.info_outline_rounded,
+                  size: 14,
+                  color: AppTheme.onSurfaceVariant,
+                ),
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     'No footage links found for this event.',
-                    style: GoogleFonts.inter(fontSize: 11, color: AppTheme.onSurfaceVariant),
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppTheme.onSurfaceVariant,
+                    ),
                   ),
                 ),
               ],
@@ -163,7 +176,8 @@ class _MediaSection extends ConsumerWidget {
                 child: ListView.separated(
                   scrollDirection: Axis.horizontal,
                   itemCount: imagePics.length,
-                  separatorBuilder: (_, __) => const SizedBox(width: 8),
+                  separatorBuilder: (context, index) =>
+                      const SizedBox(width: 8),
                   itemBuilder: (_, i) => AspectRatio(
                     aspectRatio: 1,
                     child: _PictureTile(url: imagePics[i].url, type: 'image'),
@@ -179,10 +193,7 @@ class _MediaSection extends ConsumerWidget {
 }
 
 class _PictureTile extends ConsumerStatefulWidget {
-  const _PictureTile({
-    required this.url,
-    required this.type,
-  });
+  const _PictureTile({required this.url, required this.type});
   final String url;
   final String type;
 
@@ -209,28 +220,9 @@ class _PictureTileState extends ConsumerState<_PictureTile> {
         children: [
           // Content Layer
           if (isVideo)
-            const _VideoPlaceholder()
+            _InAppVideoPlayer(url: widget.url)
           else
             _buildImagePlayer(),
-
-          // Open External Button
-          Positioned(
-            top: 8,
-            right: 8,
-            child: IconButton(
-              icon: const Icon(Icons.open_in_new_rounded,
-                  size: 16, color: Colors.white),
-              onPressed: () =>
-                  launchUrl(Uri.parse(widget.url), mode: LaunchMode.externalApplication),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.black45,
-                padding: const EdgeInsets.all(8),
-              ),
-              constraints: const BoxConstraints(),
-              tooltip: 'Open in browser',
-            ),
-          ),
-
         ],
       ),
     );
@@ -245,15 +237,15 @@ class _PictureTileState extends ConsumerState<_PictureTile> {
             if (token == null && !widget.url.contains('?X-Amz-')) {
               return const _EmptyFrame(isVideo: false);
             }
+            final attachAuth =
+                token != null && shouldAttachApiAuthHeader(widget.url);
             return Image.network(
               transformUrl(widget.url),
-              headers: widget.url.contains('?X-Amz-')
-                  ? {}
-                  : {'Authorization': 'Bearer $token'},
+              headers: attachAuth ? {'Authorization': 'Bearer $token'} : null,
               fit: BoxFit.cover,
               cacheWidth: 360, // Limit memory usage for thumbnails
-              errorBuilder: (_, __, ___) =>
-              const _EmptyFrame(isVideo: false, isError: true),
+              errorBuilder: (context, error, stackTrace) =>
+                  const _EmptyFrame(isVideo: false, isError: true),
               loadingBuilder: (context, child, loadingProgress) {
                 if (loadingProgress == null) return child;
                 return const _EmptyFrame(isVideo: false);
@@ -261,52 +253,176 @@ class _PictureTileState extends ConsumerState<_PictureTile> {
             );
           },
           loading: () => const _EmptyFrame(isVideo: false),
-          error: (_, __) => const _EmptyFrame(isVideo: false, isError: true),
+          error: (error, stackTrace) =>
+              const _EmptyFrame(isVideo: false, isError: true),
         );
       },
     );
   }
 }
 
-class _VideoPlaceholder extends StatelessWidget {
-  const _VideoPlaceholder();
+class _InAppVideoPlayer extends ConsumerStatefulWidget {
+  const _InAppVideoPlayer({required this.url});
+  final String url;
+
+  @override
+  ConsumerState<_InAppVideoPlayer> createState() => _InAppVideoPlayerState();
+}
+
+class _InAppVideoPlayerState extends ConsumerState<_InAppVideoPlayer> {
+  VideoPlayerController? _controller;
+  bool _isInitialized = false;
+  bool _isDisposed = false;
+  String? _error;
+
+  @override
+  void initState() {
+    super.initState();
+    _initialize();
+  }
+
+  Future<void> _initialize() async {
+    try {
+      final token = await ref.read(accessTokenProvider.future);
+      if (_isDisposed || !mounted) return;
+
+      final headers = <String, String>{'User-Agent': 'SecureHubMobile/1.0'};
+
+      if (token != null && shouldAttachApiAuthHeader(widget.url)) {
+        headers['Authorization'] = 'Bearer $token';
+      }
+
+      final transformed = transformUrl(widget.url);
+      if (kDebugMode) {
+        debugPrint(
+          'Initializing video: $transformed with headers: ${headers.keys}',
+        );
+      }
+
+      _controller = VideoPlayerController.networkUrl(
+        Uri.parse(transformed),
+        httpHeaders: headers,
+      );
+
+      await _controller!.initialize();
+
+      if (_isDisposed || !mounted) {
+        await _controller?.dispose();
+        _controller = null;
+        return;
+      }
+
+      setState(() {
+        _isInitialized = true;
+      });
+
+      _controller!.setVolume(0); // Mute by default
+      _controller!.setLooping(true);
+      _controller!.play();
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('Video initialization error: $e');
+      }
+      if (!_isDisposed && mounted) {
+        setState(() {
+          _error = 'Playback failed';
+        });
+      }
+    }
+  }
+
+  @override
+  void dispose() {
+    _isDisposed = true;
+    _controller?.pause();
+    _controller?.dispose();
+    _controller = null;
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.black,
-      alignment: Alignment.center,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+    if (_error != null) {
+      return Container(
+        color: Colors.black87,
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(
+              Icons.error_outline_rounded,
+              color: Colors.white54,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              _error!,
+              style: TextStyle(fontSize: 10, color: Colors.white54),
+            ),
+          ],
+        ),
+      );
+    }
+
+    if (!_isInitialized || _controller == null) {
+      return const Center(child: CircularProgressIndicator(strokeWidth: 2));
+    }
+
+    return GestureDetector(
+      onTap: () {
+        if (_controller == null || !_controller!.value.isInitialized) return;
+
+        if (_controller!.value.isPlaying) {
+          _controller!.pause();
+        } else {
+          _controller!.play();
+        }
+        if (mounted) setState(() {});
+      },
+      child: Stack(
+        alignment: Alignment.center,
         children: [
-          Container(
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.12),
-              shape: BoxShape.circle,
-            ),
-            child: const Icon(
-              Icons.play_circle_fill_rounded,
-              color: Colors.white,
-              size: 40,
-            ),
-          ),
-          const SizedBox(height: 10),
-          Text(
-            'VIDEO EVIDENCE',
-            style: GoogleFonts.inter(
-              fontSize: 11,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 1.2,
-              color: Colors.white,
+          SizedBox.expand(
+            child: FittedBox(
+              fit: BoxFit.cover,
+              clipBehavior: Clip.hardEdge,
+              child: SizedBox(
+                width: _controller!.value.size.width,
+                height: _controller!.value.size.height,
+                child: VideoPlayer(_controller!),
+              ),
             ),
           ),
-          const SizedBox(height: 6),
-          Text(
-            'Open externally to view the clip.',
-            style: GoogleFonts.inter(
-              fontSize: 12,
-              color: Colors.white70,
+          if (!_controller!.value.isPlaying)
+            Container(
+              decoration: const BoxDecoration(
+                color: Colors.black26,
+                shape: BoxShape.circle,
+              ),
+              padding: const EdgeInsets.all(12),
+              child: const Icon(
+                Icons.play_arrow_rounded,
+                color: Colors.white,
+                size: 32,
+              ),
+            ),
+          Positioned(
+            bottom: 8,
+            right: 8,
+            child: IconButton(
+              icon: Icon(
+                _controller!.value.volume == 0
+                    ? Icons.volume_off_rounded
+                    : Icons.volume_up_rounded,
+                color: Colors.white,
+                size: 16,
+              ),
+              onPressed: () {
+                if (_controller == null) return;
+                _controller!.setVolume(_controller!.value.volume == 0 ? 1 : 0);
+                if (mounted) setState(() {});
+              },
+              style: IconButton.styleFrom(backgroundColor: Colors.black45),
             ),
           ),
         ],
@@ -339,7 +455,7 @@ class _EmptyFrame extends StatelessWidget {
             const SizedBox(height: 8),
             Text(
               'Load failed',
-              style: GoogleFonts.inter(
+              style: TextStyle(
                 fontSize: 10,
                 color: AppTheme.error,
                 fontWeight: FontWeight.w600,
@@ -351,3 +467,4 @@ class _EmptyFrame extends StatelessWidget {
     );
   }
 }
+
