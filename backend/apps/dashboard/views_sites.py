@@ -21,6 +21,7 @@ from apps.accounts.rbac import Perm
 from apps.alarms.media import collect_related_event_media, resolve_picture_media_type
 from apps.alarms.models import AlarmEvent as Event
 from apps.alarms.tasks import (
+    import_hik_sites,
     initial_site_discovery,
     refresh_hik_site_health,
     sync_hik_alarm_status,
@@ -326,6 +327,34 @@ class GlobalSyncView(StaffRequiredMixin, View):
                 continue
         messages.success(request, f"Global infrastructure sync complete. {count} sites updated.")
         return redirect("dashboard:home")
+
+
+class HikImportSitesView(StaffRequiredMixin, View):
+    def post(self, request):
+        search = request.POST.get("search", "").strip()
+        limit_value = request.POST.get("limit", "").strip()
+        limit = None
+        if limit_value:
+            try:
+                limit = max(1, int(limit_value))
+            except ValueError:
+                messages.error(request, "Import limit must be a number.")
+                return redirect("dashboard:sites")
+
+        service = HikPartnerService()
+        if not service.client.is_configured():
+            messages.error(request, "Hik-Partner Pro is not configured.")
+            return redirect("dashboard:sites")
+        if service.client.dry_run:
+            messages.warning(request, "Hik import skipped because dry-run mode is enabled.")
+            return redirect("dashboard:sites")
+
+        transaction.on_commit(lambda: import_hik_sites.delay(search=search, limit=limit))
+        messages.info(
+            request,
+            "Hik site import has started in the background. Sites, panels, areas, and zones will appear as the sync completes.",
+        )
+        return redirect("dashboard:sites")
 
 class ProvisionSiteView(StaffRequiredMixin, View):
     def post(self, request):

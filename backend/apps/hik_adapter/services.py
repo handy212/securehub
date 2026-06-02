@@ -2536,6 +2536,169 @@ class HikPartnerService:
             f"Site '{name}' was created on Hik platform but could not be located via search."
         )
 
+    def fetch_all_hik_sites(
+        self,
+        *,
+        search: str = "",
+        page_size: int = 100,
+        limit: int | None = None,
+    ) -> list[dict]:
+        """
+        Fetch all sites visible to the Hik-Partner account via paginated site/search.
+        Hik does not expose a single site+device+subsystem export endpoint, so this
+        is the first step in full infrastructure discovery.
+        """
+        rows: list[dict] = []
+        page = 1
+
+        while True:
+            resp = self.client.search_sites(
+                search=search,
+                page=page,
+                page_size=page_size,
+            )
+            data = resp.get("data", {}) or {}
+            page_rows = data.get("rows", []) or []
+            rows.extend(page_rows)
+
+            if limit and len(rows) >= limit:
+                return rows[:limit]
+
+            total = int(data.get("total") or 0)
+            if total:
+                if len(rows) >= total or not page_rows:
+                    break
+            elif len(page_rows) < page_size:
+                break
+            page += 1
+
+        return rows
+
+    def import_hik_sites(
+        self,
+        *,
+        search: str = "",
+        page_size: int = 100,
+        limit: int | None = None,
+        sync_status: bool = True,
+        refresh_health: bool = True,
+        dry_run: bool = False,
+        stdout=None,
+    ) -> dict:
+        """
+        Import every visible Hik site, then sync devices, subsystems, and zones.
+
+        Returns counts suitable for management commands/tasks. In dry_run mode no
+        local database writes or transparent device calls are performed.
+        """
+        hik_sites = self.fetch_all_hik_sites(
+            search=search,
+            page_size=page_size,
+            limit=limit,
+        )
+        result = {
+            "hik_sites_seen": len(hik_sites),
+            "created": 0,
+            "updated": 0,
+            "devices_seen": 0,
+            "synced_panels": 0,
+            "status_synced": 0,
+            "health_refreshed": 0,
+            "errors": 0,
+            "sites": [],
+        }
+
+        for row in hik_sites:
+            hik_site_id = row.get("id") or row.get("siteId") or row.get("siteID")
+            if not hik_site_id:
+                result["errors"] += 1
+                result["sites"].append({
+                    "hik_site_id": "",
+                    "name": row.get("siteName", ""),
+                    "error": "missing Hik site id",
+                })
+                continue
+
+            site_name = row.get("siteName") or row.get("name") or hik_site_id
+            site_summary = {
+                "hik_site_id": hik_site_id,
+                "name": site_name,
+                "created": False,
+                "devices_seen": 0,
+                "synced_panels": 0,
+                "status_synced": False,
+                "health_refreshed": False,
+            }
+
+            if dry_run:
+                result["sites"].append(site_summary)
+                if stdout:
+                    stdout.write(f"[dry-run] would import Hik site {site_name} ({hik_site_id})")
+                continue
+
+            defaults = {
+                "name": site_name,
+                "state": row.get("siteState", "") or "",
+                "city": row.get("siteCity", "") or "",
+                "address": row.get("location") or row.get("siteStreet", "") or "",
+                "timezone": str(row.get("timeZone") or "UTC"),
+            }
+            primary = row.get("primaryIndustry") or ""
+            secondary = row.get("secondaryIndustry") or ""
+            if primary:
+                defaults["primary_industry"] = normalize_scene_label(primary)
+            if secondary:
+                defaults["secondary_industry"] = secondary
+
+            try:
+                site, created = Site.objects.update_or_create(
+                    hik_site_id=hik_site_id,
+                    defaults=defaults,
+                )
+                site_summary["created"] = created
+                if created:
+                    result["created"] += 1
+                else:
+                    result["updated"] += 1
+
+                device_result = self.sync_site_devices(site)
+                site_summary["devices_seen"] = device_result.get("devices_seen", 0)
+                site_summary["synced_panels"] = device_result.get("synced_panels", 0)
+                result["devices_seen"] += site_summary["devices_seen"]
+                result["synced_panels"] += site_summary["synced_panels"]
+
+                if sync_status:
+                    self.sync_alarm_status(site)
+                    site_summary["status_synced"] = True
+                    result["status_synced"] += 1
+
+                if refresh_health:
+                    try:
+                        self.refresh_site_health(site)
+                        site_summary["health_refreshed"] = True
+                        result["health_refreshed"] += 1
+                    except Exception as health_exc:
+                        site_summary["health_warning"] = str(health_exc)
+                        logger.warning(
+                            "import_hik_sites: health refresh failed for site %s: %s",
+                            site.name,
+                            health_exc,
+                        )
+            except Exception as exc:
+                result["errors"] += 1
+                site_summary["error"] = str(exc)
+                logger.error(
+                    "import_hik_sites: failed for Hik site %s (%s): %s",
+                    site_name,
+                    hik_site_id,
+                    exc,
+                    exc_info=True,
+                )
+
+            result["sites"].append(site_summary)
+
+        return result
+
     # ------------------------------------------------------------------
     # Device management — §3.18, §3.19
     # ------------------------------------------------------------------

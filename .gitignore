@@ -28,3 +28,5 @@ securehub_mobile/.flutter-plugins-dependencies
 securehub_mobile/.packages
 securehub_mobile/build/
 securehub_mobile/.idea/
+backend/celerybeat-schedule
+backend/logs/*.log

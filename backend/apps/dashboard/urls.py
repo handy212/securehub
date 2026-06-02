@@ -113,6 +113,7 @@ urlpatterns = [
     path("customers/groups/<uuid:pk>/delete/", views.CustomerGroupDeleteView.as_view(), name="customer-group-delete"),
     path("settings/", views.PlatformSettingsView.as_view(), name="settings"),
     path("sync/global/", views.GlobalSyncView.as_view(), name="global-sync"),
+    path("sync/hik-sites/import/", views.HikImportSitesView.as_view(), name="hik-import-sites"),
     # Subscription management
     path("subscriptions/", views.SubscriptionListView.as_view(), name="subscriptions"),
     path("subscriptions/create/", views.CreateSubscriptionView.as_view(), name="subscription-create"),

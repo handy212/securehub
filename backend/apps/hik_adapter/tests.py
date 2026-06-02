@@ -97,6 +97,62 @@ class HikAdapterTests(TestCase):
         self.assertEqual(mock_list_devices.call_count, 2)
         mock_subscribe_events.assert_called_once_with(["SN-PAGE-1", "SN-PAGE-2"])
 
+    @patch("apps.hik_adapter.client.HikPartnerClient.search_sites")
+    def test_fetch_all_hik_sites_paginates_site_search(self, mock_search_sites):
+        mock_search_sites.side_effect = [
+            {"data": {"rows": [{"id": "site-1", "siteName": "Site 1"}], "total": 2}},
+            {"data": {"rows": [{"id": "site-2", "siteName": "Site 2"}], "total": 2}},
+        ]
+
+        service = HikPartnerService()
+        service.client.dry_run = False
+
+        rows = service.fetch_all_hik_sites(page_size=1)
+
+        self.assertEqual([row["id"] for row in rows], ["site-1", "site-2"])
+        self.assertEqual(mock_search_sites.call_count, 2)
+
+    @patch("apps.hik_adapter.services.HikPartnerService.refresh_site_health")
+    @patch("apps.hik_adapter.services.HikPartnerService.sync_alarm_status")
+    @patch("apps.hik_adapter.services.HikPartnerService.sync_site_devices")
+    @patch("apps.hik_adapter.services.HikPartnerService.fetch_all_hik_sites")
+    def test_import_hik_sites_creates_site_and_runs_full_sync(
+        self,
+        mock_fetch_all_hik_sites,
+        mock_sync_site_devices,
+        mock_sync_alarm_status,
+        mock_refresh_site_health,
+    ):
+        mock_fetch_all_hik_sites.return_value = [
+            {
+                "id": "hik-import-1",
+                "siteName": "Imported Site",
+                "siteState": "Greater Accra",
+                "siteCity": "Accra",
+                "siteStreet": "Ring Road",
+                "location": "Ring Road, Accra",
+                "timeZone": "222",
+                "primaryIndustry": "Residential",
+            }
+        ]
+        mock_sync_site_devices.return_value = {"devices_seen": 3, "synced_panels": 1}
+
+        service = HikPartnerService()
+        service.client.dry_run = False
+
+        result = service.import_hik_sites()
+
+        site = Site.objects.get(hik_site_id="hik-import-1")
+        self.assertEqual(site.name, "Imported Site")
+        self.assertEqual(site.city, "Accra")
+        self.assertEqual(site.address, "Ring Road, Accra")
+        self.assertEqual(result["created"], 1)
+        self.assertEqual(result["devices_seen"], 3)
+        self.assertEqual(result["synced_panels"], 1)
+        mock_sync_site_devices.assert_called_once_with(site)
+        mock_sync_alarm_status.assert_called_once_with(site)
+        mock_refresh_site_health.assert_called_once_with(site)
+
     @patch("apps.hik_adapter.client.requests.post")
     def test_get_access_token_success(self, mock_post):
         # Per API guide §3.1: token request uses plain appKey + secretKey

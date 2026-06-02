@@ -151,6 +151,13 @@
                             <span class="min-w-0"><span class="console-row-title block truncate">Sync estate</span></span>
                         </button>
                     </form>
+                    <form action="{% url 'dashboard:hik-import-sites' %}" method="post" class="contents">
+                        {% csrf_token %}
+                        <button type="submit" class="console-shortcut-btn col-span-2 w-full">
+                            <span class="text-brand">⇄</span>
+                            <span class="min-w-0"><span class="console-row-title block truncate">Import Hik sites</span></span>
+                        </button>
+                    </form>
                     <a href="{% url 'dashboard:logs' %}" class="console-shortcut-btn">
                         <span class="console-row-title truncate">Audit</span>
                     </a>

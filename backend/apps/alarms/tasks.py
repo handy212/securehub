@@ -823,6 +823,27 @@ def refresh_hik_site_health(self, site_id: str) -> dict:
         raise self.retry(exc=exc)
 
 
+@shared_task(bind=True, max_retries=1, default_retry_delay=60)
+def import_hik_sites(self, *, search: str = "", limit: int | None = None) -> dict:
+    """Import all visible Hik sites and sync devices, areas, zones, and health."""
+    from apps.hik_adapter.services import HikPartnerService
+
+    service = HikPartnerService()
+    if not service.client.is_configured() or service.client.dry_run:
+        return {"skipped": True, "reason": "not configured or dry_run"}
+
+    with _non_overlapping_task_lock("import_hik_sites") as acquired:
+        if not acquired:
+            logger.info("import_hik_sites: previous run still active; skipping overlap")
+            return {"skipped": True, "reason": "previous import still active"}
+
+        try:
+            return service.import_hik_sites(search=search, limit=limit)
+        except Exception as exc:
+            logger.error("import_hik_sites: failed: %s", exc, exc_info=True)
+            raise self.retry(exc=exc)
+
+
 def _subscription_access_recipients(subscription):
     from apps.sites.models import CustomerSiteAccess
 
