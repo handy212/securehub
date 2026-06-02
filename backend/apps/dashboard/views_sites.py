@@ -84,11 +84,17 @@ class SiteConsoleView(StaffRequiredMixin, TemplateView):
         devices = AlarmPanelDevice.objects.filter(site=site).prefetch_related("subsystems__zones", "peripherals", "outputs")
         context["devices"] = devices
         context["devices_count"] = devices.count()
+        devices_list = list(devices)
+        context["primary_device"] = next(
+            (device for device in devices_list if device.is_online),
+            devices_list[0] if devices_list else None,
+        )
+        context["online_devices_count"] = sum(1 for device in devices_list if device.is_online)
         context["hik_devices"] = site.hik_devices.all()
         context["hik_devices_count"] = site.hik_devices.count()
         online_control_area_count = sum(
             device.subsystems.count() or 1
-            for device in devices
+            for device in devices_list
             if device.is_online
         )
         context["online_control_area_count"] = online_control_area_count
@@ -118,7 +124,7 @@ class SiteConsoleView(StaffRequiredMixin, TemplateView):
         # Determine Aggregate Site Status
         context["site_status"] = service.get_site_status(site=site)
         status = "disarmed"
-        for device in devices:
+        for device in devices_list:
             for sub in device.subsystems.all():
                 s = sub.status.lower()
                 if s == "alarm":

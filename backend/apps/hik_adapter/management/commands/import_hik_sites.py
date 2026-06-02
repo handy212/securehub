@@ -74,7 +74,7 @@ class Command(BaseCommand):
                 f"{site['name']} ({site['hik_site_id']}): {marker}; "
                 f"devices={site['devices_seen']} panels={site['synced_panels']} "
                 f"status={'yes' if site['status_synced'] else 'no'} "
-                f"health={'yes' if site['health_refreshed'] else 'no'}"
+                f"health={'yes' if site['health_refreshed'] else ('skipped' if site.get('health_skipped') else 'no')}"
             )
             if site.get("health_warning"):
                 self.stdout.write(self.style.WARNING(f"  health warning: {site['health_warning']}"))

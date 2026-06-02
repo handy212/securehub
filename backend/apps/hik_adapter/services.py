@@ -2674,9 +2674,13 @@ class HikPartnerService:
 
                 if refresh_health:
                     try:
-                        self.refresh_site_health(site)
-                        site_summary["health_refreshed"] = True
-                        result["health_refreshed"] += 1
+                        health_result = self.refresh_site_health(site)
+                        if health_result.get("skipped"):
+                            site_summary["health_skipped"] = True
+                            site_summary["health_warning"] = health_result.get("reason", "health refresh skipped")
+                        else:
+                            site_summary["health_refreshed"] = True
+                            result["health_refreshed"] += 1
                     except Exception as health_exc:
                         site_summary["health_warning"] = str(health_exc)
                         logger.warning(
