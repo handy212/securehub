@@ -1,4 +1,2 @@
-DEBUG 2026-06-01 16:20:03,247 client 87846 REQ[ed9e3d95] POST /api/hpcgw/webhook/v1/config/save
 Detecting ngrok tunnel...
-Registering Webhook: https://4a50-197-251-215-82.ngrok-free.app/api/v1/alarms/webhook/
-✓ Webhook registration successful!
+No active ngrok tunnels found. Is ngrok running?

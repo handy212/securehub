@@ -1,10 +1,10 @@
  
  -------------- celery@HeadOf-IT v5.6.2 (recovery)
 --- ***** ----- 
--- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39 2026-06-01 16:19:59
+-- ******* ---- Linux-6.6.87.2-microsoft-standard-WSL2-x86_64-with-glibc2.39 2026-06-02 08:17:14
 - *** --- * --- 
 - ** ---------- [config]
-- ** ---------- .> app:         securehub:0x7ac3a7ef5400
+- ** ---------- .> app:         securehub:0x71d5ed3757c0
 - ** ---------- .> transport:   redis://127.0.0.1:6379/0
 - ** ---------- .> results:     redis://127.0.0.1:6379/0
 - *** --- * --- .> concurrency: 8 (prefork)
@@ -18,6 +18,7 @@
   . apps.alarms.tasks.check_subscription_statuses
   . apps.alarms.tasks.dispatch_alarm_notifications
   . apps.alarms.tasks.fetch_alarm_image_url
+  . apps.alarms.tasks.import_hik_sites
   . apps.alarms.tasks.initial_site_discovery
   . apps.alarms.tasks.poll_device_health
   . apps.alarms.tasks.poll_mq_events
@@ -43,275 +44,608 @@
   . apps.guarding.tasks.warn_due_welfare_checks
   . apps.guarding.tasks.warn_expiring_guard_records
 
-DEBUG 2026-06-01 16:20:04,876 client 87802 REQ[abfd3e1f] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:20:25,232 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:20:29,464 client 87802 REQ[6ee2780e] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:20:50,262 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:20:55,116 client 87802 REQ[134ee1ea] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:21:17,659 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:21:19,878 client 87802 REQ[64426fd9] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:21:40,293 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:21:44,848 client 87802 REQ[17ee6f01] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:22:05,494 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:22:09,645 client 87802 REQ[c3b68df8] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:22:31,822 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:22:34,652 client 87772 REQ[6fec87ad] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-06-01 16:22:34,687 client 87802 REQ[0cfebb6b] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-06-01 16:22:34,746 client 87773 REQ[517d8d8a] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-06-01 16:22:35,234 services 87802 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:22:35,235 client 87802 REQ[50ebecc1] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-06-01 16:22:35,741 client 87772 REQ[85cfa2be] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
-WARNING 2026-06-01 16:22:36,474 services 87802 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:22:36,474 client 87802 REQ[b41dc6aa] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-06-01 16:22:37,286 services 87802 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:22:37,287 client 87802 REQ[a1380b24] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-06-01 16:22:38,030 services 87802 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:22:39,732 services 87772 _resolve_panel_power_status: hostHealth unavailable for Q15228593
-DEBUG 2026-06-01 16:22:39,735 client 87772 REQ[bebdb0d7] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-DEBUG 2026-06-01 16:22:40,705 client 87772 REQ[afc0daaa] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
-DEBUG 2026-06-01 16:22:41,696 services 87772 Fetching device identity for DEMO-SN-001 via ISAPI
-DEBUG 2026-06-01 16:22:41,696 client 87772 REQ[8a9a829d] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
-WARNING 2026-06-01 16:22:42,465 services 87772 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=8a9a829d)
-DEBUG 2026-06-01 16:22:42,465 client 87772 REQ[fb1f6f91] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-06-01 16:22:43,799 services 87772 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=fb1f6f91)
-DEBUG 2026-06-01 16:22:43,799 client 87772 REQ[0688b64f] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-06-01 16:22:44,553 services 87772 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=0688b64f)
-DEBUG 2026-06-01 16:22:44,555 services 87772 Fetching device identity for DEMO-SN-002 via ISAPI
-DEBUG 2026-06-01 16:22:44,555 client 87772 REQ[1c971a85] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
-WARNING 2026-06-01 16:22:45,303 services 87772 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=1c971a85)
-DEBUG 2026-06-01 16:22:45,304 client 87772 REQ[be27fadf] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-06-01 16:22:46,104 services 87772 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=be27fadf)
-DEBUG 2026-06-01 16:22:46,105 client 87772 REQ[6b657b69] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-06-01 16:22:46,872 services 87772 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=6b657b69)
-DEBUG 2026-06-01 16:22:46,875 client 87772 REQ[bf718516] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-06-01 16:22:47,809 client 87772 REQ[f5556977] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
-DEBUG 2026-06-01 16:22:50,563 services 87772 _resolve_panel_power_status: hostHealth unavailable for Q42388087
-DEBUG 2026-06-01 16:22:50,566 client 87772 REQ[63be4704] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-DEBUG 2026-06-01 16:22:52,020 client 87772 REQ[f3dac880] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
-DEBUG 2026-06-01 16:22:55,311 tasks 87773 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:22:59,873 client 87802 REQ[64974372] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:23:20,202 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:23:24,385 client 87802 REQ[03e65e4d] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:23:45,713 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:23:49,483 client 87802 REQ[99b2d351] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:24:09,868 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:24:14,374 client 87802 REQ[e8f452ec] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:24:35,154 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:24:39,359 client 87802 REQ[f7ace532] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:24:59,865 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:25:04,387 client 87802 REQ[3a8f29f2] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:25:25,021 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:25:30,444 client 87802 REQ[c7e44cef] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:25:50,744 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:25:55,455 client 87802 REQ[d8144870] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:26:15,707 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:26:19,618 client 87802 REQ[a63fedd9] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:26:39,881 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:26:44,591 client 87802 REQ[fc511be3] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:27:04,838 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:27:09,521 client 87802 REQ[fa4caaf7] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:27:29,790 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:27:34,331 client 87772 REQ[2bc49263] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-06-01 16:27:34,527 client 87773 REQ[c50b029b] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:27:34,630 client 87802 REQ[3de9e28e] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-06-01 16:27:34,839 services 87802 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:27:34,839 client 87802 REQ[c34b2ccd] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-06-01 16:27:34,955 client 87772 REQ[9a78a728] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
-WARNING 2026-06-01 16:27:35,338 services 87802 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:27:35,339 client 87802 REQ[82236499] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-06-01 16:27:35,845 services 87802 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:27:35,845 client 87802 REQ[e28fc3c7] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-06-01 16:27:36,369 services 87802 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:27:38,472 services 87772 _resolve_panel_power_status: hostHealth unavailable for Q15228593
-DEBUG 2026-06-01 16:27:38,473 client 87772 REQ[f681a710] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-DEBUG 2026-06-01 16:27:39,241 client 87772 REQ[08b07993] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
-DEBUG 2026-06-01 16:27:39,965 services 87772 Fetching device identity for DEMO-SN-001 via ISAPI
-DEBUG 2026-06-01 16:27:39,965 client 87772 REQ[65f8449a] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
-WARNING 2026-06-01 16:27:40,478 services 87772 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=65f8449a)
-DEBUG 2026-06-01 16:27:40,478 client 87772 REQ[442344ba] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-06-01 16:27:40,999 services 87772 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=442344ba)
-DEBUG 2026-06-01 16:27:41,000 client 87772 REQ[e942e443] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-06-01 16:27:41,509 services 87772 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=e942e443)
-DEBUG 2026-06-01 16:27:41,511 services 87772 Fetching device identity for DEMO-SN-002 via ISAPI
-DEBUG 2026-06-01 16:27:41,511 client 87772 REQ[64de6ac2] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
-WARNING 2026-06-01 16:27:42,044 services 87772 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=64de6ac2)
-DEBUG 2026-06-01 16:27:42,045 client 87772 REQ[1134a1ec] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-06-01 16:27:42,565 services 87772 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=1134a1ec)
-DEBUG 2026-06-01 16:27:42,566 client 87772 REQ[7c969514] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-06-01 16:27:43,098 services 87772 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=7c969514)
-DEBUG 2026-06-01 16:27:43,100 client 87772 REQ[4526a311] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-06-01 16:27:44,343 client 87772 REQ[f1c57a78] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
-DEBUG 2026-06-01 16:27:46,925 services 87772 _resolve_panel_power_status: hostHealth unavailable for Q42388087
-DEBUG 2026-06-01 16:27:46,927 client 87772 REQ[52a244c2] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-DEBUG 2026-06-01 16:27:47,991 client 87772 REQ[56f059d8] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
-DEBUG 2026-06-01 16:27:54,775 tasks 87773 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:27:59,314 client 87802 REQ[65349d09] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:28:19,550 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:28:24,303 client 87802 REQ[b9337bb6] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:28:44,873 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:28:49,622 client 87802 REQ[02f26458] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:29:10,035 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:29:14,782 client 87802 REQ[98a60d56] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:29:35,018 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:29:39,645 client 87802 REQ[241ebff0] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:29:59,894 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:30:04,303 client 87802 REQ[7db9adf9] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:30:24,884 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:30:29,323 client 87802 REQ[1c005e61] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:30:49,651 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:30:54,315 client 87802 REQ[95f81bae] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:31:14,571 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:31:19,299 client 87802 REQ[f85a4974] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:31:39,560 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:31:44,626 client 87802 REQ[d26d7263] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:32:04,880 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:32:09,768 client 87802 REQ[fb7dcc85] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:32:30,022 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:32:34,370 client 87773 REQ[6b190dc4] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:32:34,484 client 87772 REQ[ad56c4ca] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-06-01 16:32:34,597 client 87802 REQ[ca344c8c] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-06-01 16:32:34,821 services 87802 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:32:34,822 client 87802 REQ[ecbfcd75] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-06-01 16:32:34,970 client 87772 REQ[91c5dea2] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
-WARNING 2026-06-01 16:32:35,422 services 87802 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:32:35,422 client 87802 REQ[e7ecd67f] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-06-01 16:32:35,950 services 87802 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:32:35,951 client 87802 REQ[cb749d5b] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-06-01 16:32:36,474 services 87802 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:32:38,300 services 87772 _resolve_panel_power_status: hostHealth unavailable for Q15228593
-DEBUG 2026-06-01 16:32:38,302 client 87772 REQ[07afb402] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-DEBUG 2026-06-01 16:32:39,065 client 87772 REQ[2a5631ee] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
-DEBUG 2026-06-01 16:32:39,812 services 87772 Fetching device identity for DEMO-SN-001 via ISAPI
-DEBUG 2026-06-01 16:32:39,812 client 87772 REQ[f5070133] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
-WARNING 2026-06-01 16:32:40,332 services 87772 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=f5070133)
-DEBUG 2026-06-01 16:32:40,333 client 87772 REQ[7aa8f877] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-06-01 16:32:40,865 services 87772 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=7aa8f877)
-DEBUG 2026-06-01 16:32:40,866 client 87772 REQ[59f2a81e] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-06-01 16:32:41,376 services 87772 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=59f2a81e)
-DEBUG 2026-06-01 16:32:41,378 services 87772 Fetching device identity for DEMO-SN-002 via ISAPI
-DEBUG 2026-06-01 16:32:41,378 client 87772 REQ[0d5c17af] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
-WARNING 2026-06-01 16:32:41,885 services 87772 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=0d5c17af)
-DEBUG 2026-06-01 16:32:41,886 client 87772 REQ[35efe91a] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-06-01 16:32:42,398 services 87772 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=35efe91a)
-DEBUG 2026-06-01 16:32:42,399 client 87772 REQ[fa7239c3] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-06-01 16:32:42,919 services 87772 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=fa7239c3)
-DEBUG 2026-06-01 16:32:42,922 client 87772 REQ[4c77b94e] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-06-01 16:32:43,698 client 87772 REQ[00da2e30] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
-DEBUG 2026-06-01 16:32:46,457 services 87772 _resolve_panel_power_status: hostHealth unavailable for Q42388087
-DEBUG 2026-06-01 16:32:46,459 client 87772 REQ[c6178666] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-DEBUG 2026-06-01 16:32:47,166 client 87772 REQ[184ea4ec] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
-DEBUG 2026-06-01 16:32:54,742 tasks 87773 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:33:00,088 client 87802 REQ[a401687d] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:33:20,318 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:33:24,512 client 87802 REQ[918cf44f] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:33:44,829 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:33:49,301 client 87802 REQ[3fe19a1a] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:34:09,586 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:34:14,626 client 87802 REQ[71368f51] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:34:34,897 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:34:39,319 client 87802 REQ[5399802c] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:34:59,570 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:35:04,323 client 87802 REQ[eacbc34c] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:35:25,378 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:35:29,342 client 87802 REQ[27bc83e1] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:35:49,891 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:35:54,305 client 87802 REQ[f41b0ca6] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:36:14,819 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:36:19,617 client 87802 REQ[16118818] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:36:39,861 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:36:44,395 client 87802 REQ[92d33d5e] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:37:04,962 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:37:09,612 client 87802 REQ[634b026b] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:37:29,869 tasks 87802 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:37:34,312 client 87773 REQ[2c5021a3] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:37:34,511 client 87802 REQ[5068308d] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-06-01 16:37:34,624 client 87772 REQ[6b59513d] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-06-01 16:37:35,035 services 87802 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:37:35,036 client 87802 REQ[a6de0247] POST /api/hpcgw/v1/site/health/report
-DEBUG 2026-06-01 16:37:35,358 client 87772 REQ[de953504] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
-WARNING 2026-06-01 16:37:35,621 services 87802 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:37:35,622 client 87802 REQ[6bf4f290] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-06-01 16:37:36,119 services 87802 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:37:36,120 client 87802 REQ[f10a95fa] POST /api/hpcgw/v1/site/health/report
-WARNING 2026-06-01 16:37:36,624 services 87802 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
-DEBUG 2026-06-01 16:37:38,460 services 87772 _resolve_panel_power_status: hostHealth unavailable for Q15228593
-DEBUG 2026-06-01 16:37:38,461 client 87772 REQ[e9911354] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-DEBUG 2026-06-01 16:37:39,202 client 87772 REQ[7553e83b] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
-DEBUG 2026-06-01 16:37:39,970 services 87772 Fetching device identity for DEMO-SN-001 via ISAPI
-DEBUG 2026-06-01 16:37:39,971 client 87772 REQ[055181f7] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
-WARNING 2026-06-01 16:37:40,492 services 87772 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=055181f7)
-DEBUG 2026-06-01 16:37:40,493 client 87772 REQ[fcbc5a83] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-06-01 16:37:41,436 services 87772 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=fcbc5a83)
-DEBUG 2026-06-01 16:37:41,437 client 87772 REQ[f2932cab] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-06-01 16:37:42,461 services 87772 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=f2932cab)
-DEBUG 2026-06-01 16:37:42,463 services 87772 Fetching device identity for DEMO-SN-002 via ISAPI
-DEBUG 2026-06-01 16:37:42,463 client 87772 REQ[6e4783ef] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
-WARNING 2026-06-01 16:37:42,980 services 87772 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=6e4783ef)
-DEBUG 2026-06-01 16:37:42,980 client 87772 REQ[2483d982] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-WARNING 2026-06-01 16:37:43,527 services 87772 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=2483d982)
-DEBUG 2026-06-01 16:37:43,528 client 87772 REQ[a4609ade] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-WARNING 2026-06-01 16:37:44,056 services 87772 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=a4609ade)
-DEBUG 2026-06-01 16:37:44,058 client 87772 REQ[b3ac6df1] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
-DEBUG 2026-06-01 16:37:44,786 client 87772 REQ[373d2cb4] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
-DEBUG 2026-06-01 16:37:47,335 services 87772 _resolve_panel_power_status: hostHealth unavailable for Q42388087
-DEBUG 2026-06-01 16:37:47,337 client 87772 REQ[4cc9d022] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
-DEBUG 2026-06-01 16:37:48,048 client 87772 REQ[119c7628] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
-DEBUG 2026-06-01 16:37:54,889 tasks 87773 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
-DEBUG 2026-06-01 16:37:59,621 client 87802 REQ[0e85dd35] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-06-01 16:38:13,517 client 87802 REQ[0e85dd35] Hik-Partner API Error [502]: Bad Gateway
-Request: POST https://ieu.hik-partner.com/api/hpcgw/v1/mq/messages
-Headers: {'Content-Type': 'application/json', 'Accept': 'application/json'}
-Gateway Error: N/A, Device Error: N/A
-Response Body: <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML><HEAD><META HTTP-EQUIV="Content-Type" CONTENT="text/html; charset=UTF-8">
-<TITLE>ERROR: The request could not be satisfied</TITLE>
-</HEAD><BODY>
-<H1>502 Bad Gateway ERROR</H1>
-<H2>The request could not be satisfied.</H2>
-<HR noshade size="1px">
-We can't connect to the server for this app or website at this time. There might be too much traffic or a configuration error. Try again later, or contact the app or website owner.
-<BR clear="all">
-If you provide content to customers through CloudFront, you can find steps to troubleshoot and help prevent this error by reviewing the CloudFront documentation.
-<BR clear="all">
-<HR noshade size="1px">
-<PRE>
-Generated by cloudfront (CloudFront) HTTP3 Server
-Request ID: 1dLdAWRWUKRt_4ZColxTv4vBRE1__SV0pSMl6usR1hGoUWWA-nK9aA&#x3D;&#x3D;
-</PRE>
-<ADDRESS>
-</ADDRESS>
-</BODY></HTML>
-ERROR 2026-06-01 16:38:13,518 client 87802 REQ[0e85dd35] Hik-Partner Connection Error: 502 Server Error: Bad Gateway for url: https://ieu.hik-partner.com/api/hpcgw/v1/mq/messages
-ERROR 2026-06-01 16:38:13,518 tasks 87802 poll_mq_events: poll_messages failed: Hik-Partner Connection Error: 502 Server Error: Bad Gateway for url: https://ieu.hik-partner.com/api/hpcgw/v1/mq/messages
-Traceback (most recent call last):
-  File "/home/dev/SecureHub/backend/apps/hik_adapter/client.py", line 179, in request
-    response.headers.get("X-ErrorCode", "N/A"),
-    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/dev/SecureHub/backend/.venv/lib/python3.12/site-packages/requests/models.py", line 1028, in raise_for_status
-    raise HTTPError(http_error_msg, response=self)
-requests.exceptions.HTTPError: 502 Server Error: Bad Gateway for url: https://ieu.hik-partner.com/api/hpcgw/v1/mq/messages
-
-The above exception was the direct cause of the following exception:
-
-Traceback (most recent call last):
-  File "/home/dev/SecureHub/backend/apps/alarms/tasks.py", line 91, in poll_mq_events
-    result = client.poll_messages()
-             ^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/dev/SecureHub/backend/apps/hik_adapter/client.py", line 292, in poll_messages
-    body = {"subType": 1, "subMode": "all"}
-           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/home/dev/SecureHub/backend/apps/hik_adapter/client.py", line 215, in request
-    )
-apps.hik_adapter.exceptions.HikPartnerError: Hik-Partner Connection Error: 502 Server Error: Bad Gateway for url: https://ieu.hik-partner.com/api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:38:19,049 client 87802 REQ[41469130] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-06-01 16:38:19,265 client 87802 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-06-01 16:38:19,265 client 87802 REQ[c8d591a1] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-06-01 16:38:19,944 client 87802 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-06-01 16:38:19,944 client 87802 REQ[88f9686b] POST /api/hpcgw/v1/mq/messages
-DEBUG 2026-06-01 16:38:24,303 client 87772 REQ[fd178a96] POST /api/hpcgw/v1/mq/messages
-WARNING 2026-06-01 16:38:24,520 client 87772 poll_messages: MQ not subscribed (LAP068001) — attempting re-subscribe...
-DEBUG 2026-06-01 16:38:24,520 client 87772 REQ[e0168b53] POST /api/hpcgw/v1/mq/subscribe
-INFO 2026-06-01 16:38:25,063 client 87772 poll_messages: re-subscribe successful, retrying poll
-DEBUG 2026-06-01 16:38:25,064 client 87772 REQ[7d7c4f99] POST /api/hpcgw/v1/mq/messages
-ERROR 2026-06-01 16:38:25,706 client 87772 poll_messages: re-subscribe or retry failed: Hik-Partner API error LAP068001: event subscription not active (path=/api/hpcgw/v1/mq/messages, req=7d7c4f99)
-DEBUG 2026-06-01 16:38:25,707 tasks 87772 poll_mq_events: MQ heartbeat — no messages (batch=)
+INFO 2026-06-02 08:17:15,651 tasks 9575 Subscription for site 'site74' marked overdue (due 2026-06-01)
+DEBUG 2026-06-02 08:17:17,191 client 9580 REQ[fda4017d] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:17:17,193 client 9570 REQ[eec52f8f] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:17:17,199 client 9567 REQ[14a51f38] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-06-02 08:17:17,703 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:17:17,704 client 9580 REQ[1a9b4faf] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:17:18,581 client 9570 REQ[8bf50f5e] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 08:17:19,352 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:17:19,353 client 9580 REQ[7f234fc9] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:17:20,820 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:17:20,821 client 9580 REQ[04211271] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:17:21,935 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:17:22,885 services 9570 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 08:17:22,887 client 9570 REQ[6335edb4] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:17:24,490 client 9570 REQ[499b3475] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:17:26,086 services 9570 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 08:17:26,086 client 9570 REQ[9dea0d05] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:17:27,454 services 9570 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=9dea0d05)
+DEBUG 2026-06-02 08:17:27,454 client 9570 REQ[6832991a] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:17:28,867 services 9570 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=6832991a)
+DEBUG 2026-06-02 08:17:28,867 client 9570 REQ[a4316b4d] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:17:30,212 services 9570 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=a4316b4d)
+DEBUG 2026-06-02 08:17:30,213 services 9570 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 08:17:30,213 client 9570 REQ[f36af914] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:17:29,651 services 9570 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=f36af914)
+DEBUG 2026-06-02 08:17:29,652 client 9570 REQ[e5dac467] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:17:30,745 services 9570 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=e5dac467)
+DEBUG 2026-06-02 08:17:30,745 client 9570 REQ[f3ae9a01] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:17:32,129 services 9570 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=f3ae9a01)
+DEBUG 2026-06-02 08:17:32,130 client 9570 REQ[789b7483] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:17:33,790 client 9570 REQ[4c86fea6] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 08:17:37,410 tasks 9567 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:17:38,758 services 9570 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 08:17:38,760 client 9570 REQ[717fa036] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:17:39,880 client 9570 REQ[7703ac96] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:17:40,266 client 9580 REQ[873999dc] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:18:00,460 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:18:05,185 client 9580 REQ[b1110c41] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:18:27,172 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:18:30,646 client 9580 REQ[f44335f7] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:18:51,040 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:18:56,195 client 9580 REQ[986a57a2] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:19:17,265 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:19:21,019 client 9580 REQ[f684ce53] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:19:41,434 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:19:45,466 client 9580 REQ[93341c9e] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:20:05,792 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:20:09,826 client 9580 REQ[b5ce28f6] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:20:32,168 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:20:35,587 client 9580 REQ[216bccad] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:20:58,214 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:21:00,280 client 9580 REQ[7f2147ae] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:21:20,125 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:21:25,747 client 9580 REQ[436507a8] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:21:46,249 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:21:50,444 client 9580 REQ[40de0126] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:22:10,280 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:22:14,567 client 9580 REQ[29a0559e] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:22:14,795 client 9570 REQ[7b9a34e8] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-06-02 08:22:14,961 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:22:14,962 client 9580 REQ[1602396a] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:22:15,186 client 9567 REQ[38790909] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:22:15,757 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:22:15,758 client 9580 REQ[0e4ec4d6] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:22:16,421 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:22:16,421 client 9580 REQ[32154220] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:22:16,507 client 9567 REQ[80d530b9] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 08:22:17,129 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:22:34,893 tasks 9570 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+ERROR 2026-06-02 08:22:35,224 client 9567 REQ[80d530b9] Hik-Partner Connection Error: HTTPSConnectionPool(host='apiieu.hik-partner.com', port=443): Read timed out. (read timeout=20)
+DEBUG 2026-06-02 08:22:35,224 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 08:22:35,225 client 9567 REQ[ec6f3392] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:22:36,197 client 9567 REQ[6ea40b43] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:22:37,136 services 9567 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 08:22:37,136 client 9567 REQ[64362d5a] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:22:37,811 services 9567 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=64362d5a)
+DEBUG 2026-06-02 08:22:37,812 client 9567 REQ[b1e8b202] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:22:38,512 services 9567 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=b1e8b202)
+DEBUG 2026-06-02 08:22:38,514 client 9567 REQ[af9589d2] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:22:39,193 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=af9589d2)
+DEBUG 2026-06-02 08:22:39,194 services 9567 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 08:22:39,194 client 9567 REQ[15df6635] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+DEBUG 2026-06-02 08:22:39,458 client 9580 REQ[bbc9b5a6] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-06-02 08:22:39,898 services 9567 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=15df6635)
+DEBUG 2026-06-02 08:22:39,898 client 9567 REQ[babe8946] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:22:40,591 services 9567 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=babe8946)
+DEBUG 2026-06-02 08:22:40,592 client 9567 REQ[a8b065c4] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:22:41,297 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=a8b065c4)
+DEBUG 2026-06-02 08:22:41,298 client 9567 REQ[5ca0c6b8] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:22:42,295 client 9567 REQ[4aea6569] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 08:22:46,540 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 08:22:46,541 client 9567 REQ[39c805f0] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:22:47,580 client 9567 REQ[85ae2173] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:23:01,420 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:23:05,161 client 9580 REQ[4cb11a14] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:23:24,866 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:23:29,577 client 9580 REQ[17166e2d] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:23:49,506 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:23:55,067 client 9580 REQ[ffd02327] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:24:15,339 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:24:19,992 client 9580 REQ[a2b4838f] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:24:39,643 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:24:44,454 client 9580 REQ[5ddc0052] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:25:06,700 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:25:09,488 client 9580 REQ[88ffe0f0] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:25:31,147 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:25:35,198 client 9580 REQ[4304e002] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:25:54,996 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:25:59,588 client 9580 REQ[dbfcea03] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:26:19,396 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:26:24,470 client 9580 REQ[880acb1a] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:26:44,708 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:26:49,587 client 9580 REQ[eb72425b] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:27:09,849 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:27:14,444 client 9580 REQ[9363ff75] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:27:14,676 client 9568 REQ[c0307e36] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:27:15,038 client 9567 REQ[0ab75139] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:27:15,273 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:27:15,274 client 9580 REQ[1753dd68] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:27:16,088 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:27:16,089 client 9580 REQ[51ffd1ac] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:27:16,316 client 9567 REQ[843c8efc] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 08:27:16,769 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:27:16,770 client 9580 REQ[6116bc60] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:27:17,471 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:27:20,090 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 08:27:20,092 client 9567 REQ[05c9bcbd] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:27:21,086 client 9567 REQ[ac15741a] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:27:22,047 services 9567 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 08:27:22,047 client 9567 REQ[82790c26] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:27:22,740 services 9567 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=82790c26)
+DEBUG 2026-06-02 08:27:22,741 client 9567 REQ[282aca22] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:27:23,463 services 9567 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=282aca22)
+DEBUG 2026-06-02 08:27:23,464 client 9567 REQ[dd5162fa] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:27:24,180 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=dd5162fa)
+DEBUG 2026-06-02 08:27:24,182 services 9567 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 08:27:24,182 client 9567 REQ[c69aca57] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:27:24,891 services 9567 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=c69aca57)
+DEBUG 2026-06-02 08:27:24,892 client 9567 REQ[b82734ae] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:27:25,593 services 9567 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=b82734ae)
+DEBUG 2026-06-02 08:27:25,593 client 9567 REQ[4f21caf6] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:27:26,282 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=4f21caf6)
+DEBUG 2026-06-02 08:27:26,285 client 9567 REQ[1c0b2d71] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:27:27,239 client 9567 REQ[5805a15f] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 08:27:31,618 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 08:27:31,620 client 9567 REQ[370d34e5] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:27:32,621 client 9567 REQ[6d73b345] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:27:37,073 tasks 9568 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:27:37,632 client 9580 REQ[432dbc34] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:27:59,793 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:28:05,204 client 9580 REQ[f90a1280] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:28:25,433 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:28:30,101 client 9580 REQ[e34f52ce] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:28:49,691 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:28:55,107 client 9580 REQ[8deded86] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:29:15,595 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:29:19,585 client 9580 REQ[c40228ad] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:29:39,390 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:29:44,491 client 9580 REQ[4a74fb99] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:30:06,566 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:30:10,739 client 9580 REQ[a4e8c618] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:30:30,541 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:30:35,242 client 9580 REQ[0dd5a8e4] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:30:54,913 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:30:59,634 client 9580 REQ[5c036c9d] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:31:19,820 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:31:25,707 client 9580 REQ[d24b9639] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:31:46,171 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:31:50,415 client 9580 REQ[f80876a7] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:32:12,996 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:32:14,829 client 9567 REQ[02d79646] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:32:15,064 client 9580 REQ[6b0f005a] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:32:15,296 client 9568 REQ[09fe9219] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-06-02 08:32:16,015 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:32:16,016 client 9580 REQ[b5bda2fc] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:32:16,068 client 9567 REQ[e5c76e51] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 08:32:16,781 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:32:16,782 client 9580 REQ[1ff31ab2] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:32:17,463 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:32:17,464 client 9580 REQ[0df30e0d] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:32:18,158 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:32:19,825 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 08:32:19,827 client 9567 REQ[7f8641ce] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:32:20,762 client 9567 REQ[c97361a9] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:32:21,686 services 9567 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 08:32:21,686 client 9567 REQ[0c87740e] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:32:22,654 services 9567 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=0c87740e)
+DEBUG 2026-06-02 08:32:22,654 client 9567 REQ[05af1621] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:32:23,353 services 9567 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=05af1621)
+DEBUG 2026-06-02 08:32:23,353 client 9567 REQ[5b5d5af4] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:32:24,071 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=5b5d5af4)
+DEBUG 2026-06-02 08:32:24,072 services 9567 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 08:32:24,072 client 9567 REQ[5aed3929] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:32:24,782 services 9567 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=5aed3929)
+DEBUG 2026-06-02 08:32:24,783 client 9567 REQ[d750044e] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:32:25,492 services 9567 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=d750044e)
+DEBUG 2026-06-02 08:32:25,493 client 9567 REQ[497c97dc] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:32:26,231 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=497c97dc)
+DEBUG 2026-06-02 08:32:26,233 client 9567 REQ[cab6fe4e] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:32:27,250 client 9567 REQ[02c5e42a] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 08:32:31,538 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 08:32:31,541 client 9567 REQ[afd0f6b0] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:32:32,571 client 9567 REQ[2a28bcad] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:32:37,771 tasks 9568 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:32:39,690 client 9580 REQ[ee907977] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:33:00,042 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:33:05,320 client 9580 REQ[28fbee91] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:33:25,026 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:33:30,558 client 9580 REQ[0039c88a] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:33:50,738 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:33:55,006 client 9580 REQ[d1bb1419] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:34:14,752 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:34:20,205 client 9580 REQ[35a8e048] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:34:42,547 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:34:44,607 client 9580 REQ[4b8f0c94] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:35:04,994 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:35:09,600 client 9580 REQ[13d5bd89] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:35:29,298 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:35:35,322 client 9580 REQ[3b1744d3] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:35:55,451 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:35:59,611 client 9580 REQ[15586da9] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:36:19,447 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:36:24,617 client 9580 REQ[e31be3ba] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:36:45,037 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:36:50,230 client 9580 REQ[9923910e] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:37:11,863 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:37:14,818 client 9580 REQ[f8f99c25] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:37:15,058 client 9568 REQ[fef57ea1] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:37:15,079 client 9567 REQ[bc3ef07f] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:37:15,201 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:37:15,202 client 9580 REQ[1900373b] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:37:15,881 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:37:15,883 client 9580 REQ[b77129ad] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:37:16,186 client 9567 REQ[ec1a38ee] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 08:37:16,564 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:37:16,565 client 9580 REQ[d3b4d8c5] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:37:15,353 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:37:17,617 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 08:37:17,620 client 9567 REQ[5fa2b072] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:37:18,530 client 9567 REQ[17425a6e] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:37:19,426 services 9567 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 08:37:19,426 client 9567 REQ[dec0e4ae] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:37:20,127 services 9567 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=dec0e4ae)
+DEBUG 2026-06-02 08:37:20,129 client 9567 REQ[2aa7aca6] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:37:20,838 services 9567 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=2aa7aca6)
+DEBUG 2026-06-02 08:37:20,839 client 9567 REQ[84658f6c] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:37:21,556 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=84658f6c)
+DEBUG 2026-06-02 08:37:21,559 services 9567 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 08:37:21,560 client 9567 REQ[4409b0de] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:37:22,257 services 9567 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=4409b0de)
+DEBUG 2026-06-02 08:37:22,258 client 9567 REQ[f5d8dfa8] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:37:23,015 services 9567 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=f5d8dfa8)
+DEBUG 2026-06-02 08:37:23,017 client 9567 REQ[f23d2d27] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:37:23,725 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=f23d2d27)
+DEBUG 2026-06-02 08:37:23,727 client 9567 REQ[09a0afbf] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:37:24,711 client 9567 REQ[9314561b] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 08:37:29,008 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 08:37:29,009 client 9567 REQ[aa24cbd3] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:37:30,064 client 9567 REQ[e9c0e87a] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:37:34,746 tasks 9568 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:37:40,222 client 9580 REQ[053133b3] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:38:00,553 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:38:04,656 client 9580 REQ[ee0436be] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:38:24,340 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:38:29,622 client 9580 REQ[4ed9f069] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:38:49,512 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:38:54,989 client 9580 REQ[0394bb23] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:39:17,025 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:39:19,631 client 9580 REQ[69b9f348] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:39:41,636 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:39:44,617 client 9580 REQ[d8979c94] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:40:04,541 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:40:09,632 client 9580 REQ[1b8ddfcc] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:40:29,988 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:40:35,264 client 9580 REQ[1018f12b] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:40:55,059 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:41:00,220 client 9580 REQ[6434f3c9] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:41:20,001 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:41:25,219 client 9580 REQ[64d6efcf] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:41:47,500 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:41:49,655 client 9580 REQ[2ded580a] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:42:09,843 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:42:14,459 client 9567 REQ[d92be0a7] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:42:15,063 client 9580 REQ[733eb501] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:42:15,215 client 9568 REQ[913c16ca] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-06-02 08:42:15,399 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:42:15,400 client 9580 REQ[ba1aa9e4] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:42:15,550 client 9567 REQ[0a751d90] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 08:42:16,113 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:42:16,114 client 9580 REQ[86697785] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:42:16,801 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:42:16,802 client 9580 REQ[80f6c503] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:42:17,498 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:42:18,799 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 08:42:18,801 client 9567 REQ[884355ff] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:42:19,741 client 9567 REQ[439668f8] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:42:18,846 services 9567 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 08:42:18,846 client 9567 REQ[dd93d927] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:42:19,531 services 9567 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=dd93d927)
+DEBUG 2026-06-02 08:42:19,532 client 9567 REQ[fbcf4e5b] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:42:20,237 services 9567 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=fbcf4e5b)
+DEBUG 2026-06-02 08:42:20,238 client 9567 REQ[40e7ff5c] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:42:20,935 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=40e7ff5c)
+DEBUG 2026-06-02 08:42:20,937 services 9567 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 08:42:20,937 client 9567 REQ[3e6fa3cd] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:42:21,641 services 9567 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=3e6fa3cd)
+DEBUG 2026-06-02 08:42:21,642 client 9567 REQ[2a16df0b] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:42:22,338 services 9567 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=2a16df0b)
+DEBUG 2026-06-02 08:42:22,339 client 9567 REQ[ada609df] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:42:23,029 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=ada609df)
+DEBUG 2026-06-02 08:42:23,033 client 9567 REQ[0ccc18bc] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:42:24,034 client 9567 REQ[dbec9958] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 08:42:28,421 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 08:42:28,422 client 9567 REQ[7c38592a] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:42:29,422 client 9567 REQ[83c7ae1e] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:42:35,080 tasks 9568 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:42:39,600 client 9580 REQ[b993942a] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:42:59,810 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:43:04,720 client 9580 REQ[2e069d05] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:43:24,551 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:43:30,247 client 9580 REQ[5993d916] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:43:50,631 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:43:55,676 client 9580 REQ[3b358835] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:44:17,976 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:44:20,222 client 9580 REQ[97c41366] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:44:40,120 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:44:44,738 client 9580 REQ[fbf4ff81] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:45:04,568 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:45:10,235 client 9580 REQ[8f84f96f] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:45:30,340 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:45:35,259 client 9580 REQ[dd53a9b5] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:45:55,041 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:45:59,604 client 9580 REQ[a5c4f3ec] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:46:21,313 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:46:25,217 client 9580 REQ[05afebb9] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:46:46,949 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:46:50,226 client 9580 REQ[a7a78951] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:47:10,028 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:47:14,456 client 9567 REQ[ec540a81] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:47:14,690 client 9580 REQ[8bf33f84] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:47:15,045 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:47:15,046 client 9580 REQ[7f84b29d] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:47:15,229 client 9568 REQ[5eda3a7b] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-06-02 08:47:15,730 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:47:15,730 client 9580 REQ[1383864f] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:47:15,736 client 9567 REQ[3d8a54c1] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 08:47:16,420 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:47:16,421 client 9580 REQ[4901e047] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:47:17,115 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:47:19,351 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 08:47:19,352 client 9567 REQ[c4979eb0] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:47:20,301 client 9567 REQ[3213bab7] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:47:21,289 services 9567 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 08:47:21,289 client 9567 REQ[296c7a01] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:47:21,979 services 9567 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=296c7a01)
+DEBUG 2026-06-02 08:47:21,980 client 9567 REQ[77a542b1] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:47:22,674 services 9567 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=77a542b1)
+DEBUG 2026-06-02 08:47:22,675 client 9567 REQ[4eb05ce0] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:47:23,385 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=4eb05ce0)
+DEBUG 2026-06-02 08:47:23,386 services 9567 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 08:47:23,386 client 9567 REQ[96f1cd49] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:47:24,082 services 9567 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=96f1cd49)
+DEBUG 2026-06-02 08:47:24,082 client 9567 REQ[f3c5a92f] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:47:22,933 services 9567 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=f3c5a92f)
+DEBUG 2026-06-02 08:47:22,934 client 9567 REQ[3257ba2d] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:47:23,618 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=3257ba2d)
+DEBUG 2026-06-02 08:47:23,621 client 9567 REQ[ee515224] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:47:24,599 client 9567 REQ[d98bc3ea] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 08:47:28,808 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 08:47:28,811 client 9567 REQ[e5d7a42c] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:47:29,794 client 9567 REQ[2ce79a0c] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:47:35,138 tasks 9568 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:47:39,618 client 9580 REQ[47cd153e] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:48:00,148 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:48:05,217 client 9580 REQ[41105781] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:48:24,934 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:48:29,637 client 9580 REQ[f87dbd0a] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:48:52,425 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:48:54,604 client 9580 REQ[859a082a] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:49:14,360 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:49:20,241 client 9580 REQ[cfcfe06f] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:49:39,932 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:49:44,644 client 9580 REQ[dbfa2acb] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:50:09,256 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:50:10,225 client 9580 REQ[320eefab] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:50:29,899 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:50:34,717 client 9580 REQ[86790aed] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:50:56,741 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:51:00,851 client 9580 REQ[d90b7292] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:51:23,399 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:51:25,298 client 9580 REQ[b5c65e55] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:51:45,100 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:51:50,361 client 9580 REQ[39b01c3c] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:52:10,077 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:52:14,436 client 9567 REQ[4fd9d390] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:52:14,666 client 9568 REQ[29e542d3] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:52:14,816 client 9580 REQ[9ec79be2] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:52:15,602 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:52:15,603 client 9580 REQ[3b1b3435] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:52:15,698 client 9567 REQ[31513abb] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 08:52:16,276 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:52:16,277 client 9580 REQ[a1f466c8] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:52:16,981 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:52:16,983 client 9580 REQ[69113adf] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:52:17,666 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:52:19,177 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 08:52:19,180 client 9567 REQ[f8d38cb7] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:52:20,183 client 9567 REQ[081f95a0] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:52:21,125 services 9567 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 08:52:21,125 client 9567 REQ[edc33d6d] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:52:21,867 services 9567 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=edc33d6d)
+DEBUG 2026-06-02 08:52:21,868 client 9567 REQ[c61c883b] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:52:22,582 services 9567 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=c61c883b)
+DEBUG 2026-06-02 08:52:22,583 client 9567 REQ[1b28404c] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:52:23,268 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=1b28404c)
+DEBUG 2026-06-02 08:52:23,271 services 9567 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 08:52:23,271 client 9567 REQ[e8412d06] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:52:23,976 services 9567 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=e8412d06)
+DEBUG 2026-06-02 08:52:23,977 client 9567 REQ[a874a98a] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:52:24,682 services 9567 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=a874a98a)
+DEBUG 2026-06-02 08:52:24,682 client 9567 REQ[5ec1af31] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:52:25,377 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=5ec1af31)
+DEBUG 2026-06-02 08:52:25,380 client 9567 REQ[0bda8927] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:52:26,356 client 9567 REQ[132439be] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 08:52:28,987 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 08:52:28,988 client 9567 REQ[3a31d1f2] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:52:29,973 client 9567 REQ[639ae384] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:52:34,848 tasks 9568 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:52:39,660 client 9580 REQ[af0932e1] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:52:59,716 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:53:05,302 client 9580 REQ[e1c1ab15] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:53:27,410 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:53:29,657 client 9580 REQ[5cee1d93] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:53:51,914 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:53:55,255 client 9580 REQ[a1a33d6e] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:54:15,003 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:54:19,771 client 9580 REQ[4ba51cdb] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:54:40,053 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:54:45,281 client 9580 REQ[67a8168f] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:55:05,010 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:55:09,704 client 9580 REQ[75e8b84a] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:55:29,530 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:55:34,759 client 9580 REQ[a0543d90] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:55:56,401 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:56:00,260 client 9580 REQ[bfe1209e] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:56:20,038 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:56:25,392 client 9580 REQ[0bd423f6] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:56:45,145 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:56:49,779 client 9580 REQ[108fd7e9] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:57:09,804 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:57:14,452 client 9580 REQ[2a171dc9] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:57:14,797 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:57:14,798 client 9580 REQ[8a4a87b8] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:57:14,871 client 9567 REQ[49e5bc4d] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:57:15,119 client 9568 REQ[d42496e0] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-06-02 08:57:15,516 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:57:15,516 client 9580 REQ[219703f9] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 08:57:16,186 client 9567 REQ[73c24c25] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 08:57:16,231 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:57:16,232 client 9580 REQ[acbf612b] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 08:57:16,918 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 08:57:20,103 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 08:57:20,104 client 9567 REQ[291d4db1] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:57:21,045 client 9567 REQ[ccd6b54c] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:57:22,003 services 9567 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 08:57:22,003 client 9567 REQ[ec6b4360] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:57:22,720 services 9567 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=ec6b4360)
+DEBUG 2026-06-02 08:57:22,721 client 9567 REQ[875c1f55] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:57:23,430 services 9567 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=875c1f55)
+DEBUG 2026-06-02 08:57:23,431 client 9567 REQ[fd77a52f] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:57:24,135 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=fd77a52f)
+DEBUG 2026-06-02 08:57:24,137 services 9567 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 08:57:24,137 client 9567 REQ[ddd55a1b] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 08:57:24,843 services 9567 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=ddd55a1b)
+DEBUG 2026-06-02 08:57:24,845 client 9567 REQ[30fdf726] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 08:57:25,553 services 9567 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=30fdf726)
+DEBUG 2026-06-02 08:57:25,554 client 9567 REQ[aaa8bc69] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 08:57:26,253 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=aaa8bc69)
+DEBUG 2026-06-02 08:57:26,254 client 9567 REQ[c0769cbf] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 08:57:27,250 client 9567 REQ[4f614663] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 08:57:29,567 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 08:57:29,568 client 9567 REQ[d402b134] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 08:57:30,588 client 9567 REQ[bb9abb9e] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 08:57:34,781 tasks 9568 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:57:39,735 client 9580 REQ[6dc30718] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:58:00,343 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:58:04,820 client 9580 REQ[70e72138] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:58:26,947 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:58:30,317 client 9580 REQ[226cd98d] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:58:50,093 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:58:55,348 client 9580 REQ[cbb92bee] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:59:14,995 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:59:19,739 client 9580 REQ[57b5ce38] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 08:59:40,079 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 08:59:44,715 client 9580 REQ[6fd1d076] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:00:04,645 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:00:09,839 client 9580 REQ[12eecc94] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:00:32,247 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:00:35,543 client 9580 REQ[eb95c87f] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:00:58,951 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:00:59,722 client 9580 REQ[713b9141] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:01:19,878 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:01:25,309 client 9580 REQ[2c155d5c] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:01:44,975 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:01:50,523 client 9580 REQ[f30bb14a] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:02:10,361 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:02:14,858 client 9580 REQ[d09b8c70] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 09:02:15,094 client 9568 REQ[42d51fb2] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:02:15,532 client 9567 REQ[50530e14] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 09:02:15,793 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 09:02:15,795 client 9580 REQ[38a8f9e3] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 09:02:16,575 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 09:02:16,576 client 9580 REQ[20def553] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 09:02:16,926 client 9567 REQ[3c9f0097] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 09:02:17,273 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 09:02:17,274 client 9580 REQ[6403aab3] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 09:02:17,967 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 09:02:20,430 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 09:02:20,433 client 9567 REQ[6ae935dc] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 09:02:21,378 client 9567 REQ[5a076a12] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 09:02:22,323 services 9567 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 09:02:22,323 client 9567 REQ[90151039] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 09:02:23,028 services 9567 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=90151039)
+DEBUG 2026-06-02 09:02:23,029 client 9567 REQ[7235d49f] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 09:02:23,818 services 9567 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=7235d49f)
+DEBUG 2026-06-02 09:02:23,819 client 9567 REQ[7bd578fc] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 09:02:24,520 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=7bd578fc)
+DEBUG 2026-06-02 09:02:24,524 services 9567 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 09:02:24,524 client 9567 REQ[7313379d] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 09:02:25,259 services 9567 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=7313379d)
+DEBUG 2026-06-02 09:02:25,261 client 9567 REQ[7b35735e] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 09:02:25,998 services 9567 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=7b35735e)
+DEBUG 2026-06-02 09:02:25,999 client 9567 REQ[dc8f01cc] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 09:02:26,717 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=dc8f01cc)
+DEBUG 2026-06-02 09:02:26,720 client 9567 REQ[fe7b53ae] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 09:02:27,787 client 9567 REQ[64a7f84b] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 09:02:32,018 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 09:02:32,022 client 9567 REQ[d41cd164] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 09:02:32,995 client 9567 REQ[01fd53ef] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 09:02:34,926 tasks 9568 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:02:39,730 client 9580 REQ[0ab8b348] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:03:01,520 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:03:04,767 client 9580 REQ[d31d5374] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:03:24,993 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:03:30,112 client 9580 REQ[444d8efb] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:03:49,833 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:03:55,088 client 9580 REQ[4051ac78] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:04:14,912 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:04:20,466 client 9580 REQ[59b544b0] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:04:40,511 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:04:45,395 client 9580 REQ[3aa0459b] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:05:05,127 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:05:10,619 client 9580 REQ[b81b87c5] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:05:32,973 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:05:34,835 client 9580 REQ[3f32da42] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:05:54,648 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:06:00,627 client 9580 REQ[63332be8] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:06:21,009 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:06:24,714 client 9580 REQ[ccc820b0] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:06:44,755 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:06:50,363 client 9580 REQ[127bb439] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:07:10,109 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:07:14,826 client 9567 REQ[0828cac5] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 09:07:15,059 client 9580 REQ[2f5c760a] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 09:07:15,059 client 9568 REQ[26a5d0da] POST /api/hpcgw/v1/mq/messages
+WARNING 2026-06-02 09:07:15,405 services 9580 refresh_site_health: skipping site site74 due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 09:07:15,405 client 9580 REQ[caba7099] POST /api/hpcgw/v1/site/health/report
+DEBUG 2026-06-02 09:07:16,055 client 9567 REQ[466047ce] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+WARNING 2026-06-02 09:07:16,169 services 9580 refresh_site_health: skipping site Warehouse North due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 09:07:16,170 client 9580 REQ[b39b0d1c] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 09:07:16,852 services 9580 refresh_site_health: skipping site Retail Showroom due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 09:07:16,853 client 9580 REQ[e1c7c463] POST /api/hpcgw/v1/site/health/report
+WARNING 2026-06-02 09:07:17,556 services 9580 refresh_site_health: skipping site Dev Site  due to LAP008xxx exception (invalid or revoked)
+DEBUG 2026-06-02 09:07:19,492 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q15228593
+DEBUG 2026-06-02 09:07:19,494 client 9567 REQ[7cc8b7a1] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 09:07:20,480 client 9567 REQ[c77f333c] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 09:07:21,377 services 9567 Fetching device identity for DEMO-SN-001 via ISAPI
+DEBUG 2026-06-02 09:07:21,377 client 9567 REQ[9e67a9b4] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 09:07:22,093 services 9567 Failed to fetch device identity for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=9e67a9b4)
+DEBUG 2026-06-02 09:07:22,094 client 9567 REQ[04ddeebe] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 09:07:22,813 services 9567 sync_alarm_status: sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=04ddeebe)
+DEBUG 2026-06-02 09:07:22,814 client 9567 REQ[723106f4] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 09:07:23,562 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-001: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=723106f4)
+DEBUG 2026-06-02 09:07:23,564 services 9567 Fetching device identity for DEMO-SN-002 via ISAPI
+DEBUG 2026-06-02 09:07:23,564 client 9567 REQ[732db29f] GET /api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json
+WARNING 2026-06-02 09:07:24,285 services 9567 Failed to fetch device identity for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/System/deviceInfo?format=json, req=732db29f)
+DEBUG 2026-06-02 09:07:24,287 client 9567 REQ[0208dde7] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+WARNING 2026-06-02 09:07:25,020 services 9567 sync_alarm_status: sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json, req=0208dde7)
+DEBUG 2026-06-02 09:07:25,022 client 9567 REQ[63113b13] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+WARNING 2026-06-02 09:07:25,755 services 9567 sync_alarm_status: zone sync failed for DEMO-SN-002: Hik-Partner API error LAP034000: unknown error (path=/api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json, req=63113b13)
+DEBUG 2026-06-02 09:07:25,757 client 9567 REQ[f5c61fa8] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/subSystems?format=json
+DEBUG 2026-06-02 09:07:26,806 client 9567 REQ[1547f41c] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/hostHealth?format=json
+DEBUG 2026-06-02 09:07:31,013 services 9567 _resolve_panel_power_status: hostHealth unavailable for Q42388087
+DEBUG 2026-06-02 09:07:31,015 client 9567 REQ[92cfd105] GET /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/zones?format=json
+DEBUG 2026-06-02 09:07:31,977 client 9567 REQ[973f38c2] POST /api/hpcgw/v1/device/transparent/ISAPI/SecurityCP/status/outputStatus?format=json
+DEBUG 2026-06-02 09:07:36,767 tasks 9568 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:07:40,338 client 9580 REQ[8d9aca31] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:08:02,630 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:08:05,759 client 9580 REQ[a8bf8bf9] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:08:25,555 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:08:30,028 client 9580 REQ[1893a62e] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:08:49,757 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:08:55,342 client 9580 REQ[0ad91648] POST /api/hpcgw/v1/mq/messages
+DEBUG 2026-06-02 09:09:15,707 tasks 9580 poll_mq_events: MQ heartbeat — no messages (batch=672edde8696063ed66c8fe858e01bc0c)
+DEBUG 2026-06-02 09:09:19,740 client 9580 REQ[77775003] POST /api/hpcgw/v1/mq/messages
